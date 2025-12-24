@@ -3,8 +3,8 @@ import React from "react";
 // import { Cta } from "./components/Cta";
 // import { Features } from "./Features";
 // import { Footer } from "./Footer";
-import Hero from "./components/Hero";
-import Navbar from "./components/Navbar";
+import Hero from "../components/Hero";
+import Navbar from "../components/Navbar";
 // import { Navbar } from "./Navbar";
 // import { ProblemSolution } from "./ProblemSolution";
 

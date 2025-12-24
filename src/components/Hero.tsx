@@ -1,7 +1,8 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import Image from 'next/image'
 import React from "react";
+import { Button } from './ui/button';
 
 export default function Hero() {
   return (
@@ -16,21 +17,19 @@ export default function Hero() {
           platform.
         </p>
 
-        <motion.button 
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="w-fit h-auto px-[clamp(2rem,4vw,43px)] py-[clamp(1rem,2vw,26px)] bg-[#8e8edb] rounded-[83px] hover:bg-[#7a7ac7] transition-colors"
-        >
-          <span className="font-sub-heading font-[number:var(--sub-heading-font-weight)] text-white text-[clamp(0.875rem,1.5vw,var(--sub-heading-font-size))] tracking-[var(--sub-heading-letter-spacing)] leading-[var(--sub-heading-line-height)] whitespace-nowrap [font-style:var(--sub-heading-font-style)]">
-            START FOR FREE
-          </span>
-        </motion.button>
+        <Button className="bg-[#8e8edb] hover:bg-[#7a7ac8] text-white rounded-[83px] w-fit px-[43px] py-[26px] h-20">
+            <span className="font-sub-heading font-[number:var(--sub-heading-font-weight)] text-[length:var(--sub-heading-font-size)] tracking-[var(--sub-heading-letter-spacing)] leading-[var(--sub-heading-line-height)] [font-style:var(--sub-heading-font-style)]">
+              START FOR FREE
+            </span>
+          </Button>
       </div>
 
       <div className="w-full max-w-[532px] aspect-[532/566]">
-        <img
+        <Image
           src="/homehero.png"
           alt="Dashboard illustration"
+          width={532}
+          height={566}
           className="w-full h-full object-contain"
         />
       </div>
