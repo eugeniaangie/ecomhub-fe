@@ -22,8 +22,8 @@ export default function DashboardPage() {
       const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       const data = await dashboardApi.getSummary(month);
       setSummary(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load dashboard summary');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load dashboard summary');
     } finally {
       setIsLoading(false);
     }
