@@ -140,14 +140,24 @@ export const JOURNAL_ENTRY_STATUS_OPTIONS: Array<{ value: JournalEntryStatus | '
 ];
 
 // ===== Ad Budget Platforms =====
-export const AD_PLATFORM_OPTIONS = [
-  'Facebook Ads',
-  'Google Ads',
-  'Instagram Ads',
-  'TikTok Ads',
-  'LinkedIn Ads',
-  'Twitter Ads',
-  'YouTube Ads',
-  'Other',
+import type { AdPlatform } from '@/lib/types/finance';
+
+export const AD_PLATFORM_LABELS: Record<AdPlatform, string> = {
+  meta_ads: 'Meta Ads',
+  google_ads: 'Google Ads',
+  tiktok_ads: 'TikTok Ads',
+  shopee_ads: 'Shopee Ads',
+  lazada_ads: 'Lazada Ads',
+  blibli_ads: 'Blibli Ads',
+};
+
+export const AD_PLATFORM_OPTIONS: Array<{ value: AdPlatform | ''; label: string }> = [
+  { value: '', label: 'All Platforms' },
+  { value: 'meta_ads', label: 'Meta Ads' },
+  { value: 'google_ads', label: 'Google Ads' },
+  { value: 'tiktok_ads', label: 'TikTok Ads' },
+  { value: 'shopee_ads', label: 'Shopee Ads' },
+  { value: 'lazada_ads', label: 'Lazada Ads' },
+  { value: 'blibli_ads', label: 'Blibli Ads' },
 ];
 

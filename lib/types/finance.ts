@@ -21,7 +21,7 @@ export interface CreateFiscalPeriod {
   period_end: string;   // YYYY-MM-DD
 }
 
-export interface UpdateFiscalPeriod extends CreateFiscalPeriod {}
+export type UpdateFiscalPeriod = CreateFiscalPeriod;
 
 // ===== Expense Categories =====
 export interface ExpenseCategory {
@@ -39,7 +39,7 @@ export interface CreateExpenseCategory {
   description?: string;
 }
 
-export interface UpdateExpenseCategory extends CreateExpenseCategory {}
+export type UpdateExpenseCategory = CreateExpenseCategory;
 
 // ===== Chart of Accounts =====
 export type AccountType = 'asset' | 'liability' | 'equity' | 'revenue' | 'expense' | 'contra_asset' | 'contra_liability';
@@ -65,7 +65,7 @@ export interface CreateAccount {
   is_active?: boolean;
 }
 
-export interface UpdateAccount extends CreateAccount {}
+export type UpdateAccount = CreateAccount;
 
 // ===== Operational Expenses =====
 export type ExpenseStatus = 'pending' | 'approved' | 'rejected' | 'paid';
@@ -102,7 +102,7 @@ export interface CreateOperationalExpense {
   receipt_image_url?: string;
 }
 
-export interface UpdateOperationalExpense extends CreateOperationalExpense {}
+export type UpdateOperationalExpense = CreateOperationalExpense;
 
 // ===== Pagination =====
 export interface PaginatedResponseFinance<T> {
@@ -114,9 +114,11 @@ export interface PaginatedResponseFinance<T> {
 }
 
 // ===== Ad Budgets =====
+export type AdPlatform = 'meta_ads' | 'google_ads' | 'tiktok_ads' | 'shopee_ads' | 'lazada_ads' | 'blibli_ads';
+
 export interface AdBudget {
   id: number;
-  platform: string;
+  platform: AdPlatform;
   month_year: string; // YYYY-MM-01 format
   budget_amount: number;
   spent_amount: number;
@@ -128,7 +130,7 @@ export interface AdBudget {
 }
 
 export interface CreateAdBudget {
-  platform: string;
+  platform: AdPlatform;
   month_year: string; // YYYY-MM-01
   budget_amount: number;
   spent_amount?: number;
@@ -249,7 +251,7 @@ export interface CreateJournalEntry {
   lines: Omit<JournalEntryLine, 'id' | 'account'>[];
 }
 
-export interface UpdateJournalEntry extends CreateJournalEntry {}
+export type UpdateJournalEntry = CreateJournalEntry;
 
 // ===== User Roles =====
 export type UserRole = 'staff' | 'admin' | 'superadmin';

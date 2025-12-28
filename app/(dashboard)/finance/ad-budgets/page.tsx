@@ -6,9 +6,9 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
-import { formatCurrency, formatDate } from '@/lib/utils/formatters';
-import { AD_PLATFORM_OPTIONS } from '@/lib/utils/constants';
-import type { AdBudget } from '@/lib/types/finance';
+import { formatCurrency, formatDate, formatNumber, parseFormattedNumber } from '@/lib/utils/formatters';
+import { AD_PLATFORM_OPTIONS, AD_PLATFORM_LABELS } from '@/lib/utils/constants';
+import type { AdBudget, AdPlatform } from '@/lib/types/finance';
 
 export default function AdBudgetsPage() {
   useEffect(() => {
@@ -33,19 +33,37 @@ export default function AdBudgetsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [platformFilter, setPlatformFilter] = useState('');
-  const [monthFilter, setMonthFilter] = useState('');
+  // Default to current month (YYYY-MM-01 format)
+  const getCurrentMonthFilter = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}-01`;
+  };
+  const [monthFilter, setMonthFilter] = useState(getCurrentMonthFilter());
 
   // Data
   const [budgets, setBudgets] = useState<AdBudget[]>([]);
 
   // Form
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    platform: AdPlatform | '';
+    month_year: string;
+    budget_amount: number;
+    spent_amount: number;
+    notes: string;
+  }>({
     platform: '',
     month_year: '',
     budget_amount: 0,
     spent_amount: 0,
     notes: '',
   });
+
+  // Display states for formatted amounts
+  const [budgetAmountDisplay, setBudgetAmountDisplay] = useState('');
+  const [spentAmountDisplay, setSpentAmountDisplay] = useState('');
+  const [spentAmountUpdateDisplay, setSpentAmountUpdateDisplay] = useState('');
 
   // Spent update form
   const [spentForm, setSpentForm] = useState({
@@ -101,6 +119,8 @@ export default function AdBudgetsPage() {
       spent_amount: 0,
       notes: '',
     });
+    setBudgetAmountDisplay('');
+    setSpentAmountDisplay('');
     setFormError('');
     setIsModalOpen(true);
   };
@@ -114,6 +134,8 @@ export default function AdBudgetsPage() {
       spent_amount: item.spent_amount,
       notes: item.notes || '',
     });
+    setBudgetAmountDisplay(formatNumber(item.budget_amount.toString()));
+    setSpentAmountDisplay(formatNumber(item.spent_amount.toString()));
     setFormError('');
     setIsModalOpen(true);
   };
@@ -123,6 +145,7 @@ export default function AdBudgetsPage() {
     setSpentForm({
       spent_amount: item.spent_amount,
     });
+    setSpentAmountUpdateDisplay(formatNumber(item.spent_amount.toString()));
     setIsSpentModalOpen(true);
   };
 
@@ -160,10 +183,15 @@ export default function AdBudgetsPage() {
       return;
     }
 
+    if (!form.platform) {
+      setFormError('Platform is required');
+      return;
+    }
+
     try {
       setFormError('');
       const payload = {
-        platform: form.platform.trim(),
+        platform: form.platform as AdPlatform,
         month_year: form.month_year,
         budget_amount: form.budget_amount,
         spent_amount: form.spent_amount || 0,
@@ -183,6 +211,8 @@ export default function AdBudgetsPage() {
         spent_amount: 0,
         notes: '',
       });
+      setBudgetAmountDisplay('');
+      setSpentAmountDisplay('');
       loadData();
     } catch (err: unknown) {
       console.error('Error saving ad budget:', err);
@@ -229,6 +259,8 @@ export default function AdBudgetsPage() {
       spent_amount: 0,
       notes: '',
     });
+    setBudgetAmountDisplay('');
+    setSpentAmountDisplay('');
     setFormError('');
   };
 
@@ -236,6 +268,7 @@ export default function AdBudgetsPage() {
     setIsSpentModalOpen(false);
     setUpdatingSpentItem(null);
     setSpentForm({ spent_amount: 0 });
+    setSpentAmountUpdateDisplay('');
     setFormError('');
   };
 
@@ -291,33 +324,34 @@ export default function AdBudgetsPage() {
             setCurrentPage(1);
           }}
         >
-          <option value="">All Platforms</option>
-          {AD_PLATFORM_OPTIONS.map((platform) => (
-            <option key={platform} value={platform}>
-              {platform}
+          {AD_PLATFORM_OPTIONS.map((option) => (
+            <option key={option.value || 'all'} value={option.value}>
+              {option.label}
             </option>
           ))}
         </select>
         <input
           type="month"
-          className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={monthFilter}
+          className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+          value={monthFilter ? monthFilter.slice(0, 7) : getCurrentMonthFilter().slice(0, 7)}
           onChange={(e) => {
             const monthValue = e.target.value;
-            setMonthFilter(monthValue ? `${monthValue}-01` : '');
-            setCurrentPage(1);
+            if (monthValue) {
+              setMonthFilter(`${monthValue}-01`);
+              setCurrentPage(1);
+            }
           }}
         />
         <Button onClick={handleSearch} variant="secondary">
           Search
         </Button>
-        {(searchQuery || platformFilter || monthFilter) && (
+        {(searchQuery || platformFilter || (monthFilter && monthFilter !== getCurrentMonthFilter())) && (
           <Button
             onClick={() => {
               setSearchInput('');
               setSearchQuery('');
               setPlatformFilter('');
-              setMonthFilter('');
+              setMonthFilter(getCurrentMonthFilter());
               setCurrentPage(1);
             }}
             variant="ghost"
@@ -374,7 +408,7 @@ export default function AdBudgetsPage() {
                   return (
                     <tr key={budget.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        {budget.platform}
+                        {AD_PLATFORM_LABELS[budget.platform] || budget.platform}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
                         {formatDate(budget.month_year)}
@@ -482,13 +516,13 @@ export default function AdBudgetsPage() {
               id="platform"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={form.platform}
-              onChange={(e) => setForm({ ...form, platform: e.target.value })}
+              onChange={(e) => setForm({ ...form, platform: e.target.value as AdPlatform | '' })}
               required
             >
               <option value="">Select a platform</option>
-              {AD_PLATFORM_OPTIONS.map((platform) => (
-                <option key={platform} value={platform}>
-                  {platform}
+              {AD_PLATFORM_OPTIONS.filter(opt => opt.value !== '').map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
                 </option>
               ))}
             </select>
@@ -515,14 +549,31 @@ export default function AdBudgetsPage() {
               </label>
               <input
                 id="budget-amount"
-                type="number"
-                min="0"
-                step="1000"
+                type="text"
+                inputMode="numeric"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={form.budget_amount}
-                onChange={(e) => setForm({ ...form, budget_amount: parseFloat(e.target.value) || 0 })}
+                value={budgetAmountDisplay}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const numValue = parseFormattedNumber(val);
+                  const formatted = formatNumber(val);
+                  setBudgetAmountDisplay(formatted);
+                  setForm({ ...form, budget_amount: numValue });
+                }}
+                onFocus={(e) => {
+                  if (form.budget_amount === 0 || budgetAmountDisplay === '') {
+                    e.target.select();
+                  }
+                }}
+                onBlur={() => {
+                  if (form.budget_amount > 0) {
+                    setBudgetAmountDisplay(formatNumber(form.budget_amount.toString()));
+                  } else {
+                    setBudgetAmountDisplay('');
+                  }
+                }}
                 required
-                placeholder="Enter budget amount"
+                placeholder="Enter budget amount (e.g., 1.000.000)"
               />
             </div>
 
@@ -532,13 +583,30 @@ export default function AdBudgetsPage() {
               </label>
               <input
                 id="spent-amount"
-                type="number"
-                min="0"
-                step="1000"
+                type="text"
+                inputMode="numeric"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={form.spent_amount}
-                onChange={(e) => setForm({ ...form, spent_amount: parseFloat(e.target.value) || 0 })}
-                placeholder="Enter spent amount"
+                value={spentAmountDisplay}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const numValue = parseFormattedNumber(val);
+                  const formatted = formatNumber(val);
+                  setSpentAmountDisplay(formatted);
+                  setForm({ ...form, spent_amount: numValue });
+                }}
+                onFocus={(e) => {
+                  if (form.spent_amount === 0 || spentAmountDisplay === '') {
+                    e.target.select();
+                  }
+                }}
+                onBlur={() => {
+                  if (form.spent_amount > 0) {
+                    setSpentAmountDisplay(formatNumber(form.spent_amount.toString()));
+                  } else {
+                    setSpentAmountDisplay('');
+                  }
+                }}
+                placeholder="Enter spent amount (e.g., 500.000)"
               />
             </div>
           </div>
@@ -600,16 +668,31 @@ export default function AdBudgetsPage() {
                 </label>
                 <input
                   id="spent-amount-update"
-                  type="number"
-                  min="0"
-                  step="1000"
+                  type="text"
+                  inputMode="numeric"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={spentForm.spent_amount}
-                  onChange={(e) =>
-                    setSpentForm({ spent_amount: parseFloat(e.target.value) || 0 })
-                  }
+                  value={spentAmountUpdateDisplay}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const numValue = parseFormattedNumber(val);
+                    const formatted = formatNumber(val);
+                    setSpentAmountUpdateDisplay(formatted);
+                    setSpentForm({ spent_amount: numValue });
+                  }}
+                  onFocus={(e) => {
+                    if (spentForm.spent_amount === 0 || spentAmountUpdateDisplay === '') {
+                      e.target.select();
+                    }
+                  }}
+                  onBlur={() => {
+                    if (spentForm.spent_amount > 0) {
+                      setSpentAmountUpdateDisplay(formatNumber(spentForm.spent_amount.toString()));
+                    } else {
+                      setSpentAmountUpdateDisplay('');
+                    }
+                  }}
                   required
-                  placeholder="Enter spent amount"
+                  placeholder="Enter spent amount (e.g., 500.000)"
                 />
                 <p className="mt-1 text-xs text-gray-500">
                   Remaining: {formatCurrency(updatingSpentItem.budget_amount - spentForm.spent_amount)}
