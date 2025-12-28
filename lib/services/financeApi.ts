@@ -14,6 +14,19 @@ import type {
   OperationalExpense,
   CreateOperationalExpense,
   UpdateOperationalExpense,
+  AdBudget,
+  CreateAdBudget,
+  UpdateAdBudget,
+  UpdateAdBudgetSpent,
+  CapitalInvestor,
+  CreateCapitalInvestor,
+  UpdateCapitalInvestor,
+  UpdateReturnPaid,
+  UpdateInvestorStatus,
+  TotalInvestment,
+  JournalEntry,
+  CreateJournalEntry,
+  UpdateJournalEntry,
   PaginatedResponseFinance,
 } from '../types/finance';
 
@@ -292,6 +305,228 @@ export const operationalExpensesApi = {
    */
   pay: async (id: number) => {
     return api.post<OperationalExpense>(`${API_VERSION}/operational-expenses/${id}/pay`, {});
+  },
+};
+
+// ===== Ad Budgets =====
+export const adBudgetsApi = {
+  /**
+   * Get paginated list of ad budgets with filters
+   */
+  getList: async (params: {
+    page: number;
+    limit: number;
+    search?: string;
+    platform?: string;
+    month_year?: string;
+  }) => {
+    const queryParams = new URLSearchParams({
+      page: params.page.toString(),
+      limit: params.limit.toString(),
+    });
+    if (params.search) queryParams.append('search', params.search);
+    if (params.platform) queryParams.append('platform', params.platform);
+    if (params.month_year) queryParams.append('month_year', params.month_year);
+
+    return api.get<PaginatedResponseFinance<AdBudget>>(
+      `${API_VERSION}/ad-budgets?${queryParams.toString()}`
+    );
+  },
+
+  /**
+   * Get all budgets for a specific month
+   */
+  getByMonth: async (monthYear: string) => {
+    return api.get<AdBudget[]>(`${API_VERSION}/ad-budgets/month/${monthYear}`);
+  },
+
+  /**
+   * Get single ad budget by ID
+   */
+  getById: async (id: number) => {
+    return api.get<AdBudget>(`${API_VERSION}/ad-budgets/${id}`);
+  },
+
+  /**
+   * Create new ad budget
+   */
+  create: async (data: CreateAdBudget) => {
+    return api.post<AdBudget>(`${API_VERSION}/ad-budgets`, data);
+  },
+
+  /**
+   * Update ad budget
+   */
+  update: async (id: number, data: UpdateAdBudget) => {
+    return api.put<AdBudget>(`${API_VERSION}/ad-budgets/${id}`, data);
+  },
+
+  /**
+   * Update spent amount only
+   */
+  updateSpent: async (id: number, data: UpdateAdBudgetSpent) => {
+    return api.patch<AdBudget>(`${API_VERSION}/ad-budgets/${id}/spent`, data);
+  },
+
+  /**
+   * Delete ad budget
+   */
+  delete: async (id: number) => {
+    return api.delete<{ message: string }>(`${API_VERSION}/ad-budgets/${id}`);
+  },
+};
+
+// ===== Capital Investors =====
+export const capitalInvestorsApi = {
+  /**
+   * Get paginated list of capital investors
+   */
+  getList: async (params: {
+    page: number;
+    limit: number;
+    search?: string;
+  }) => {
+    const queryParams = new URLSearchParams({
+      page: params.page.toString(),
+      limit: params.limit.toString(),
+    });
+    if (params.search) queryParams.append('search', params.search);
+
+    return api.get<PaginatedResponseFinance<CapitalInvestor>>(
+      `${API_VERSION}/capital-investors?${queryParams.toString()}`
+    );
+  },
+
+  /**
+   * Get all capital investors (for dropdown)
+   */
+  getAll: async () => {
+    return api.get<CapitalInvestor[]>(`${API_VERSION}/capital-investors/no_page`);
+  },
+
+  /**
+   * Get total investment summary
+   * API returns either a number (total_investment) or an object
+   */
+  getTotal: async () => {
+    return api.get<TotalInvestment | number>(`${API_VERSION}/capital-investors/total`);
+  },
+
+  /**
+   * Get single capital investor by ID
+   */
+  getById: async (id: number) => {
+    return api.get<CapitalInvestor>(`${API_VERSION}/capital-investors/${id}`);
+  },
+
+  /**
+   * Create new capital investor
+   */
+  create: async (data: CreateCapitalInvestor) => {
+    return api.post<CapitalInvestor>(`${API_VERSION}/capital-investors`, data);
+  },
+
+  /**
+   * Update capital investor
+   */
+  update: async (id: number, data: UpdateCapitalInvestor) => {
+    return api.put<CapitalInvestor>(`${API_VERSION}/capital-investors/${id}`, data);
+  },
+
+  /**
+   * Update return paid amount
+   */
+  updateReturnPaid: async (id: number, data: UpdateReturnPaid) => {
+    return api.patch<CapitalInvestor>(`${API_VERSION}/capital-investors/${id}/return-paid`, data);
+  },
+
+  /**
+   * Update investor status
+   */
+  updateStatus: async (id: number, data: UpdateInvestorStatus) => {
+    return api.patch<CapitalInvestor>(`${API_VERSION}/capital-investors/${id}/status`, data);
+  },
+
+  /**
+   * Delete capital investor
+   */
+  delete: async (id: number) => {
+    return api.delete<{ message: string }>(`${API_VERSION}/capital-investors/${id}`);
+  },
+};
+
+// ===== Journal Entries =====
+export const journalEntriesApi = {
+  /**
+   * Get paginated list of journal entries with filters
+   */
+  getList: async (params: {
+    page: number;
+    limit: number;
+    search?: string;
+    status?: string;
+    fiscal_period_id?: number;
+  }) => {
+    const queryParams = new URLSearchParams({
+      page: params.page.toString(),
+      limit: params.limit.toString(),
+    });
+    if (params.search) queryParams.append('search', params.search);
+    if (params.status) queryParams.append('status', params.status);
+    if (params.fiscal_period_id) queryParams.append('fiscal_period_id', params.fiscal_period_id.toString());
+
+    return api.get<PaginatedResponseFinance<JournalEntry>>(
+      `${API_VERSION}/journal-entries?${queryParams.toString()}`
+    );
+  },
+
+  /**
+   * Get single journal entry by ID (includes lines)
+   */
+  getById: async (id: number) => {
+    return api.get<JournalEntry>(`${API_VERSION}/journal-entries/${id}`);
+  },
+
+  /**
+   * Create new journal entry
+   */
+  create: async (data: CreateJournalEntry) => {
+    return api.post<JournalEntry>(`${API_VERSION}/journal-entries`, data);
+  },
+
+  /**
+   * Update journal entry (only if status = draft)
+   */
+  update: async (id: number, data: UpdateJournalEntry) => {
+    return api.put<JournalEntry>(`${API_VERSION}/journal-entries/${id}`, data);
+  },
+
+  /**
+   * Delete journal entry (only if status = draft)
+   */
+  delete: async (id: number) => {
+    return api.delete<{ message: string }>(`${API_VERSION}/journal-entries/${id}`);
+  },
+
+  /**
+   * Approve journal entry (Admin only)
+   */
+  approve: async (id: number) => {
+    return api.post<JournalEntry>(`${API_VERSION}/journal-entries/${id}/approve`, {});
+  },
+
+  /**
+   * Reject journal entry (Admin only)
+   */
+  reject: async (id: number) => {
+    return api.post<JournalEntry>(`${API_VERSION}/journal-entries/${id}/reject`, {});
+  },
+
+  /**
+   * Post journal entry to accounts (Admin only)
+   */
+  post: async (id: number) => {
+    return api.post<JournalEntry>(`${API_VERSION}/journal-entries/${id}/post`, {});
   },
 };
 

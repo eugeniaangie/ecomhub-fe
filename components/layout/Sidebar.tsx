@@ -21,6 +21,9 @@ const navItems: NavItem[] = [
       { label: 'Expense Categories', href: '/finance/expense-categories' },
       { label: 'Chart of Accounts', href: '/finance/accounts' },
       { label: 'Operational Expenses', href: '/finance/operational-expenses' },
+      { label: 'Ad Budgets', href: '/finance/ad-budgets' },
+      { label: 'Capital Investors', href: '/finance/capital-investors' },
+      { label: 'Journal Entries', href: '/finance/journal-entries' },
     ],
   },
   {

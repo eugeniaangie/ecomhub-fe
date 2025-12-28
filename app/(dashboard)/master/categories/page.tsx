@@ -28,6 +28,7 @@ export default function MasterDataPage() {
 
   // Data states
   const [categories, setCategories] = useState<MasterCategory[]>([]);
+  const [allCategories, setAllCategories] = useState<MasterCategory[]>([]); // For parent lookup
 
   // Form states
   const [categoryForm, setCategoryForm] = useState({ 
@@ -38,8 +39,26 @@ export default function MasterDataPage() {
 
   useEffect(() => {
     loadData();
+    loadAllCategories();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, pageSize]);
+
+  const loadAllCategories = async () => {
+    try {
+      // Load all categories for parent lookup (reasonable limit)
+      // Load first page with reasonable limit, or use current page data
+      const response = await masterCategoryApi.getAll(1, 100);
+      if (response && response.results) {
+        setAllCategories(response.results);
+        // If there are more pages, we'll use what we have
+        // For better UX, we could load more pages if needed, but 100 should be enough for most cases
+      }
+    } catch (err) {
+      console.error('Error loading all categories:', err);
+      // Don't show error, just use empty array
+      setAllCategories([]);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -133,62 +152,102 @@ export default function MasterDataPage() {
     }
   };
 
+  // Helper function to get parent category name
+  // First check current page categories, then allCategories
+  const getParentCategoryName = (parentId: number | null | undefined): string => {
+    if (!parentId) return '-';
+    // First check in current page categories (most common case)
+    const parentInPage = categories.find(cat => cat.id === parentId);
+    if (parentInPage) return parentInPage.category_name;
+    // Then check in allCategories (for parent lookup)
+    const parent = allCategories.find(cat => cat.id === parentId);
+    return parent ? parent.category_name : `ID: ${parentId}`;
+  };
+
+  // Sort categories: parent first, then children with indent
+  const sortedCategories = [...categories].sort((a, b) => {
+    // If both have parent or both don't have parent, sort by name
+    if ((a.parent_id && b.parent_id) || (!a.parent_id && !b.parent_id)) {
+      return a.category_name.localeCompare(b.category_name);
+    }
+    // Parent categories come first
+    return a.parent_id ? 1 : -1;
+  });
+
   const renderCategories = () => (
     <Card>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Parent ID</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Category Name
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Parent Category
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Description
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {categories.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
+                <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
                   No categories found
                 </td>
               </tr>
             ) : (
-              categories.map((cat) => (
-                <tr key={cat.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{cat.category_name}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{cat.parent_id || '-'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{cat.description || '-'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(cat)}>
-                        Edit
-                      </Button>
-                      <Button variant="danger" size="sm" onClick={() => handleDelete(cat.id)}>
-                        Delete
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+              sortedCategories.map((cat) => {
+                const indent = cat.parent_id ? 'pl-8' : '';
+                return (
+                  <tr key={cat.id} className="hover:bg-gray-50">
+                    <td className={`px-6 py-4 text-sm font-medium text-gray-900 ${indent}`}>
+                      {cat.parent_id && (
+                        <span className="text-gray-400 mr-2">└─</span>
+                      )}
+                      {cat.category_name}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {getParentCategoryName(cat.parent_id)}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {cat.description || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(cat)}>
+                          Edit
+                        </Button>
+                        <Button variant="danger" size="sm" onClick={() => handleDelete(cat.id)}>
+                          Delete
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
 
       {/* Pagination */}
-      {totalResults > 0 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalResults={totalResults}
-          pageSize={pageSize}
-          onPageChange={(page) => setCurrentPage(page)}
-          onPageSizeChange={(size) => {
-            setPageSize(size);
-            setCurrentPage(1);
-          }}
-        />
-      )}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalResults={totalResults}
+        pageSize={pageSize}
+        onPageChange={(page) => setCurrentPage(page)}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setCurrentPage(1);
+        }}
+      />
     </Card>
   );
 
