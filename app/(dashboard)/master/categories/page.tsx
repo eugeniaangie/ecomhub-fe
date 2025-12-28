@@ -164,15 +164,49 @@ export default function MasterDataPage() {
     return parent ? parent.category_name : `ID: ${parentId}`;
   };
 
-  // Sort categories: parent first, then children with indent
-  const sortedCategories = [...categories].sort((a, b) => {
-    // If both have parent or both don't have parent, sort by name
-    if ((a.parent_id && b.parent_id) || (!a.parent_id && !b.parent_id)) {
-      return a.category_name.localeCompare(b.category_name);
-    }
-    // Parent categories come first
-    return a.parent_id ? 1 : -1;
-  });
+  // Sort categories: parent followed by all its children (depth-first)
+  const sortedCategories = (() => {
+    const sorted: MasterCategory[] = [];
+    const processed = new Set<number>();
+    
+    // Helper to get all descendants of a category
+    const getDescendants = (parentId: number): MasterCategory[] => {
+      return categories.filter(cat => cat.parent_id === parentId);
+    };
+    
+    // Helper to add category and all its descendants recursively
+    const addWithDescendants = (category: MasterCategory) => {
+      if (processed.has(category.id)) return;
+      
+      sorted.push(category);
+      processed.add(category.id);
+      
+      // Add all direct children, sorted by category_name
+      const children = getDescendants(category.id).sort((a, b) => 
+        a.category_name.localeCompare(b.category_name)
+      );
+      
+      // Recursively add each child and its descendants
+      children.forEach(child => addWithDescendants(child));
+    };
+    
+    // Start with root categories (no parent), sorted by category_name
+    const rootCategories = categories
+      .filter(cat => !cat.parent_id)
+      .sort((a, b) => a.category_name.localeCompare(b.category_name));
+    
+    // Add each root and all its descendants
+    rootCategories.forEach(root => addWithDescendants(root));
+    
+    // Add any remaining categories (orphaned, shouldn't happen but just in case)
+    categories.forEach(cat => {
+      if (!processed.has(cat.id)) {
+        sorted.push(cat);
+      }
+    });
+    
+    return sorted;
+  })();
 
   const renderCategories = () => (
     <Card>
@@ -203,10 +237,31 @@ export default function MasterDataPage() {
               </tr>
             ) : (
               sortedCategories.map((cat) => {
-                const indent = cat.parent_id ? 'pl-8' : '';
+                // Calculate indent level based on parent hierarchy (recursive)
+                const getIndentLevel = (category: MasterCategory, visited = new Set<number>()): number => {
+                  // Prevent infinite loop
+                  if (visited.has(category.id)) return 0;
+                  visited.add(category.id);
+                  
+                  if (!category.parent_id) return 0;
+                  const parent = categories.find(c => c.id === category.parent_id);
+                  if (!parent) return 1;
+                  return getIndentLevel(parent, visited) + 1;
+                };
+                
+                const indentLevel = getIndentLevel(cat);
+                // Apply indent: level 0 = no indent, level 1 = pl-8, level 2 = pl-16, level 3 = pl-24, etc.
+                const indentClass = 
+                  indentLevel === 0 ? '' :
+                  indentLevel === 1 ? 'pl-8' :
+                  indentLevel === 2 ? 'pl-16' :
+                  indentLevel === 3 ? 'pl-24' :
+                  indentLevel === 4 ? 'pl-32' :
+                  'pl-40'; // Max 5 levels
+                
                 return (
                   <tr key={cat.id} className="hover:bg-gray-50">
-                    <td className={`px-6 py-4 text-sm font-medium text-gray-900 ${indent}`}>
+                    <td className={`px-6 py-4 text-sm font-medium text-gray-900 ${indentClass}`}>
                       {cat.parent_id && (
                         <span className="text-gray-400 mr-2">└─</span>
                       )}
