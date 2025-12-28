@@ -126,6 +126,32 @@ export const api = {
     return handleResponse<T>(response);
   },
 
+  patch: async <T>(endpoint: string, body?: unknown, options?: RequestInit): Promise<T> => {
+    const token = auth.getToken();
+    const headers: Record<string, string> = {
+      'accept': 'application/json',
+      'Content-Type': 'application/json',
+      ...(options?.headers as Record<string, string>),
+    };
+
+    if (token) {
+      // Clean token: remove any "Bearer " prefix and trim whitespace
+      const cleanToken = token.trim().replace(/^Bearer\s+/i, '');
+      if (cleanToken) {
+        headers['Authorization'] = `Bearer ${cleanToken}`;
+      }
+    }
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'PATCH',
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+      ...options,
+    });
+
+    return handleResponse<T>(response);
+  },
+
   delete: async <T>(endpoint: string, options?: RequestInit): Promise<T> => {
     const token = auth.getToken();
     const headers: Record<string, string> = {

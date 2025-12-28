@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
 import { StatusBadge } from '@/components/finance/StatusBadge';
-import { formatDate, formatDateTime, formatCurrency, getTodayFormatted } from '@/lib/utils/formatters';
+import { formatDate, formatDateTime, formatCurrency, getTodayFormatted, isValidDate } from '@/lib/utils/formatters';
 import { EXPENSE_STATUS_COLORS, EXPENSE_STATUS_LABELS, EXPENSE_STATUS_OPTIONS } from '@/lib/utils/constants';
 import type { OperationalExpense, ExpenseCategory, Account } from '@/lib/types/finance';
 
@@ -519,11 +519,19 @@ export default function OperationalExpensesPage() {
             <input
               id="expense-date"
               type="date"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               value={form.expense_date}
-              onChange={(e) => setForm({ ...form, expense_date: e.target.value })}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (isValidDate(value)) {
+                  setForm({ ...form, expense_date: value });
+                  setFormError('');
+                }
+              }}
               required
+              max={getTodayFormatted()}
             />
+            <p className="mt-1 text-xs text-gray-500">Click to open calendar picker</p>
           </div>
 
           <div>

@@ -6,8 +6,16 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { StatusBadge } from '@/components/finance/StatusBadge';
-import { formatDate, formatDateTime, formatDateForAPI, getTodayFormatted } from '@/lib/utils/formatters';
+import {
+  formatDate,
+  formatDateTime,
+  formatDateForAPI,
+  getFirstDayOfCurrentMonth,
+  getLastDayOfCurrentMonth,
+  isValidDate,
+} from '@/lib/utils/formatters';
 import { FISCAL_PERIOD_STATUS_COLORS } from '@/lib/utils/constants';
 import type { FiscalPeriod } from '@/lib/types/finance';
 
@@ -38,12 +46,12 @@ export default function FiscalPeriodsPage() {
   // Form
   const [form, setForm] = useState({
     period_name: '',
-    period_start: getTodayFormatted(),
-    period_end: getTodayFormatted(),
+    period_start: getFirstDayOfCurrentMonth(),
+    period_end: getLastDayOfCurrentMonth(),
   });
 
   // TODO: Get user role from auth context
-  const userRole = 'admin'; // Temporary: 'staff' | 'admin' | 'superadmin'
+  const userRole: 'staff' | 'admin' | 'superadmin' = 'admin'; // Temporary
 
   useEffect(() => {
     loadData();
@@ -79,10 +87,13 @@ export default function FiscalPeriodsPage() {
 
   const handleCreate = () => {
     setEditingItem(null);
+    // Set default to current month (1st day to last day)
+    const startDate = getFirstDayOfCurrentMonth();
+    const endDate = getLastDayOfCurrentMonth();
     setForm({
       period_name: '',
-      period_start: getTodayFormatted(),
-      period_end: getTodayFormatted(),
+      period_start: startDate,
+      period_end: endDate,
     });
     setFormError('');
     setIsModalOpen(true);
@@ -161,8 +172,24 @@ export default function FiscalPeriodsPage() {
       return;
     }
 
+    // Validate date format and validity
+    if (!isValidDate(form.period_start)) {
+      setFormError('Start date is invalid. Please select a valid date.');
+      return;
+    }
+
+    if (!isValidDate(form.period_end)) {
+      setFormError('End date is invalid. Please select a valid date.');
+      return;
+    }
+
     const startDate = new Date(form.period_start);
     const endDate = new Date(form.period_end);
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      setFormError('Invalid date format. Please select valid dates.');
+      return;
+    }
 
     if (endDate <= startDate) {
       setFormError('End date must be after start date');
@@ -185,8 +212,8 @@ export default function FiscalPeriodsPage() {
       setIsModalOpen(false);
       setForm({
         period_name: '',
-        period_start: getTodayFormatted(),
-        period_end: getTodayFormatted(),
+        period_start: getFirstDayOfCurrentMonth(),
+        period_end: getLastDayOfCurrentMonth(),
       });
       loadData();
     } catch (err: unknown) {
@@ -201,14 +228,14 @@ export default function FiscalPeriodsPage() {
     setEditingItem(null);
     setForm({
       period_name: '',
-      period_start: getTodayFormatted(),
-      period_end: getTodayFormatted(),
+      period_start: getFirstDayOfCurrentMonth(),
+      period_end: getLastDayOfCurrentMonth(),
     });
     setFormError('');
   };
 
   const canClose = userRole === 'admin' || userRole === 'superadmin';
-  const canReopen = userRole === 'superadmin';
+  const canReopen = (userRole as string) === 'superadmin';
 
   if (isLoading && periods.length === 0 && !error) {
     return (
@@ -401,28 +428,42 @@ export default function FiscalPeriodsPage() {
             <label htmlFor="period-start" className="block text-sm font-medium text-gray-700 mb-1">
               Start Date <span className="text-red-500">*</span>
             </label>
-            <input
+            <DatePicker
               id="period-start"
-              type="date"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={form.period_start}
-              onChange={(e) => setForm({ ...form, period_start: e.target.value })}
+              onChange={(value) => {
+                if (isValidDate(value)) {
+                  setForm({ ...form, period_start: value });
+                  setFormError('');
+                }
+              }}
               required
+              min="2000-01-01"
+              max="2100-12-31"
+              placeholder="Select start date"
             />
+            <p className="mt-1 text-xs text-gray-500">Click to open calendar picker</p>
           </div>
 
           <div>
             <label htmlFor="period-end" className="block text-sm font-medium text-gray-700 mb-1">
               End Date <span className="text-red-500">*</span>
             </label>
-            <input
+            <DatePicker
               id="period-end"
-              type="date"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={form.period_end}
-              onChange={(e) => setForm({ ...form, period_end: e.target.value })}
+              onChange={(value) => {
+                if (isValidDate(value)) {
+                  setForm({ ...form, period_end: value });
+                  setFormError('');
+                }
+              }}
               required
+              min={form.period_start || '2000-01-01'}
+              max="2100-12-31"
+              placeholder="Select end date"
             />
+            <p className="mt-1 text-xs text-gray-500">Click to open calendar picker</p>
           </div>
         </div>
       </Modal>

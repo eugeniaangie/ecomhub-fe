@@ -113,6 +113,144 @@ export interface PaginatedResponseFinance<T> {
   results: T[];
 }
 
+// ===== Ad Budgets =====
+export interface AdBudget {
+  id: number;
+  platform: string;
+  month_year: string; // YYYY-MM-01 format
+  budget_amount: number;
+  spent_amount: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: number;
+  updated_by?: number;
+}
+
+export interface CreateAdBudget {
+  platform: string;
+  month_year: string; // YYYY-MM-01
+  budget_amount: number;
+  spent_amount?: number;
+  notes?: string;
+}
+
+export interface UpdateAdBudget {
+  platform?: string;
+  month_year?: string;
+  budget_amount?: number;
+  spent_amount?: number;
+  notes?: string;
+}
+
+export interface UpdateAdBudgetSpent {
+  spent_amount: number;
+}
+
+// ===== Capital Investors =====
+export type InvestmentType = 'equity' | 'debt' | 'convertible_note' | 'grant';
+export type InvestorStatus = 'active' | 'fully_paid' | 'defaulted' | 'cancelled';
+
+export interface CapitalInvestor {
+  id: number;
+  investor_name: string;
+  investment_type: InvestmentType;
+  amount: number;
+  investment_date: string;
+  return_percentage?: number;
+  maturity_date?: string;
+  return_paid: number;
+  contract_document_url?: string;
+  notes?: string;
+  status: InvestorStatus;
+  created_at: string;
+  updated_at: string;
+  created_by?: number;
+  updated_by?: number;
+}
+
+export interface CreateCapitalInvestor {
+  investor_name: string;
+  investment_type: InvestmentType;
+  amount: number;
+  investment_date: string; // YYYY-MM-DD
+  return_percentage?: number;
+  maturity_date?: string; // YYYY-MM-DD
+  contract_document_url?: string;
+  notes?: string;
+}
+
+export interface UpdateCapitalInvestor {
+  investor_name?: string;
+  investment_type?: InvestmentType;
+  amount?: number;
+  investment_date?: string;
+  return_percentage?: number;
+  maturity_date?: string;
+  contract_document_url?: string;
+  notes?: string;
+}
+
+export interface UpdateReturnPaid {
+  return_paid: number;
+}
+
+export interface UpdateInvestorStatus {
+  status: InvestorStatus;
+}
+
+export interface TotalInvestment {
+  total_amount: number;
+  total_return_paid: number;
+  total_remaining: number;
+}
+
+// ===== Journal Entries =====
+export type JournalEntryStatus = 'draft' | 'approved' | 'rejected' | 'posted';
+
+export interface JournalEntryLine {
+  id?: number;
+  account_id: number;
+  description: string;
+  debit: number;
+  credit: number;
+  // Relations
+  account?: Account;
+}
+
+export interface JournalEntry {
+  id: number;
+  entry_number: string; // Auto-generated: JE-000001
+  entry_date: string;
+  fiscal_period_id: number;
+  description: string;
+  reference_number?: string;
+  status: JournalEntryStatus;
+  total_debit: number;
+  total_credit: number;
+  approved_by?: number;
+  approved_at?: string;
+  posted_by?: number;
+  posted_at?: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: number;
+  updated_by?: number;
+  // Relations
+  fiscal_period?: FiscalPeriod;
+  lines?: JournalEntryLine[];
+}
+
+export interface CreateJournalEntry {
+  entry_date: string; // YYYY-MM-DD
+  fiscal_period_id: number;
+  description: string;
+  reference_number?: string;
+  lines: Omit<JournalEntryLine, 'id' | 'account'>[];
+}
+
+export interface UpdateJournalEntry extends CreateJournalEntry {}
+
 // ===== User Roles =====
 export type UserRole = 'staff' | 'admin' | 'superadmin';
 

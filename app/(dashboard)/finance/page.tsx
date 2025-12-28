@@ -33,6 +33,27 @@ const financeModules = [
     icon: '💰',
     features: ['Approval workflow', 'Status tracking', 'Payment management'],
   },
+  {
+    title: 'Ad Budgets',
+    description: 'Track marketing and advertising budgets per platform',
+    href: '/finance/ad-budgets',
+    icon: '📢',
+    features: ['Platform budgets', 'Spent tracking', 'Progress visualization'],
+  },
+  {
+    title: 'Capital Investors',
+    description: 'Manage capital investments and investor relationships',
+    href: '/finance/capital-investors',
+    icon: '💼',
+    features: ['Investment tracking', 'Return management', 'Status updates'],
+  },
+  {
+    title: 'Journal Entries',
+    description: 'Double-entry bookkeeping with approval workflow',
+    href: '/finance/journal-entries',
+    icon: '📝',
+    features: ['Double-entry validation', 'Approval workflow', 'Post to accounts'],
+  },
 ];
 
 export default function FinancePage() {
