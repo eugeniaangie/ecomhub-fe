@@ -13,7 +13,16 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   // { label: 'Dashboard', href: '/' },
-  // { label: 'Financial Records', href: '/finance' },
+  {
+    label: 'Finance Management',
+    href: '/finance',
+    children: [
+      { label: 'Fiscal Periods', href: '/finance/fiscal-periods' },
+      { label: 'Expense Categories', href: '/finance/expense-categories' },
+      { label: 'Chart of Accounts', href: '/finance/accounts' },
+      { label: 'Operational Expenses', href: '/finance/operational-expenses' },
+    ],
+  },
   {
     label: 'Master Data',
     href: '/master',
@@ -25,7 +34,7 @@ const navItems: NavItem[] = [
 
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
-  const [expandedMenus, setExpandedMenus] = useState<string[]>(['/master']);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(['/finance', '/master']);
 
   const toggleMenu = (href: string) => {
     setExpandedMenus(prev =>
