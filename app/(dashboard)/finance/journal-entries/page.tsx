@@ -15,10 +15,8 @@ import {
 } from '@/lib/utils/constants';
 import type {
   JournalEntry,
-  JournalEntryLine,
   FiscalPeriod,
   Account,
-  JournalEntryStatus,
 } from '@/lib/types/finance';
 
 export default function JournalEntriesPage() {
@@ -241,12 +239,14 @@ export default function JournalEntriesPage() {
     value: string | number
   ) => {
     const newLines = [...form.lines];
-    newLines[index] = { ...newLines[index], [field]: value };
+    // Ensure numeric fields are numbers
+    const numericValue = typeof value === 'string' ? parseFloat(value) || 0 : value;
+    newLines[index] = { ...newLines[index], [field]: field === 'debit' || field === 'credit' ? numericValue : value };
 
     // If debit is set, clear credit and vice versa
-    if (field === 'debit' && value > 0) {
+    if (field === 'debit' && numericValue > 0) {
       newLines[index].credit = 0;
-    } else if (field === 'credit' && value > 0) {
+    } else if (field === 'credit' && numericValue > 0) {
       newLines[index].debit = 0;
     }
 
