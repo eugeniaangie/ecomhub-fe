@@ -293,16 +293,77 @@ export default function AccountsPage() {
                   </td>
                 </tr>
               ) : (
-                accounts.map((account) => {
-                  // Calculate indent level based on parent_account_id
-                  const indent = account.parent_account_id ? 'pl-8' : '';
+                // Sort accounts: parent followed by all its children (depth-first)
+                (() => {
+                  const sorted: Account[] = [];
+                  const processed = new Set<number>();
+                  
+                  // Helper to get all descendants of an account
+                  const getDescendants = (parentId: number): Account[] => {
+                    return accounts.filter(acc => acc.parent_account_id === parentId);
+                  };
+                  
+                  // Helper to add account and all its descendants recursively
+                  const addWithDescendants = (account: Account) => {
+                    if (processed.has(account.id)) return;
+                    
+                    sorted.push(account);
+                    processed.add(account.id);
+                    
+                    // Add all direct children, sorted by account_code
+                    const children = getDescendants(account.id).sort((a, b) => 
+                      a.account_code.localeCompare(b.account_code)
+                    );
+                    
+                    // Recursively add each child and its descendants
+                    children.forEach(child => addWithDescendants(child));
+                  };
+                  
+                  // Start with root accounts (no parent), sorted by account_code
+                  const rootAccounts = accounts
+                    .filter(acc => !acc.parent_account_id)
+                    .sort((a, b) => a.account_code.localeCompare(b.account_code));
+                  
+                  // Add each root and all its descendants
+                  rootAccounts.forEach(root => addWithDescendants(root));
+                  
+                  // Add any remaining accounts (orphaned, shouldn't happen but just in case)
+                  accounts.forEach(acc => {
+                    if (!processed.has(acc.id)) {
+                      sorted.push(acc);
+                    }
+                  });
+                  
+                  return sorted;
+                })().map((account) => {
+                    // Calculate indent level based on parent hierarchy (recursive)
+                    const getIndentLevel = (acc: Account, visited = new Set<number>()): number => {
+                      // Prevent infinite loop
+                      if (visited.has(acc.id)) return 0;
+                      visited.add(acc.id);
+                      
+                      if (!acc.parent_account_id) return 0;
+                      const parent = accounts.find(a => a.id === acc.parent_account_id);
+                      if (!parent) return 1;
+                      return getIndentLevel(parent, visited) + 1;
+                    };
+                    
+                    const indentLevel = getIndentLevel(account);
+                    // Apply indent: level 0 = no indent, level 1 = pl-8, level 2 = pl-16, level 3 = pl-24, etc.
+                    const indentClass = 
+                      indentLevel === 0 ? '' :
+                      indentLevel === 1 ? 'pl-8' :
+                      indentLevel === 2 ? 'pl-16' :
+                      indentLevel === 3 ? 'pl-24' :
+                      indentLevel === 4 ? 'pl-32' :
+                      'pl-40'; // Max 5 levels
                   
                   return (
                     <tr key={account.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">
                         {account.account_code}
                       </td>
-                      <td className={`px-6 py-4 text-sm text-gray-900 ${indent}`}>
+                      <td className={`px-6 py-4 text-sm text-gray-900 ${indentClass}`}>
                         {account.parent_account_id && (
                           <span className="text-gray-400 mr-2">└─</span>
                         )}
