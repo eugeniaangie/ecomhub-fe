@@ -5,6 +5,7 @@ import { masterCategoryApi } from '@/lib/api';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { Pagination } from '@/components/ui/Pagination';
 import type { MasterCategory } from '@/lib/types';
 
 export default function MasterDataPage() {
@@ -19,6 +20,12 @@ export default function MasterDataPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MasterCategory | null>(null);
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalResults, setTotalResults] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+
   // Data states
   const [categories, setCategories] = useState<MasterCategory[]>([]);
 
@@ -31,23 +38,30 @@ export default function MasterDataPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, pageSize]);
 
   const loadData = async () => {
     try {
       setIsLoading(true);
       setError('');
-      const response = await masterCategoryApi.getAll(1, 100);
+      const response = await masterCategoryApi.getAll(currentPage, pageSize);
       if (response && response.results) {
         setCategories(response.results);
+        setTotalPages(response.total_pages);
+        setTotalResults(response.total_results);
       } else {
         setCategories([]);
+        setTotalPages(1);
+        setTotalResults(0);
       }
     } catch (err: unknown) {
       console.error('Error loading categories:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load data';
       setError(errorMessage);
       setCategories([]);
+      setTotalPages(1);
+      setTotalResults(0);
     } finally {
       setIsLoading(false);
     }
@@ -160,6 +174,21 @@ export default function MasterDataPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {totalResults > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalResults={totalResults}
+          pageSize={pageSize}
+          onPageChange={(page) => setCurrentPage(page)}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setCurrentPage(1);
+          }}
+        />
+      )}
     </Card>
   );
 
