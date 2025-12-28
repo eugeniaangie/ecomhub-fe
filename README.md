@@ -1,224 +1,187 @@
-# EcomHub Frontend
+# EcomHub - Internal Dashboard
 
-Frontend dashboard for an internal e-commerce management system (ecomhub-core). Built with Next.js, TypeScript, and Tailwind CSS.
+## Menu Structure
 
-## 🛠 Tech Stack
+### 📊 DASHBOARD
+- **Overview** (sales, stock, alerts)
+  - *Status: Not yet implemented*
 
-- **Framework**: Next.js 16 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS 4
-- **State Management**: React Hooks
-- **Authentication**: JWT (stored in sessionStorage + cookie for middleware)
-- **API Communication**: fetch API
-- **Deployment**: Vercel / Netlify ready
+---
 
-## 🚀 Getting Started
+### 🏢 MASTER DATA
+Master data untuk data referensi yang digunakan di seluruh sistem.
 
-### Prerequisites
+- **👤 Users & Roles**
+  - *Status: Not yet implemented*
+  
+- **📁 Categories**
+  - *Status: ✅ Implemented*
+  - Path: `/master/categories`
+  - Description: Manage product categories with hierarchical structure
 
-- Node.js 18+ 
-- npm, yarn, pnpm, or bun
+- **🎨 Product Attributes**
+  - *Status: Not yet implemented*
 
-### Installation
+- **💰 Pricing Rules**
+  - *Status: Not yet implemented*
 
-1. Clone the repository
-2. Install dependencies:
+- **🏦 Accounts (Chart of Accounts)**
+  - *Status: ✅ Implemented*
+  - Path: `/finance/accounts`
+  - Description: Manage chart of accounts with hierarchical structure and 7 account types
 
-```bash
-npm install
-# or
-yarn install
-# or
-pnpm install
-```
+- **📋 Expense Categories**
+  - *Status: ✅ Implemented*
+  - Path: `/finance/expense-categories`
+  - Description: Organize expenses into categories for better tracking
 
-3. Create `.env.local` file in the root directory:
+---
 
-```env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
-```
+### 📦 INVENTORY
+- **🛍️ Products**
+  - Product List
+  - Add Product
+  - Product Variants
+  - *Status: Not yet implemented*
 
-4. Run the development server:
+- **📊 Stock Management**
+  - Current Stock
+  - Stock Movements
+  - Stock Opname
+  - *Status: Not yet implemented*
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-```
+- **⚠️ Low Stock Alerts**
+  - *Status: Not yet implemented*
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser
+---
 
-### 🧪 Testing Without Backend (Development Mode)
+### 🛒 ORDERS (Future)
+- Order List
+- Process Orders
+- Fake Orders / Fraud
+- *Status: Not yet implemented*
 
-In development mode, you can test the application without a running backend:
+---
 
-**Test Credentials:**
-- **Email**: `admin@test.com`
-- **Password**: `admin123`
+### 🏪 MARKETPLACE (Future)
+- Connected Stores
+- Sync Products
+- Settlements
+- *Status: Not yet implemented*
 
-The login page will show a blue development mode banner with a "Fill Test Credentials" button for quick testing. When using these credentials, the app will use mock data instead of making real API calls.
+---
 
-**Note**: This feature only works in development mode (`NODE_ENV=development`). In production, you must use the real backend API.
+### 💰 FINANCIAL
+Modul keuangan untuk mengelola transaksi, anggaran, dan laporan keuangan.
 
-## 📁 Project Structure
+#### 💸 Transactions
+- **Income**
+  - *Status: Not yet implemented*
 
-```
-ecomhub-fe/
-├── app/
-│   ├── (auth)/
-│   │   └── login/
-│   │       └── page.tsx          # Login page
-│   │
-│   ├── (dashboard)/
-│   │   ├── layout.tsx            # Protected dashboard layout
-│   │   ├── page.tsx              # Dashboard home (financial summary)
-│   │   ├── finance/
-│   │   │   └── page.tsx          # Financial records (income/expense)
-│   │   └── master/
-│   │       └── page.tsx          # Master data management
-│   │
-│   ├── globals.css
-│   └── layout.tsx                # Root layout
-│
-├── components/
-│   ├── layout/
-│   │   ├── Sidebar.tsx           # Navigation sidebar
-│   │   ├── Topbar.tsx            # Top navigation bar
-│   │   └── PageWrapper.tsx       # Dashboard page wrapper
-│   │
-│   └── ui/
-│       ├── Button.tsx            # Reusable button component
-│       ├── Input.tsx             # Form input component
-│       ├── Modal.tsx             # Modal dialog component
-│       └── Card.tsx              # Card container component
-│
-├── lib/
-│   ├── api.ts                    # API client wrapper
-│   ├── auth.ts                   # Authentication helpers
-│   └── types.ts                  # TypeScript type definitions
-│
-├── middleware.ts                 # Route protection middleware
-├── .env.local                    # Environment variables (create this)
-└── README.md
-```
+- **Expenses**
+  - *Status: Not yet implemented*
 
-## 🔐 Authentication
+- **Transfers**
+  - *Status: Not yet implemented*
 
-The application uses JWT-based authentication:
+- **Journal Entries**
+  - *Status: ✅ Implemented*
+  - Path: `/finance/journal-entries`
+  - Description: Double-entry bookkeeping with approval workflow
 
-- Login page at `/login`
-- JWT token stored in sessionStorage (client-side) and cookie (for middleware)
-- Protected routes are automatically redirected to login if unauthenticated
-- Token expiration handled gracefully with redirect to login
+#### 💵 Operational Expenses
+- *Status: ✅ Implemented*
+- Path: `/finance/operational-expenses`
+- Description: Track and approve operational expenses with workflow
 
-## 🎯 Features
+#### 💳 Account Balances
+- *Status: Not yet implemented*
+- (Can be derived from Chart of Accounts)
 
-### Phase 1 - Financial MVP
+#### 🎯 Budget Planning (Optional)
+- **Ad Budgets**
+  - *Status: ✅ Implemented*
+  - Path: `/finance/ad-budgets`
+  - Description: Track marketing and advertising budgets per platform
 
-- **Authentication**
-  - Login page with JWT authentication
-  - Protected routes with middleware
-  - Logout functionality
+- **Monthly Budgets**
+  - *Status: Not yet implemented*
 
-- **Dashboard**
-  - Monthly financial summary
-  - Total income, expense, and net profit cards
-  - Simple, clean UI
+#### 🤝 Capital & Investors
+- *Status: ✅ Implemented*
+- Path: `/finance/capital-investors`
+- Description: Manage capital investments and investor relationships
 
-- **Financial Records**
-  - Income and expense transaction lists
-  - Create, edit, and delete transactions
-  - Category-based filtering
-  - Payment method and account tracking
+#### 📊 Financial Reports
+- **Profit & Loss**
+  - *Status: Not yet implemented*
 
-- **Master Data**
-  - Categories management (income/expense)
-  - Payment methods management
-  - Accounts management (cash, bank, e-wallet)
+- **Cash Flow**
+  - *Status: Not yet implemented*
 
-## 🔗 API Integration
+- **Balance Sheet**
+  - *Status: Not yet implemented*
 
-The frontend expects a REST API backend with the following structure:
+#### 📅 Fiscal Periods
+- *Status: ✅ Implemented*
+- Path: `/finance/fiscal-periods`
+- Description: Manage fiscal periods, close and reopen accounting periods
 
-- **Base URL**: Configured via `NEXT_PUBLIC_API_BASE_URL` environment variable
-- **Authentication**: JWT token sent via `Authorization: Bearer <token>` header
-- **Response Format**: 
-  ```json
-  {
-    "data": T,
-    "message": "string"
-  }
-  ```
+---
 
-### API Endpoints Used
+### 📈 REPORTS
+- Sales Report
+- Stock Report
+- Product Performance
+- Expense Summary
+- *Status: Not yet implemented*
 
-- `POST /auth/login` - User authentication
-- `GET /dashboard/summary?month=YYYY-MM` - Dashboard summary
-- `GET /transactions?type=income|expense` - List transactions
-- `POST /transactions` - Create transaction
-- `PUT /transactions/:id` - Update transaction
-- `DELETE /transactions/:id` - Delete transaction
-- `GET /categories?type=income|expense` - List categories
-- `POST /categories` - Create category
-- `PUT /categories/:id` - Update category
-- `DELETE /categories/:id` - Delete category
-- `GET /payment-methods` - List payment methods
-- `POST /payment-methods` - Create payment method
-- `PUT /payment-methods/:id` - Update payment method
-- `DELETE /payment-methods/:id` - Delete payment method
-- `GET /accounts` - List accounts
-- `POST /accounts` - Create account
-- `PUT /accounts/:id` - Update account
-- `DELETE /accounts/:id` - Delete account
+---
 
-## 🎨 UI Principles
+### ⚙️ SETTINGS
+- Profile
+- Store Settings
+- Integrations (Shopee API)
+- Preferences
+- *Status: Not yet implemented*
 
-- Clean, dashboard-first design
-- No over-animation
-- Mobile responsive
-- Focus on clarity and usability
-- Consistent color scheme (blue primary, green for income, red for expenses)
+---
 
-## 🚢 Deployment
+## Implementation Status
 
-### Vercel
+### ✅ Implemented Modules
+1. **Master Data**
+   - Categories
+   - Chart of Accounts
+   - Expense Categories
 
-1. Push your code to GitHub
-2. Import project in Vercel
-3. Add environment variable `NEXT_PUBLIC_API_BASE_URL`
-4. Deploy
+2. **Financial**
+   - Fiscal Periods
+   - Operational Expenses
+   - Ad Budgets
+   - Capital Investors
+   - Journal Entries
 
-### Netlify
+### 🚧 In Progress
+- None currently
 
-1. Push your code to GitHub
-2. Import project in Netlify
-3. Add environment variable `NEXT_PUBLIC_API_BASE_URL`
-4. Deploy
+### 📋 Planned
+- Dashboard Overview
+- Users & Roles
+- Product Attributes
+- Pricing Rules
+- Inventory Management
+- Orders Management
+- Marketplace Integration
+- Financial Reports
+- General Reports
+- Settings
 
-## 📝 Development
+---
 
-### Building for Production
+## Notes
 
-```bash
-npm run build
-npm start
-```
-
-### Linting
-
-```bash
-npm run lint
-```
-
-## 🔒 Security Notes
-
-- JWT tokens are stored in sessionStorage (client-side) and cookies (for middleware)
-- In production, consider using http-only cookies set by the backend for better security
-- All API requests include the JWT token in the Authorization header
-- Protected routes are enforced by middleware
-
-## 📄 License
-
-Private - Internal use only
+- Master Data modules are for reference data that doesn't change frequently
+- Financial modules handle transactions, budgets, and financial reporting
+- Future modules (Orders, Marketplace) are marked as "Future" in the menu structure
+- Some modules may be optional based on business needs (e.g., Budget Planning)
