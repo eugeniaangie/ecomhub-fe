@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
 import { StatusBadge } from '@/components/finance/StatusBadge';
-import { formatDate, formatDateTime, formatCurrency, isValidDate } from '@/lib/utils/formatters';
+import { formatDate, formatDateTime, formatCurrency, isValidDate, formatNumber, parseFormattedNumber } from '@/lib/utils/formatters';
 import {
   JOURNAL_ENTRY_STATUS_COLORS,
   JOURNAL_ENTRY_STATUS_LABELS,
@@ -48,6 +48,12 @@ export default function JournalEntriesPage() {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [fiscalPeriods, setFiscalPeriods] = useState<FiscalPeriod[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
+
+  // Display states for formatted amounts (debit/credit per line)
+  const [lineDisplays, setLineDisplays] = useState<Array<{ debit: string; credit: string }>>([
+    { debit: '', credit: '' },
+    { debit: '', credit: '' },
+  ]);
 
   // Form
   const [form, setForm] = useState({
@@ -126,6 +132,7 @@ export default function JournalEntriesPage() {
         { account_id: 0, description: '', debit: 0, credit: 0 },
       ],
     });
+    setLineDisplays([{ debit: '', credit: '' }, { debit: '', credit: '' }]);
     setFormError('');
     setIsModalOpen(true);
   };
@@ -136,23 +143,33 @@ export default function JournalEntriesPage() {
       return;
     }
     setEditingItem(item);
+    const lines = item.lines
+      ? item.lines.map((line) => ({
+          account_id: line.account_id,
+          description: line.description,
+          debit: line.debit,
+          credit: line.credit,
+        }))
+      : [
+          { account_id: 0, description: '', debit: 0, credit: 0 },
+          { account_id: 0, description: '', debit: 0, credit: 0 },
+        ];
+    
     setForm({
       entry_date: item.entry_date,
       fiscal_period_id: item.fiscal_period_id,
       description: item.description,
       reference_number: item.reference_number || '',
-      lines: item.lines
-        ? item.lines.map((line) => ({
-            account_id: line.account_id,
-            description: line.description,
-            debit: line.debit,
-            credit: line.credit,
-          }))
-        : [
-            { account_id: 0, description: '', debit: 0, credit: 0 },
-            { account_id: 0, description: '', debit: 0, credit: 0 },
-          ],
+      lines,
     });
+    
+    setLineDisplays(
+      lines.map((line) => ({
+        debit: line.debit > 0 ? formatNumber(line.debit.toString()) : '',
+        credit: line.credit > 0 ? formatNumber(line.credit.toString()) : '',
+      }))
+    );
+    
     setFormError('');
     setIsModalOpen(true);
   };
@@ -221,6 +238,7 @@ export default function JournalEntriesPage() {
       ...form,
       lines: [...form.lines, { account_id: 0, description: '', debit: 0, credit: 0 }],
     });
+    setLineDisplays([...lineDisplays, { debit: '', credit: '' }]);
   };
 
   const handleRemoveLine = (index: number) => {
@@ -229,7 +247,9 @@ export default function JournalEntriesPage() {
       return;
     }
     const newLines = form.lines.filter((_, i) => i !== index);
+    const newDisplays = lineDisplays.filter((_, i) => i !== index);
     setForm({ ...form, lines: newLines });
+    setLineDisplays(newDisplays);
     setFormError('');
   };
 
@@ -239,18 +259,43 @@ export default function JournalEntriesPage() {
     value: string | number
   ) => {
     const newLines = [...form.lines];
-    // Ensure numeric fields are numbers
-    const numericValue = typeof value === 'string' ? parseFloat(value) || 0 : value;
-    newLines[index] = { ...newLines[index], [field]: field === 'debit' || field === 'credit' ? numericValue : value };
-
-    // If debit is set, clear credit and vice versa
-    if (field === 'debit' && numericValue > 0) {
-      newLines[index].credit = 0;
-    } else if (field === 'credit' && numericValue > 0) {
-      newLines[index].debit = 0;
+    const newDisplays = [...lineDisplays];
+    
+    // If debit is set, clear credit and vice versa (mutually exclusive)
+    if (field === 'debit') {
+      const numValue = typeof value === 'string' ? parseFormattedNumber(value) : value;
+      newLines[index] = { 
+        ...newLines[index], 
+        debit: numValue,
+        credit: numValue > 0 ? 0 : newLines[index].credit // Clear credit only if debit > 0
+      };
+      // Update display
+      const formatted = typeof value === 'string' ? formatNumber(value) : (numValue > 0 ? formatNumber(numValue.toString()) : '');
+      newDisplays[index] = { 
+        ...newDisplays[index], 
+        debit: formatted,
+        credit: numValue > 0 ? '' : newDisplays[index].credit // Clear credit display
+      };
+    } else if (field === 'credit') {
+      const numValue = typeof value === 'string' ? parseFormattedNumber(value) : value;
+      newLines[index] = { 
+        ...newLines[index], 
+        credit: numValue,
+        debit: numValue > 0 ? 0 : newLines[index].debit // Clear debit only if credit > 0
+      };
+      // Update display
+      const formatted = typeof value === 'string' ? formatNumber(value) : (numValue > 0 ? formatNumber(numValue.toString()) : '');
+      newDisplays[index] = { 
+        ...newDisplays[index], 
+        credit: formatted,
+        debit: numValue > 0 ? '' : newDisplays[index].debit // Clear debit display
+      };
+    } else {
+      newLines[index] = { ...newLines[index], [field]: value };
     }
 
     setForm({ ...form, lines: newLines });
+    setLineDisplays(newDisplays);
     setFormError('');
   };
 
@@ -343,6 +388,7 @@ export default function JournalEntriesPage() {
           { account_id: 0, description: '', debit: 0, credit: 0 },
         ],
       });
+      setLineDisplays([{ debit: '', credit: '' }, { debit: '', credit: '' }]);
       loadData();
     } catch (err: unknown) {
       console.error('Error saving journal entry:', err);
@@ -364,6 +410,7 @@ export default function JournalEntriesPage() {
         { account_id: 0, description: '', debit: 0, credit: 0 },
       ],
     });
+    setLineDisplays([{ debit: '', credit: '' }, { debit: '', credit: '' }]);
     setFormError('');
   };
 
@@ -733,32 +780,70 @@ export default function JournalEntriesPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">Debit</label>
+                      <label className="block text-xs text-gray-500 mb-1">
+                        Debit (Masuk) <span className="text-red-500">*</span>
+                      </label>
                       <input
-                        type="number"
-                        min="0"
-                        step="1000"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={line.debit || ''}
-                        onChange={(e) =>
-                          handleLineChange(index, 'debit', parseFloat(e.target.value) || 0)
-                        }
+                        type="text"
+                        inputMode="numeric"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        value={lineDisplays[index]?.debit || ''}
+                        onChange={(e) => {
+                          handleLineChange(index, 'debit', e.target.value);
+                        }}
+                        onFocus={(e) => {
+                          if (!lineDisplays[index]?.debit || lineDisplays[index].debit === '') {
+                            e.target.select();
+                          }
+                        }}
+                        onBlur={() => {
+                          const newDisplays = [...lineDisplays];
+                          if (form.lines[index].debit > 0) {
+                            newDisplays[index] = { ...newDisplays[index], debit: formatNumber(form.lines[index].debit.toString()) };
+                          } else {
+                            newDisplays[index] = { ...newDisplays[index], debit: '' };
+                          }
+                          setLineDisplays(newDisplays);
+                        }}
+                        disabled={line.credit > 0}
                         placeholder="0"
                       />
+                      {line.credit > 0 && (
+                        <p className="mt-1 text-xs text-gray-500">Pilih salah satu: Debit atau Credit</p>
+                      )}
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">Credit</label>
+                      <label className="block text-xs text-gray-500 mb-1">
+                        Credit (Keluar) <span className="text-red-500">*</span>
+                      </label>
                       <input
-                        type="number"
-                        min="0"
-                        step="1000"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={line.credit || ''}
-                        onChange={(e) =>
-                          handleLineChange(index, 'credit', parseFloat(e.target.value) || 0)
-                        }
+                        type="text"
+                        inputMode="numeric"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        value={lineDisplays[index]?.credit || ''}
+                        onChange={(e) => {
+                          handleLineChange(index, 'credit', e.target.value);
+                        }}
+                        onFocus={(e) => {
+                          if (!lineDisplays[index]?.credit || lineDisplays[index].credit === '') {
+                            e.target.select();
+                          }
+                        }}
+                        onBlur={() => {
+                          const newDisplays = [...lineDisplays];
+                          if (form.lines[index].credit > 0) {
+                            newDisplays[index] = { ...newDisplays[index], credit: formatNumber(form.lines[index].credit.toString()) };
+                          } else {
+                            newDisplays[index] = { ...newDisplays[index], credit: '' };
+                          }
+                          setLineDisplays(newDisplays);
+                        }}
+                        disabled={line.debit > 0}
                         placeholder="0"
                       />
+                      {line.debit > 0 && (
+                        <p className="mt-1 text-xs text-gray-500">Pilih salah satu: Debit atau Credit</p>
+                      )}
                     </div>
                   </div>
                 </div>
