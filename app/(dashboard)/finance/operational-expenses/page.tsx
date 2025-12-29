@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
 import { StatusBadge } from '@/components/finance/StatusBadge';
-import { formatDate, formatDateTime, formatCurrency, getTodayFormatted, isValidDate } from '@/lib/utils/formatters';
+import { formatDate, formatDateTime, formatCurrency, getTodayFormatted, isValidDate, formatNumber, parseFormattedNumber } from '@/lib/utils/formatters';
 import { EXPENSE_STATUS_COLORS, EXPENSE_STATUS_LABELS, EXPENSE_STATUS_OPTIONS } from '@/lib/utils/constants';
 import type { OperationalExpense, ExpenseCategory, Account } from '@/lib/types/finance';
 
@@ -40,6 +40,9 @@ export default function OperationalExpensesPage() {
   const [expenses, setExpenses] = useState<OperationalExpense[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
+
+  // Display state for formatted amount
+  const [amountDisplay, setAmountDisplay] = useState('');
 
   // Form
   const [form, setForm] = useState({
@@ -115,6 +118,7 @@ export default function OperationalExpensesPage() {
       description: '',
       receipt_image_url: '',
     });
+    setAmountDisplay('');
     setFormError('');
     setIsModalOpen(true);
   };
@@ -133,6 +137,7 @@ export default function OperationalExpensesPage() {
       description: item.description || '',
       receipt_image_url: item.receipt_image_url || '',
     });
+    setAmountDisplay(formatNumber(item.amount.toString()));
     setFormError('');
     setIsModalOpen(true);
   };
@@ -242,6 +247,7 @@ export default function OperationalExpensesPage() {
         description: '',
         receipt_image_url: '',
       });
+      setAmountDisplay('');
       loadData();
     } catch (err: unknown) {
       console.error('Error saving operational expense:', err);
@@ -261,6 +267,7 @@ export default function OperationalExpensesPage() {
       description: '',
       receipt_image_url: '',
     });
+    setAmountDisplay('');
     setFormError('');
   };
 
@@ -580,14 +587,31 @@ export default function OperationalExpensesPage() {
             </label>
             <input
               id="amount"
-              type="number"
-              min="0"
-              step="1000"
+              type="text"
+              inputMode="numeric"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={form.amount}
-              onChange={(e) => setForm({ ...form, amount: parseFloat(e.target.value) || 0 })}
+              value={amountDisplay}
+              onChange={(e) => {
+                const val = e.target.value;
+                const numValue = parseFormattedNumber(val);
+                const formatted = formatNumber(val);
+                setAmountDisplay(formatted);
+                setForm({ ...form, amount: numValue });
+              }}
+              onFocus={(e) => {
+                if (form.amount === 0 || amountDisplay === '') {
+                  e.target.select();
+                }
+              }}
+              onBlur={() => {
+                if (form.amount > 0) {
+                  setAmountDisplay(formatNumber(form.amount.toString()));
+                } else {
+                  setAmountDisplay('');
+                }
+              }}
               required
-              placeholder="Enter amount"
+              placeholder="Enter amount (e.g., 7.000.000)"
             />
           </div>
 
