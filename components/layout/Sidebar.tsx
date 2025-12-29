@@ -12,7 +12,14 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  // { label: 'Dashboard', href: '/' },
+  {
+    label: 'Dashboard',
+    href: '/dashboard',
+    children: [
+      { label: 'Finance Dashboard', href: '/finance/dashboard' },
+      // { label: 'Sales Dashboard', href: '/sales/dashboard' },
+    ],
+  },
   {
     label: 'Master Data',
     href: '/master',
