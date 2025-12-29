@@ -394,21 +394,25 @@ export default function MasterDataPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Master Category</h1>
-        <Button onClick={handleCreate} variant="primary">
-          + Add Category
-        </Button>
+      <div className="fixed top-16 left-64 right-0 z-40 bg-white px-6 py-4 border-b border-gray-200 shadow-sm">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">Master Category</h1>
+          <Button onClick={handleCreate} variant="primary">
+            + Add Category
+          </Button>
+        </div>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-          {error}
-        </div>
-      )}
+      <div className="pt-[72px] px-6">
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+            {error}
+          </div>
+        )}
 
-      {/* Content */}
-      {renderCategories()}
+        {/* Content */}
+        {renderCategories()}
+      </div>
 
       {/* Modal */}
       <Modal

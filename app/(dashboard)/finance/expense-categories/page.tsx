@@ -151,21 +151,25 @@ export default function ExpenseCategoriesPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Expense Categories</h1>
-        <Button onClick={handleCreate} variant="primary">
-          + Add Expense Category
-        </Button>
+      <div className="fixed top-16 left-64 right-0 z-40 bg-white px-6 py-4 border-b border-gray-200 shadow-sm">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">Expense Categories</h1>
+          <Button onClick={handleCreate} variant="primary">
+            + Add Expense Category
+          </Button>
+        </div>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-          {error}
-        </div>
-      )}
+      <div className="pt-[72px] px-6">
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+            {error}
+          </div>
+        )}
 
-      {/* Search */}
-      <div className="mb-4 flex gap-2">
+        {/* Search */}
+        <div className="fixed top-[136px] left-64 right-0 z-30 bg-white px-6 py-4 border-b border-gray-200 shadow-sm">
+        <div className="flex gap-2">
         <input
           type="text"
           placeholder="Search by name or description..."
@@ -189,8 +193,9 @@ export default function ExpenseCategoriesPage() {
             Clear
           </Button>
         )}
-      </div>
-
+        </div>
+        </div>
+        <div className="pt-[72px]">
       {/* Table */}
       <Card>
         <div className="overflow-x-auto">
@@ -314,6 +319,7 @@ export default function ExpenseCategoriesPage() {
           </div>
         </div>
       </Modal>
+      </div>
     </div>
   );
 }

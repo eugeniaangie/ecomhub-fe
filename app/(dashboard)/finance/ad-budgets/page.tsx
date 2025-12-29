@@ -291,23 +291,27 @@ export default function AdBudgetsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Ad Budgets</h1>
-        {canEdit && (
-          <Button onClick={handleCreate} variant="primary">
-            + Add Ad Budget
-          </Button>
-        )}
+      <div className="fixed top-16 left-64 right-0 z-40 bg-white px-6 py-4 border-b border-gray-200 shadow-sm">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">Ad Budgets</h1>
+          {canEdit && (
+            <Button onClick={handleCreate} variant="primary">
+              + Add Ad Budget
+            </Button>
+          )}
+        </div>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-          {error}
-        </div>
-      )}
+      <div className="pt-[72px] px-6">
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+            {error}
+          </div>
+        )}
 
-      {/* Search & Filters */}
-      <div className="mb-4 flex gap-2 flex-wrap">
+        {/* Search & Filters */}
+        <div className="fixed top-[136px] left-64 right-0 z-30 bg-white px-6 py-4 border-b border-gray-200 shadow-sm">
+        <div className="flex gap-2 flex-wrap">
         <input
           type="text"
           placeholder="Search by platform or notes..."
@@ -359,8 +363,9 @@ export default function AdBudgetsPage() {
             Clear
           </Button>
         )}
-      </div>
-
+        </div>
+        </div>
+        <div className="pt-[72px]">
       {/* Table */}
       <Card>
         <div className="overflow-x-auto">
@@ -702,6 +707,7 @@ export default function AdBudgetsPage() {
           )}
         </div>
       </Modal>
+      </div>
     </div>
   );
 }

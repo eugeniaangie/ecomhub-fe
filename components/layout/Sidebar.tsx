@@ -218,12 +218,12 @@ export const Sidebar: React.FC = () => {
   };
 
   return (
-    <aside className="w-64 bg-gray-900 text-white min-h-screen">
+    <aside className="fixed left-0 top-0 w-64 h-screen bg-gray-900 text-white overflow-y-auto">
       <div className="p-6">
         <h1 className="text-xl font-bold">EcomHub</h1>
         <p className="text-sm text-gray-400 mt-1">Internal Dashboard</p>
       </div>
-      <nav className="px-4">
+      <nav className="px-4 pb-4">
         <ul className="space-y-2">
           {navItems.map((item) => renderNavItem(item, pathname, expandedMenus, toggleMenu))}
         </ul>

@@ -57,15 +57,16 @@ export default function FinanceDashboardPage() {
 
   return (
     <div>
-      <div className="mb-8">
+      <div className="fixed top-16 left-64 right-0 z-40 bg-white px-6 py-4 border-b border-gray-200 shadow-sm">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Finance Dashboard</h1>
         <p className="text-gray-600">
           Overview of your Neobank account balance and expenses
         </p>
       </div>
 
-      {/* Date Range Filter */}
-      <Card className="mb-6">
+      <div className="pt-[120px] px-6">
+        {/* Date Range Filter */}
+        <Card className="mb-6 bg-white shadow-sm">
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex-1 min-w-[200px]">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -369,6 +370,7 @@ export default function FinanceDashboardPage() {
           </Card>
         </>
       )}
+      </div>
     </div>
   );
 }
