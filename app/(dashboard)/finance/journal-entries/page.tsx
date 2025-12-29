@@ -137,46 +137,130 @@ export default function JournalEntriesPage() {
     setIsModalOpen(true);
   };
 
-  const handleEdit = (item: JournalEntry) => {
+  const handleEdit = async (item: JournalEntry) => {
     if (item.status !== 'draft') {
       setError('Can only edit journal entries with draft status');
       return;
     }
-    setEditingItem(item);
-    const lines = item.lines
-      ? item.lines.map((line) => ({
-          account_id: line.account_id,
-          description: line.description,
-          debit: line.debit,
-          credit: line.credit,
+    
+    try {
+      // Fetch full details including lines and relations
+      const fullDetails = await journalEntriesApi.getById(item.id);
+      // Merge with item from list to ensure all fields are present
+      const completeItem = {
+        ...item,
+        ...fullDetails,
+        lines: fullDetails.lines || item.lines,
+        fiscal_period: fullDetails.fiscal_period || item.fiscal_period,
+      };
+      
+      setEditingItem(completeItem);
+      const lines = completeItem.lines && completeItem.lines.length > 0
+        ? completeItem.lines.map((line) => ({
+            account_id: line.account_id,
+            description: line.description || '',
+            debit: line.debit || 0,
+            credit: line.credit || 0,
+          }))
+        : [
+            { account_id: 0, description: '', debit: 0, credit: 0 },
+            { account_id: 0, description: '', debit: 0, credit: 0 },
+          ];
+      
+      // Format entry_date to YYYY-MM-DD for input type="date"
+      let formattedDate = '';
+      if (completeItem.entry_date) {
+        const date = new Date(completeItem.entry_date);
+        if (!isNaN(date.getTime())) {
+          formattedDate = date.toISOString().split('T')[0];
+        }
+      }
+      
+      setForm({
+        entry_date: formattedDate,
+        fiscal_period_id: completeItem.fiscal_period_id || 0,
+        description: completeItem.description || '',
+        reference_number: completeItem.reference_number || '',
+        lines,
+      });
+      
+      setLineDisplays(
+        lines.map((line) => ({
+          debit: line.debit > 0 ? formatNumber(line.debit.toString()) : '',
+          credit: line.credit > 0 ? formatNumber(line.credit.toString()) : '',
         }))
-      : [
-          { account_id: 0, description: '', debit: 0, credit: 0 },
-          { account_id: 0, description: '', debit: 0, credit: 0 },
-        ];
-    
-    setForm({
-      entry_date: item.entry_date,
-      fiscal_period_id: item.fiscal_period_id,
-      description: item.description,
-      reference_number: item.reference_number || '',
-      lines,
-    });
-    
-    setLineDisplays(
-      lines.map((line) => ({
-        debit: line.debit > 0 ? formatNumber(line.debit.toString()) : '',
-        credit: line.credit > 0 ? formatNumber(line.credit.toString()) : '',
-      }))
-    );
-    
-    setFormError('');
-    setIsModalOpen(true);
+      );
+      
+      setFormError('');
+      setIsModalOpen(true);
+    } catch (err: unknown) {
+      console.error('Error loading journal entry details for edit:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load details';
+      setError(errorMessage);
+      // Fallback to item from list if fetch fails
+      setEditingItem(item);
+      const lines = item.lines
+        ? item.lines.map((line) => ({
+            account_id: line.account_id,
+            description: line.description || '',
+            debit: line.debit || 0,
+            credit: line.credit || 0,
+          }))
+        : [
+            { account_id: 0, description: '', debit: 0, credit: 0 },
+            { account_id: 0, description: '', debit: 0, credit: 0 },
+          ];
+      
+      // Format entry_date to YYYY-MM-DD for input type="date"
+      let formattedDate = '';
+      if (item.entry_date) {
+        const date = new Date(item.entry_date);
+        if (!isNaN(date.getTime())) {
+          formattedDate = date.toISOString().split('T')[0];
+        }
+      }
+      
+      setForm({
+        entry_date: formattedDate,
+        fiscal_period_id: item.fiscal_period_id || 0,
+        description: item.description || '',
+        reference_number: item.reference_number || '',
+        lines,
+      });
+      
+      setLineDisplays(
+        lines.map((line) => ({
+          debit: line.debit > 0 ? formatNumber(line.debit.toString()) : '',
+          credit: line.credit > 0 ? formatNumber(line.credit.toString()) : '',
+        }))
+      );
+      
+      setFormError('');
+      setIsModalOpen(true);
+    }
   };
 
-  const handleView = (item: JournalEntry) => {
-    setViewingItem(item);
-    setIsDetailModalOpen(true);
+  const handleView = async (item: JournalEntry) => {
+    try {
+      // Fetch full details including lines and relations
+      const fullDetails = await journalEntriesApi.getById(item.id);
+      // Merge with item from list to ensure all fields are present
+      setViewingItem({
+        ...item,
+        ...fullDetails,
+        // Ensure lines and relations are from fullDetails if available
+        lines: fullDetails.lines || item.lines,
+        fiscal_period: fullDetails.fiscal_period || item.fiscal_period,
+      });
+      setIsDetailModalOpen(true);
+    } catch (err: unknown) {
+      console.error('Error loading journal entry details:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load details';
+      setError(errorMessage);
+      // Fallback to item from list if fetch fails
+      setViewingItem(item);
+      setIsDetailModalOpen(true);
+    }
   };
 
   const handleDelete = async (id: number, entry: JournalEntry) => {
@@ -892,15 +976,21 @@ export default function JournalEntriesPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <div className="text-sm font-medium text-gray-500">Entry Number</div>
-                <div className="text-sm text-gray-900 font-medium">{viewingItem.entry_number}</div>
+                <div className="text-sm text-gray-900 font-medium">
+                  {viewingItem.entry_number || 'N/A'}
+                </div>
               </div>
               <div>
                 <div className="text-sm font-medium text-gray-500">Status</div>
                 <div className="mt-1">
-                  <StatusBadge
-                    label={JOURNAL_ENTRY_STATUS_LABELS[viewingItem.status]}
-                    colorClass={JOURNAL_ENTRY_STATUS_COLORS[viewingItem.status]}
-                  />
+                  {viewingItem.status ? (
+                    <StatusBadge
+                      label={JOURNAL_ENTRY_STATUS_LABELS[viewingItem.status]}
+                      colorClass={JOURNAL_ENTRY_STATUS_COLORS[viewingItem.status]}
+                    />
+                  ) : (
+                    <span className="text-sm text-gray-500">N/A</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -908,19 +998,25 @@ export default function JournalEntriesPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <div className="text-sm font-medium text-gray-500">Entry Date</div>
-                <div className="text-sm text-gray-900">{formatDate(viewingItem.entry_date)}</div>
+                <div className="text-sm text-gray-900">
+                  {viewingItem.entry_date ? formatDate(viewingItem.entry_date) : 'N/A'}
+                </div>
               </div>
               <div>
                 <div className="text-sm font-medium text-gray-500">Fiscal Period</div>
                 <div className="text-sm text-gray-900">
-                  {viewingItem.fiscal_period?.period_name || 'N/A'}
+                  {viewingItem.fiscal_period?.period_name ||
+                    (viewingItem.fiscal_period_id
+                      ? fiscalPeriods.find((p) => p.id === viewingItem.fiscal_period_id)?.period_name
+                      : null) ||
+                    'N/A'}
                 </div>
               </div>
             </div>
 
             <div>
               <div className="text-sm font-medium text-gray-500">Description</div>
-              <div className="text-sm text-gray-900">{viewingItem.description}</div>
+              <div className="text-sm text-gray-900">{viewingItem.description || 'N/A'}</div>
             </div>
 
             {viewingItem.reference_number && (
@@ -952,9 +1048,11 @@ export default function JournalEntriesPage() {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {viewingItem.lines?.map((line, index) => (
-                      <tr key={index}>
+                      <tr key={line.id || index}>
                         <td className="px-4 py-2 text-sm text-gray-900">
-                          {getAccountName(line.account_id)}
+                          {line.account
+                            ? `${line.account.account_code} - ${line.account.account_name}`
+                            : getAccountName(line.account_id)}
                         </td>
                         <td className="px-4 py-2 text-sm text-gray-500">{line.description}</td>
                         <td className="px-4 py-2 text-sm text-gray-900 text-right">
