@@ -260,7 +260,7 @@ export default function MasterDataPage() {
                   'pl-40'; // Max 5 levels
                 
                 return (
-                  <tr key={cat.id} className="hover:bg-gray-50">
+                <tr key={cat.id} className="hover:bg-gray-50">
                     <td className={`px-6 py-4 text-sm font-medium text-gray-900 ${indentClass}`}>
                       {cat.parent_id && (
                         <span className="text-gray-400 mr-2">└─</span>
@@ -273,17 +273,17 @@ export default function MasterDataPage() {
                     <td className="px-6 py-4 text-sm text-gray-500">
                       {cat.description || '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(cat)}>
-                          Edit
-                        </Button>
-                        <Button variant="danger" size="sm" onClick={() => handleDelete(cat.id)}>
-                          Delete
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex justify-end gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(cat)}>
+                        Edit
+                      </Button>
+                      <Button variant="danger" size="sm" onClick={() => handleDelete(cat.id)}>
+                        Delete
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
                 );
               })
             )}

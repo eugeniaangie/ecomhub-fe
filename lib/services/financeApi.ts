@@ -28,6 +28,9 @@ import type {
   CreateJournalEntry,
   UpdateJournalEntry,
   PaginatedResponseFinance,
+  CurrentBalanceResponse,
+  AdExpensesResponse,
+  FinanceTransaction,
 } from '../types/finance';
 
 const API_VERSION = '/api/v1';
@@ -527,6 +530,66 @@ export const journalEntriesApi = {
    */
   post: async (id: number) => {
     return api.post<JournalEntry>(`${API_VERSION}/journal-entries/${id}/post`, {});
+  },
+};
+
+// ===== Finance Reports =====
+export const financeReportsApi = {
+  /**
+   * Get current balance with transactions
+   */
+  getCurrentBalance: async (params?: {
+    account_id?: number;
+    start_date?: string;
+    end_date?: string;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.account_id) queryParams.append('account_id', params.account_id.toString());
+    if (params?.start_date) queryParams.append('start_date', params.start_date);
+    if (params?.end_date) queryParams.append('end_date', params.end_date);
+    
+    const queryString = queryParams.toString();
+    return api.get<CurrentBalanceResponse>(
+      `${API_VERSION}/reports/dashboard/finance/current-balance${queryString ? `?${queryString}` : ''}`
+    );
+  },
+
+  /**
+   * Get all Neobank transactions
+   */
+  getTransactions: async (params?: {
+    account_id?: number;
+    start_date?: string;
+    end_date?: string;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.account_id) queryParams.append('account_id', params.account_id.toString());
+    if (params?.start_date) queryParams.append('start_date', params.start_date);
+    if (params?.end_date) queryParams.append('end_date', params.end_date);
+    
+    const queryString = queryParams.toString();
+    return api.get<FinanceTransaction[]>(
+      `${API_VERSION}/reports/dashboard/finance/transactions${queryString ? `?${queryString}` : ''}`
+    );
+  },
+
+  /**
+   * Get ad expenses
+   */
+  getAdExpenses: async (params?: {
+    account_id?: number;
+    start_date?: string;
+    end_date?: string;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.account_id) queryParams.append('account_id', params.account_id.toString());
+    if (params?.start_date) queryParams.append('start_date', params.start_date);
+    if (params?.end_date) queryParams.append('end_date', params.end_date);
+    
+    const queryString = queryParams.toString();
+    return api.get<AdExpensesResponse>(
+      `${API_VERSION}/reports/dashboard/finance/ad-expenses${queryString ? `?${queryString}` : ''}`
+    );
   },
 };
 

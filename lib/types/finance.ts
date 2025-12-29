@@ -256,3 +256,32 @@ export type UpdateJournalEntry = CreateJournalEntry;
 // ===== User Roles =====
 export type UserRole = 'staff' | 'admin' | 'superadmin';
 
+// ===== Finance Reports =====
+export interface FinanceTransaction {
+  journal_entry_id: number;
+  entry_number: string;
+  entry_date: string; // ISO datetime
+  entry_description: string;
+  reference_number?: string | null;
+  neobank_debit: number;
+  neobank_credit: number;
+  line_description: string;
+  partner_account_code: string;
+  partner_account_name: string;
+  partner_account_type: string;
+  partner_amount: number;
+  status: string;
+}
+
+export interface CurrentBalanceResponse {
+  total_debit: number;
+  total_credit: number;
+  current_balance: number;
+  transactions: FinanceTransaction[];
+}
+
+export interface AdExpensesResponse {
+  total_ad_expense: number;
+  transactions: FinanceTransaction[];
+}
+
