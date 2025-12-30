@@ -259,7 +259,7 @@ export interface CreateJournalEntry {
 export type UpdateJournalEntry = CreateJournalEntry;
 
 // ===== User Roles =====
-export type UserRole = 'staff' | 'admin' | 'superadmin';
+export type UserRole = 'staff' | 'admin' | 'superadmin' | 'manager' | 'viewer';
 
 // ===== Finance Reports =====
 export interface FinanceTransaction {

@@ -6,6 +6,11 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
+import {
+  canCreateCategory,
+  canUpdateCategory,
+  canDeleteCategory,
+} from '@/lib/authHelpers';
 import type { MasterCategory } from '@/lib/types';
 
 export default function MasterDataPage() {
@@ -13,6 +18,11 @@ export default function MasterDataPage() {
   useEffect(() => {
     document.title = 'Master Category';
   }, []);
+
+  // Permission checks
+  const canCreate = canCreateCategory();
+  const canUpdate = canUpdateCategory();
+  const canDelete = canDeleteCategory();
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(''); // For page-level errors (loading data)
@@ -275,10 +285,22 @@ export default function MasterDataPage() {
                     </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(cat)}>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleEdit(cat)}
+                        disabled={!canUpdate}
+                        className={!canUpdate ? 'opacity-50 cursor-not-allowed' : ''}
+                      >
                         Edit
                       </Button>
-                      <Button variant="danger" size="sm" onClick={() => handleDelete(cat.id)}>
+                      <Button 
+                        variant="danger" 
+                        size="sm" 
+                        onClick={() => handleDelete(cat.id)}
+                        disabled={!canDelete}
+                        className={!canDelete ? 'opacity-50 cursor-not-allowed' : ''}
+                      >
                         Delete
                       </Button>
                     </div>
@@ -396,7 +418,12 @@ export default function MasterDataPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Master Category</h1>
-        <Button onClick={handleCreate} variant="primary">
+        <Button 
+          onClick={handleCreate} 
+          variant="primary"
+          disabled={!canCreate}
+          className={!canCreate ? 'opacity-50 cursor-not-allowed' : ''}
+        >
           + Add Category
         </Button>
       </div>

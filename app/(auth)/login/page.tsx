@@ -4,6 +4,7 @@ import { useState, FormEvent, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authApi } from '@/lib/api';
 import { auth } from '@/lib/auth';
+import { setUserRoles, setCurrentUserId } from '@/lib/authHelpers';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 
@@ -23,6 +24,16 @@ function LoginForm() {
     try {
       const response = await authApi.login(username, password);
       auth.setToken(response.token);
+      
+      // Fetch user info and roles after login
+      try {
+        const meData = await authApi.getMe();
+        setUserRoles(meData.roles);
+        setCurrentUserId(meData.user.id);
+      } catch (meError) {
+        console.error('Error fetching user info:', meError);
+        // Continue even if getMe fails, user can still use the app
+      }
       
       const redirect = searchParams.get('redirect') || '/';
       router.push(redirect);

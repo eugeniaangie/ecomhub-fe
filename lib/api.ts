@@ -195,6 +195,10 @@ export const authApi = {
   logout: async () => {
     return api.post<null>(`${API_VERSION}/auth/logout`);
   },
+
+  getMe: async () => {
+    return api.get<import('./types').GetMeResponse>(`${API_VERSION}/auth/me`);
+  },
 };
 
 // Dashboard endpoints

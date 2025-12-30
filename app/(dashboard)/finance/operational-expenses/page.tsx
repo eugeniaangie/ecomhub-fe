@@ -9,6 +9,14 @@ import { Pagination } from '@/components/ui/Pagination';
 import { StatusBadge } from '@/components/finance/StatusBadge';
 import { formatDate, formatDateTime, formatCurrency, getTodayFormatted, isValidDate, formatNumber, parseFormattedNumber } from '@/lib/utils/formatters';
 import { EXPENSE_STATUS_COLORS, EXPENSE_STATUS_LABELS, EXPENSE_STATUS_OPTIONS, CHANNEL_OPTIONS } from '@/lib/utils/constants';
+import {
+  canCreateOperationalExpense,
+  canUpdateOperationalExpense,
+  canDeleteOperationalExpense,
+  canApproveOperationalExpense,
+  canRejectOperationalExpense,
+  canPayOperationalExpense,
+} from '@/lib/authHelpers';
 import type { OperationalExpense, ExpenseCategory, Account } from '@/lib/types/finance';
 
 export default function OperationalExpensesPage() {
@@ -55,9 +63,7 @@ export default function OperationalExpensesPage() {
     channel: 'general' as 'shopee' | 'tiktok' | 'general' | 'lazada' | 'blibli',
   });
 
-  // TODO: Get user role and user ID from auth context
-  const userRole = 'admin'; // Temporary: 'staff' | 'admin' | 'superadmin'
-  const currentUserId = 1; // Temporary
+  // Permission checks
 
   useEffect(() => {
     loadData();
@@ -277,28 +283,24 @@ export default function OperationalExpensesPage() {
     setFormError('');
   };
 
-  const canApprove = (expense: OperationalExpense) => {
-    return (
-      (userRole === 'admin' || userRole === 'superadmin') &&
-      expense.status === 'pending'
-    );
+  const canApproveExp = (expense: OperationalExpense) => {
+    return canApproveOperationalExpense(expense.status);
   };
 
-  const canPay = (expense: OperationalExpense) => {
-    return (
-      (userRole === 'admin' || userRole === 'superadmin') &&
-      expense.status === 'approved'
-    );
+  const canRejectExp = (expense: OperationalExpense) => {
+    return canRejectOperationalExpense(expense.status);
+  };
+
+  const canPayExp = (expense: OperationalExpense) => {
+    return canPayOperationalExpense(expense.status);
   };
 
   const canEdit = (expense: OperationalExpense) => {
-    const isOwner = expense.created_by === currentUserId;
-    const isAdmin = userRole === 'admin' || userRole === 'superadmin';
-    return expense.status === 'pending' && (isOwner || isAdmin);
+    return canUpdateOperationalExpense(expense.status, expense.created_by || 0);
   };
 
   const canDelete = (expense: OperationalExpense) => {
-    return canEdit(expense);
+    return canDeleteOperationalExpense(expense.status, expense.created_by || 0);
   };
 
   const getCategoryName = (categoryId: number) => {
@@ -325,7 +327,12 @@ export default function OperationalExpensesPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Operational Expenses</h1>
-        <Button onClick={handleCreate} variant="primary">
+        <Button 
+          onClick={handleCreate} 
+          variant="primary"
+          disabled={!canCreateOperationalExpense()}
+          className={!canCreateOperationalExpense() ? 'opacity-50 cursor-not-allowed' : ''}
+        >
           + Add Expense
         </Button>
       </div>
@@ -453,31 +460,51 @@ export default function OperationalExpensesPage() {
                         <Button variant="ghost" size="sm" onClick={() => handleView(expense)}>
                           View
                         </Button>
-                        {canEdit(expense) && (
-                          <Button variant="ghost" size="sm" onClick={() => handleEdit(expense)}>
-                            Edit
-                          </Button>
-                        )}
-                        {canDelete(expense) && (
-                          <Button variant="danger" size="sm" onClick={() => handleDelete(expense.id, expense)}>
-                            Delete
-                          </Button>
-                        )}
-                        {canApprove(expense) && (
-                          <>
-                            <Button variant="primary" size="sm" onClick={() => handleApprove(expense.id)}>
-                              Approve
-                            </Button>
-                            <Button variant="danger" size="sm" onClick={() => handleReject(expense.id)}>
-                              Reject
-                            </Button>
-                          </>
-                        )}
-                        {canPay(expense) && (
-                          <Button variant="primary" size="sm" onClick={() => handlePay(expense.id)}>
-                            Pay
-                          </Button>
-                        )}
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleEdit(expense)}
+                          disabled={!canEdit(expense)}
+                          className={!canEdit(expense) ? 'opacity-50 cursor-not-allowed' : ''}
+                        >
+                          Edit
+                        </Button>
+                        <Button 
+                          variant="danger" 
+                          size="sm" 
+                          onClick={() => handleDelete(expense.id, expense)}
+                          disabled={!canDelete(expense)}
+                          className={!canDelete(expense) ? 'opacity-50 cursor-not-allowed' : ''}
+                        >
+                          Delete
+                        </Button>
+                        <Button 
+                          variant="primary" 
+                          size="sm" 
+                          onClick={() => handleApprove(expense.id)}
+                          disabled={!canApproveExp(expense)}
+                          className={!canApproveExp(expense) ? 'opacity-50 cursor-not-allowed' : ''}
+                        >
+                          Approve
+                        </Button>
+                        <Button 
+                          variant="danger" 
+                          size="sm" 
+                          onClick={() => handleReject(expense.id)}
+                          disabled={!canRejectExp(expense)}
+                          className={!canRejectExp(expense) ? 'opacity-50 cursor-not-allowed' : ''}
+                        >
+                          Reject
+                        </Button>
+                        <Button 
+                          variant="primary" 
+                          size="sm" 
+                          onClick={() => handlePay(expense.id)}
+                          disabled={!canPayExp(expense)}
+                          className={!canPayExp(expense) ? 'opacity-50 cursor-not-allowed' : ''}
+                        >
+                          Pay
+                        </Button>
                       </div>
                     </td>
                   </tr>

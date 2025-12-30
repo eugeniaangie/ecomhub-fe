@@ -8,12 +8,22 @@ import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
 import { StatusBadge } from '@/components/finance/StatusBadge';
 import { ACCOUNT_TYPE_COLORS, ACCOUNT_TYPE_LABELS, ACCOUNT_TYPE_OPTIONS } from '@/lib/utils/constants';
+import {
+  canCreateAccount,
+  canUpdateAccount,
+  canDeleteAccount,
+} from '@/lib/authHelpers';
 import type { Account, AccountType } from '@/lib/types/finance';
 
 export default function AccountsPage() {
   useEffect(() => {
     document.title = 'Chart of Accounts - Finance Management';
   }, []);
+
+  // Permission checks
+  const canCreate = canCreateAccount();
+  const canUpdate = canUpdateAccount();
+  const canDelete = canDeleteAccount();
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -208,7 +218,12 @@ export default function AccountsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Chart of Accounts</h1>
-        <Button onClick={handleCreate} variant="primary">
+        <Button 
+          onClick={handleCreate} 
+          variant="primary"
+          disabled={!canCreate}
+          className={!canCreate ? 'opacity-50 cursor-not-allowed' : ''}
+        >
           + Add Account
         </Button>
       </div>
@@ -383,10 +398,22 @@ export default function AccountsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="sm" onClick={() => handleEdit(account)}>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleEdit(account)}
+                            disabled={!canUpdate}
+                            className={!canUpdate ? 'opacity-50 cursor-not-allowed' : ''}
+                          >
                             Edit
                           </Button>
-                          <Button variant="danger" size="sm" onClick={() => handleDelete(account.id)}>
+                          <Button 
+                            variant="danger" 
+                            size="sm" 
+                            onClick={() => handleDelete(account.id)}
+                            disabled={!canDelete}
+                            className={!canDelete ? 'opacity-50 cursor-not-allowed' : ''}
+                          >
                             Delete
                           </Button>
                         </div>
