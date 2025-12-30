@@ -28,9 +28,9 @@ import type {
   CreateJournalEntry,
   UpdateJournalEntry,
   PaginatedResponseFinance,
-  CurrentBalanceResponse,
-  AdExpensesResponse,
-  FinanceTransaction,
+  AccountTransactionBalance,
+  AccountTransaction,
+  AdExpenses,
 } from '../types/finance';
 
 const API_VERSION = '/api/v1';
@@ -536,59 +536,138 @@ export const journalEntriesApi = {
 // ===== Finance Reports =====
 export const financeReportsApi = {
   /**
-   * Get current balance with transactions
+   * Get current balance for Bank Shopee
    */
-  getCurrentBalance: async (params?: {
-    account_id?: number;
-    start_date?: string;
-    end_date?: string;
+  getCurrentBalanceBankShopee: async (params: {
+    start_date: string;
+    end_date: string;
   }) => {
-    const queryParams = new URLSearchParams();
-    if (params?.account_id) queryParams.append('account_id', params.account_id.toString());
-    if (params?.start_date) queryParams.append('start_date', params.start_date);
-    if (params?.end_date) queryParams.append('end_date', params.end_date);
+    const queryParams = new URLSearchParams({
+      start_date: params.start_date,
+      end_date: params.end_date,
+    });
     
-    const queryString = queryParams.toString();
-    return api.get<CurrentBalanceResponse>(
-      `${API_VERSION}/reports/dashboard/finance/current-balance${queryString ? `?${queryString}` : ''}`
+    return api.get<AccountTransactionBalance[]>(
+      `${API_VERSION}/reports/dashboard/finance/shopee/current-balance?${queryParams.toString()}`
     );
   },
 
   /**
-   * Get all Neobank transactions
+   * Get current balance for Shopee Wallet
    */
-  getTransactions: async (params?: {
-    account_id?: number;
-    start_date?: string;
-    end_date?: string;
+  getCurrentBalanceShopeeWallet: async (params: {
+    start_date: string;
+    end_date: string;
   }) => {
-    const queryParams = new URLSearchParams();
-    if (params?.account_id) queryParams.append('account_id', params.account_id.toString());
-    if (params?.start_date) queryParams.append('start_date', params.start_date);
-    if (params?.end_date) queryParams.append('end_date', params.end_date);
+    const queryParams = new URLSearchParams({
+      start_date: params.start_date,
+      end_date: params.end_date,
+    });
     
-    const queryString = queryParams.toString();
-    return api.get<FinanceTransaction[]>(
-      `${API_VERSION}/reports/dashboard/finance/transactions${queryString ? `?${queryString}` : ''}`
+    return api.get<AccountTransactionBalance[]>(
+      `${API_VERSION}/reports/dashboard/finance/shopee/wallet/current-balance?${queryParams.toString()}`
     );
   },
 
   /**
-   * Get ad expenses
+   * Get transactions for Shopee
    */
-  getAdExpenses: async (params?: {
-    account_id?: number;
-    start_date?: string;
-    end_date?: string;
+  getTransactionsShopee: async (params: {
+    start_date: string;
+    end_date: string;
   }) => {
-    const queryParams = new URLSearchParams();
-    if (params?.account_id) queryParams.append('account_id', params.account_id.toString());
-    if (params?.start_date) queryParams.append('start_date', params.start_date);
-    if (params?.end_date) queryParams.append('end_date', params.end_date);
+    const queryParams = new URLSearchParams({
+      start_date: params.start_date,
+      end_date: params.end_date,
+    });
     
-    const queryString = queryParams.toString();
-    return api.get<AdExpensesResponse>(
-      `${API_VERSION}/reports/dashboard/finance/ad-expenses${queryString ? `?${queryString}` : ''}`
+    return api.get<AccountTransaction[]>(
+      `${API_VERSION}/reports/dashboard/finance/shopee/transactions?${queryParams.toString()}`
+    );
+  },
+
+  /**
+   * Get total ad expenses
+   */
+  getAdExpensesTotal: async (params: {
+    start_date: string;
+    end_date: string;
+  }) => {
+    const queryParams = new URLSearchParams({
+      start_date: params.start_date,
+      end_date: params.end_date,
+    });
+    
+    return api.get<AdExpenses>(
+      `${API_VERSION}/reports/dashboard/finance/ad-expenses/total?${queryParams.toString()}`
+    );
+  },
+
+  /**
+   * Get ad expenses for Shopee
+   */
+  getAdExpensesShopee: async (params: {
+    start_date: string;
+    end_date: string;
+  }) => {
+    const queryParams = new URLSearchParams({
+      start_date: params.start_date,
+      end_date: params.end_date,
+    });
+    
+    return api.get<AdExpenses>(
+      `${API_VERSION}/reports/dashboard/finance/ad-expenses/shopee?${queryParams.toString()}`
+    );
+  },
+
+  /**
+   * Get ad expenses for Meta
+   */
+  getAdExpensesMeta: async (params: {
+    start_date: string;
+    end_date: string;
+  }) => {
+    const queryParams = new URLSearchParams({
+      start_date: params.start_date,
+      end_date: params.end_date,
+    });
+    
+    return api.get<AdExpenses>(
+      `${API_VERSION}/reports/dashboard/finance/ad-expenses/meta?${queryParams.toString()}`
+    );
+  },
+
+  /**
+   * Get ad expenses for TikTok
+   */
+  getAdExpensesTikTok: async (params: {
+    start_date: string;
+    end_date: string;
+  }) => {
+    const queryParams = new URLSearchParams({
+      start_date: params.start_date,
+      end_date: params.end_date,
+    });
+    
+    return api.get<AdExpenses>(
+      `${API_VERSION}/reports/dashboard/finance/ad-expenses/tiktok?${queryParams.toString()}`
+    );
+  },
+
+  /**
+   * Get ad expenses detail
+   */
+  getAdExpensesDetail: async (params: {
+    start_date: string;
+    end_date: string;
+  }) => {
+    const queryParams = new URLSearchParams({
+      start_date: params.start_date,
+      end_date: params.end_date,
+    });
+    
+    return api.get<AccountTransaction[]>(
+      `${API_VERSION}/reports/dashboard/finance/ad-expenses/detail?${queryParams.toString()}`
     );
   },
 };

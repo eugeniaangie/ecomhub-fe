@@ -278,6 +278,45 @@ export interface FinanceTransaction {
   status: string;
 }
 
+// New API Response Types
+export interface AccountTransactionBalance {
+  account_name: string;
+  total_debit: number;
+  total_credit: number;
+  current_balance: number;
+}
+
+export interface PartnerAccount {
+  account_code: string;
+  account_name: string;
+  account_type: string;
+  amount: number;
+  description: string;
+}
+
+export interface AccountTransaction {
+  account_name: string;
+  account_code: string;
+  journal_entry_id: number;
+  entry_number: string;
+  entry_date: string; // ISO 8601 format
+  entry_description: string;
+  reference_number?: string | null;
+  account_debit: number;
+  account_credit: number;
+  net_amount: number;
+  line_description: string;
+  partner_accounts: PartnerAccount[];
+  status: string;
+}
+
+export interface AdExpenses {
+  total_ad_expense: number;
+  total_transactions: number;
+  account_count: number;
+}
+
+// Legacy types (for backward compatibility)
 export interface CurrentBalanceResponse {
   total_debit: number;
   total_credit: number;

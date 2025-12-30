@@ -5,13 +5,15 @@ import { Card } from '@/components/ui/Card';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { formatCurrency, formatDate, formatDateForAPI } from '@/lib/utils/formatters';
 import { financeReportsApi } from '@/lib/services/financeApi';
-import type { AccountTransactionBalance, AccountTransaction } from '@/lib/types/finance';
+import type { AdExpenses, AccountTransaction } from '@/lib/types/finance';
 
-export default function FinanceDashboardPage() {
+export default function AdDashboardPage() {
   const [loading, setLoading] = useState(true);
-  const [bankShopeeBalance, setBankShopeeBalance] = useState<AccountTransactionBalance | null>(null);
-  const [walletBalance, setWalletBalance] = useState<AccountTransactionBalance | null>(null);
-  const [transactions, setTransactions] = useState<AccountTransaction[]>([]);
+  const [totalAdExpenses, setTotalAdExpenses] = useState<AdExpenses | null>(null);
+  const [shopeeAdExpenses, setShopeeAdExpenses] = useState<AdExpenses | null>(null);
+  const [metaAdExpenses, setMetaAdExpenses] = useState<AdExpenses | null>(null);
+  const [tiktokAdExpenses, setTiktokAdExpenses] = useState<AdExpenses | null>(null);
+  const [adExpensesDetail, setAdExpensesDetail] = useState<AccountTransaction[]>([]);
   const [startDate, setStartDate] = useState('2025-11-01');
   const [endDate, setEndDate] = useState(formatDateForAPI(new Date()));
   const [error, setError] = useState<string | null>(null);
@@ -21,28 +23,37 @@ export default function FinanceDashboardPage() {
       setLoading(true);
       setError(null);
 
-      const [bankData, walletData, transactionsData] = await Promise.all([
-        financeReportsApi.getCurrentBalanceBankShopee({
+      const [totalData, shopeeData, metaData, tiktokData, detailData] = await Promise.all([
+        financeReportsApi.getAdExpensesTotal({
           start_date: startDate,
           end_date: endDate,
         }),
-        financeReportsApi.getCurrentBalanceShopeeWallet({
+        financeReportsApi.getAdExpensesShopee({
           start_date: startDate,
           end_date: endDate,
         }),
-        financeReportsApi.getTransactionsShopee({
+        financeReportsApi.getAdExpensesMeta({
+          start_date: startDate,
+          end_date: endDate,
+        }),
+        financeReportsApi.getAdExpensesTikTok({
+          start_date: startDate,
+          end_date: endDate,
+        }),
+        financeReportsApi.getAdExpensesDetail({
           start_date: startDate,
           end_date: endDate,
         }),
       ]);
 
-      // API returns array, get first item
-      setBankShopeeBalance(bankData[0] || null);
-      setWalletBalance(walletData[0] || null);
-      setTransactions(transactionsData);
+      setTotalAdExpenses(totalData);
+      setShopeeAdExpenses(shopeeData);
+      setMetaAdExpenses(metaData);
+      setTiktokAdExpenses(tiktokData);
+      setAdExpensesDetail(detailData);
     } catch (err) {
-      console.error('Error fetching finance data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load finance data');
+      console.error('Error fetching ad expenses data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load ad expenses data');
     } finally {
       setLoading(false);
     }
@@ -54,7 +65,7 @@ export default function FinanceDashboardPage() {
   }, [startDate, endDate]);
 
   useEffect(() => {
-    document.title = 'Finance Dashboard';
+    document.title = 'Ad Expenses Dashboard';
   }, []);
 
   const handleResetDateRange = () => {
@@ -65,9 +76,9 @@ export default function FinanceDashboardPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Finance Dashboard</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Ad Expenses Dashboard</h1>
         <p className="text-gray-600">
-          Overview of your Neobank account balance and expenses
+          Overview of your advertising expenses across all platforms
         </p>
       </div>
 
@@ -126,40 +137,11 @@ export default function FinanceDashboardPage() {
       ) : (
         <>
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <Card>
               <div className="p-6">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-gray-600">Total Debit</h3>
-                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                    <svg
-                      className="w-6 h-6 text-green-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4v16m8-8H4"
-                      />
-                    </svg>
-                  </div>
-                </div>
-                <p className="text-2xl font-bold text-gray-900">
-                  {bankShopeeBalance && walletBalance
-                    ? formatCurrency(bankShopeeBalance.total_debit + walletBalance.total_debit)
-                    : 'Rp 0'}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">Money in</p>
-              </div>
-            </Card>
-
-            <Card>
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-gray-600">Total Credit</h3>
+                  <h3 className="text-sm font-medium text-gray-600">Total Ad Expense</h3>
                   <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
                     <svg
                       className="w-6 h-6 text-red-600"
@@ -171,24 +153,53 @@ export default function FinanceDashboardPage() {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M20 12H4"
+                        d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"
                       />
                     </svg>
                   </div>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">
-                  {bankShopeeBalance && walletBalance
-                    ? formatCurrency(bankShopeeBalance.total_credit + walletBalance.total_credit)
-                    : 'Rp 0'}
+                <p className="text-2xl font-bold text-red-600">
+                  {totalAdExpenses ? formatCurrency(totalAdExpenses.total_ad_expense) : 'Rp 0'}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">Money out</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {totalAdExpenses ? `${totalAdExpenses.total_transactions} transactions` : '0 transactions'}
+                </p>
               </div>
             </Card>
 
             <Card>
               <div className="p-6">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-gray-600">Current Balance</h3>
+                  <h3 className="text-sm font-medium text-gray-600">Shopee Ads</h3>
+                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                    <svg
+                      className="w-6 h-6 text-orange-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"
+                      />
+                    </svg>
+                  </div>
+                </div>
+                <p className="text-2xl font-bold text-orange-600">
+                  {shopeeAdExpenses ? formatCurrency(shopeeAdExpenses.total_ad_expense) : 'Rp 0'}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {shopeeAdExpenses ? `${shopeeAdExpenses.total_transactions} transactions` : '0 transactions'}
+                </p>
+              </div>
+            </Card>
+
+            <Card>
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium text-gray-600">Meta Ads</h3>
                   <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                     <svg
                       className="w-6 h-6 text-blue-600"
@@ -200,34 +211,56 @@ export default function FinanceDashboardPage() {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"
                       />
                     </svg>
                   </div>
                 </div>
-                {(() => {
-                  const totalBalance = bankShopeeBalance && walletBalance
-                    ? bankShopeeBalance.current_balance + walletBalance.current_balance
-                    : 0;
-                  return (
-                    <p className={`text-2xl font-bold ${
-                      totalBalance >= 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {formatCurrency(totalBalance)}
-                    </p>
-                  );
-                })()}
-                <p className="text-xs text-gray-500 mt-1">Net balance</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {metaAdExpenses ? formatCurrency(metaAdExpenses.total_ad_expense) : 'Rp 0'}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {metaAdExpenses ? `${metaAdExpenses.total_transactions} transactions` : '0 transactions'}
+                </p>
+              </div>
+            </Card>
+
+            <Card>
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium text-gray-600">TikTok Ads</h3>
+                  <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                    <svg
+                      className="w-6 h-6 text-purple-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"
+                      />
+                    </svg>
+                  </div>
+                </div>
+                <p className="text-2xl font-bold text-purple-600">
+                  {tiktokAdExpenses ? formatCurrency(tiktokAdExpenses.total_ad_expense) : 'Rp 0'}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {tiktokAdExpenses ? `${tiktokAdExpenses.total_transactions} transactions` : '0 transactions'}
+                </p>
               </div>
             </Card>
           </div>
 
-          {/* All Transactions */}
+          {/* Ad Expenses Detail */}
           <Card>
             <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">All Transactions</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Ad Expenses Detail</h2>
 
-              {transactions.length > 0 ? (
+              {adExpensesDetail.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -248,15 +281,15 @@ export default function FinanceDashboardPage() {
                           Partner Account
                         </th>
                         <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Debit
+                          Amount
                         </th>
-                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Credit
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
                         </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {transactions.map((transaction, idx) => (
+                      {adExpensesDetail.map((transaction, idx) => (
                         <tr key={idx} className="hover:bg-gray-50">
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                             {formatDate(transaction.entry_date)}
@@ -294,9 +327,11 @@ export default function FinanceDashboardPage() {
                                     <div className="text-xs text-gray-500">
                                       {partner.account_code} ({partner.account_type})
                                     </div>
-                                    <div className="text-xs text-gray-400">
-                                      {formatCurrency(partner.amount)}
-                                    </div>
+                                    {partner.description && (
+                                      <div className="text-xs text-gray-400 mt-0.5">
+                                        {partner.description}
+                                      </div>
+                                    )}
                                   </div>
                                 ))}
                               </div>
@@ -304,23 +339,27 @@ export default function FinanceDashboardPage() {
                               <span className="text-gray-400">-</span>
                             )}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                            {transaction.account_debit > 0 ? (
-                              <span className="font-medium text-green-600">
-                                {formatCurrency(transaction.account_debit)}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400">-</span>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-medium text-red-600">
+                            {formatCurrency(
+                              transaction.account_debit > 0
+                                ? transaction.account_debit
+                                : transaction.partner_accounts && transaction.partner_accounts.length > 0
+                                ? transaction.partner_accounts[0].amount
+                                : transaction.net_amount
                             )}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                            {transaction.account_credit > 0 ? (
-                              <span className="font-medium text-red-600">
-                                {formatCurrency(transaction.account_credit)}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400">-</span>
-                            )}
+                          <td className="px-4 py-3 whitespace-nowrap text-sm">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              transaction.status === 'posted'
+                                ? 'bg-green-100 text-green-800'
+                                : transaction.status === 'approved'
+                                ? 'bg-blue-100 text-blue-800'
+                                : transaction.status === 'draft'
+                                ? 'bg-gray-100 text-gray-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {transaction.status}
+                            </span>
                           </td>
                         </tr>
                       ))}
@@ -329,7 +368,7 @@ export default function FinanceDashboardPage() {
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">
-                  No transactions found for the selected date range
+                  No ad expenses found for the selected date range
                 </div>
               )}
             </div>
