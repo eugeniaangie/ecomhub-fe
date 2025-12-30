@@ -69,6 +69,7 @@ export type UpdateAccount = CreateAccount;
 
 // ===== Operational Expenses =====
 export type ExpenseStatus = 'pending' | 'approved' | 'rejected' | 'paid';
+export type Channel = 'shopee' | 'tiktok' | 'general' | 'lazada' | 'blibli';
 
 export interface OperationalExpense {
   id: number;
@@ -79,6 +80,7 @@ export interface OperationalExpense {
   amount: number;
   description?: string;
   receipt_image_url?: string;
+  channel: Channel;
   status: ExpenseStatus;
   approved_by?: number;
   approved_at?: string;
@@ -100,6 +102,7 @@ export interface CreateOperationalExpense {
   amount: number;
   description?: string;
   receipt_image_url?: string;
+  channel: Channel;
 }
 
 export type UpdateOperationalExpense = CreateOperationalExpense;
@@ -227,6 +230,7 @@ export interface JournalEntry {
   fiscal_period_id: number;
   description: string;
   reference_number?: string;
+  channel: Channel;
   status: JournalEntryStatus;
   total_debit: number;
   total_credit: number;
@@ -248,6 +252,7 @@ export interface CreateJournalEntry {
   fiscal_period_id: number;
   description: string;
   reference_number?: string;
+  channel: Channel;
   lines: Omit<JournalEntryLine, 'id' | 'account'>[];
 }
 

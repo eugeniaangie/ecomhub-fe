@@ -12,6 +12,7 @@ import {
   JOURNAL_ENTRY_STATUS_COLORS,
   JOURNAL_ENTRY_STATUS_LABELS,
   JOURNAL_ENTRY_STATUS_OPTIONS,
+  CHANNEL_OPTIONS,
 } from '@/lib/utils/constants';
 import type {
   JournalEntry,
@@ -61,6 +62,7 @@ export default function JournalEntriesPage() {
     fiscal_period_id: 0,
     description: '',
     reference_number: '',
+    channel: 'general' as 'shopee' | 'tiktok' | 'general' | 'lazada' | 'blibli',
     lines: [
       { account_id: 0, description: '', debit: 0, credit: 0 },
       { account_id: 0, description: '', debit: 0, credit: 0 },
@@ -127,6 +129,7 @@ export default function JournalEntriesPage() {
       fiscal_period_id: fiscalPeriods.length > 0 ? fiscalPeriods[0].id : 0,
       description: '',
       reference_number: '',
+      channel: 'general',
       lines: [
         { account_id: 0, description: '', debit: 0, credit: 0 },
         { account_id: 0, description: '', debit: 0, credit: 0 },
@@ -181,6 +184,7 @@ export default function JournalEntriesPage() {
         fiscal_period_id: completeItem.fiscal_period_id || 0,
         description: completeItem.description || '',
         reference_number: completeItem.reference_number || '',
+        channel: completeItem.channel || 'general',
         lines,
       });
       
@@ -225,6 +229,7 @@ export default function JournalEntriesPage() {
         fiscal_period_id: item.fiscal_period_id || 0,
         description: item.description || '',
         reference_number: item.reference_number || '',
+        channel: item.channel || 'general',
         lines,
       });
       
@@ -448,6 +453,7 @@ export default function JournalEntriesPage() {
         fiscal_period_id: form.fiscal_period_id,
         description: form.description.trim(),
         reference_number: form.reference_number?.trim() || undefined,
+        channel: form.channel,
         lines: form.lines.map((line) => ({
           account_id: line.account_id,
           description: line.description.trim(),
@@ -467,6 +473,7 @@ export default function JournalEntriesPage() {
         fiscal_period_id: 0,
         description: '',
         reference_number: '',
+        channel: 'general',
         lines: [
           { account_id: 0, description: '', debit: 0, credit: 0 },
           { account_id: 0, description: '', debit: 0, credit: 0 },
@@ -489,6 +496,7 @@ export default function JournalEntriesPage() {
       fiscal_period_id: 0,
       description: '',
       reference_number: '',
+      channel: 'general',
       lines: [
         { account_id: 0, description: '', debit: 0, credit: 0 },
         { account_id: 0, description: '', debit: 0, credit: 0 },
@@ -806,6 +814,25 @@ export default function JournalEntriesPage() {
             />
           </div>
 
+          <div>
+            <label htmlFor="channel" className="block text-sm font-medium text-gray-700 mb-1">
+              Channel <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="channel"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={form.channel}
+              onChange={(e) => setForm({ ...form, channel: e.target.value as 'shopee' | 'tiktok' | 'general' | 'lazada' | 'blibli' })}
+              required
+            >
+              {CHANNEL_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Journal Entry Lines */}
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -1025,6 +1052,13 @@ export default function JournalEntriesPage() {
                 <div className="text-sm text-gray-900">{viewingItem.reference_number}</div>
               </div>
             )}
+
+            <div>
+              <div className="text-sm font-medium text-gray-500">Channel</div>
+              <div className="text-sm text-gray-900">
+                {CHANNEL_OPTIONS.find((opt) => opt.value === viewingItem.channel)?.label || viewingItem.channel || 'N/A'}
+              </div>
+            </div>
 
             <div className="border-t pt-4">
               <div className="text-sm font-medium text-gray-700 mb-3">Journal Entry Lines</div>
