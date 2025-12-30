@@ -8,7 +8,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
 import { StatusBadge } from '@/components/finance/StatusBadge';
 import { formatDate, formatDateTime, formatCurrency, getTodayFormatted, isValidDate, formatNumber, parseFormattedNumber } from '@/lib/utils/formatters';
-import { EXPENSE_STATUS_COLORS, EXPENSE_STATUS_LABELS, EXPENSE_STATUS_OPTIONS } from '@/lib/utils/constants';
+import { EXPENSE_STATUS_COLORS, EXPENSE_STATUS_LABELS, EXPENSE_STATUS_OPTIONS, CHANNEL_OPTIONS } from '@/lib/utils/constants';
 import type { OperationalExpense, ExpenseCategory, Account } from '@/lib/types/finance';
 
 export default function OperationalExpensesPage() {
@@ -52,6 +52,7 @@ export default function OperationalExpensesPage() {
     amount: 0,
     description: '',
     receipt_image_url: '',
+    channel: 'general' as 'shopee' | 'tiktok' | 'general' | 'lazada' | 'blibli',
   });
 
   // TODO: Get user role and user ID from auth context
@@ -117,6 +118,7 @@ export default function OperationalExpensesPage() {
       amount: 0,
       description: '',
       receipt_image_url: '',
+      channel: 'general',
     });
     setAmountDisplay('');
     setFormError('');
@@ -136,6 +138,7 @@ export default function OperationalExpensesPage() {
       amount: item.amount,
       description: item.description || '',
       receipt_image_url: item.receipt_image_url || '',
+      channel: item.channel || 'general',
     });
     setAmountDisplay(formatNumber(item.amount.toString()));
     setFormError('');
@@ -231,6 +234,7 @@ export default function OperationalExpensesPage() {
         amount: form.amount,
         description: form.description?.trim() || undefined,
         receipt_image_url: form.receipt_image_url?.trim() || undefined,
+        channel: form.channel,
       };
 
       if (editingItem) {
@@ -246,6 +250,7 @@ export default function OperationalExpensesPage() {
         amount: 0,
         description: '',
         receipt_image_url: '',
+        channel: 'general',
       });
       setAmountDisplay('');
       loadData();
@@ -266,6 +271,7 @@ export default function OperationalExpensesPage() {
       amount: 0,
       description: '',
       receipt_image_url: '',
+      channel: 'general',
     });
     setAmountDisplay('');
     setFormError('');
@@ -582,6 +588,25 @@ export default function OperationalExpensesPage() {
           </div>
 
           <div>
+            <label htmlFor="channel" className="block text-sm font-medium text-gray-700 mb-1">
+              Channel <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="channel"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={form.channel}
+              onChange={(e) => setForm({ ...form, channel: e.target.value as 'shopee' | 'tiktok' | 'general' | 'lazada' | 'blibli' })}
+              required
+            >
+              {CHANNEL_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
             <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
               Amount (IDR) <span className="text-red-500">*</span>
             </label>
@@ -694,6 +719,13 @@ export default function OperationalExpensesPage() {
             <div>
               <div className="text-sm font-medium text-gray-500">Account</div>
               <div className="text-sm text-gray-900">{getAccountName(viewingItem.account_id)}</div>
+            </div>
+
+            <div>
+              <div className="text-sm font-medium text-gray-500">Channel</div>
+              <div className="text-sm text-gray-900">
+                {CHANNEL_OPTIONS.find((opt) => opt.value === viewingItem.channel)?.label || viewingItem.channel || 'N/A'}
+              </div>
             </div>
 
             {viewingItem.description && (

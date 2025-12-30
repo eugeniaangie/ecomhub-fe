@@ -6,6 +6,7 @@ import type {
   InvestmentType,
   InvestorStatus,
   JournalEntryStatus,
+  Channel,
 } from '../types/finance';
 
 // Account Type Colors
@@ -159,5 +160,14 @@ export const AD_PLATFORM_OPTIONS: Array<{ value: AdPlatform | ''; label: string 
   { value: 'shopee_ads', label: 'Shopee Ads' },
   { value: 'lazada_ads', label: 'Lazada Ads' },
   { value: 'blibli_ads', label: 'Blibli Ads' },
+];
+
+// ===== Channel Options =====
+export const CHANNEL_OPTIONS: Array<{ value: Channel; label: string }> = [
+  { value: 'shopee', label: 'Shopee' },
+  { value: 'tiktok', label: 'TikTok' },
+  { value: 'general', label: 'General' },
+  { value: 'lazada', label: 'Lazada' },
+  { value: 'blibli', label: 'Blibli' },
 ];
 
