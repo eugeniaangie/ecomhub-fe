@@ -296,11 +296,11 @@ export default function OperationalExpensesPage() {
   };
 
   const canEdit = (expense: OperationalExpense) => {
-    return canUpdateOperationalExpense(expense.status, expense.created_by || 0);
+    return canUpdateOperationalExpense(expense.status);
   };
 
   const canDelete = (expense: OperationalExpense) => {
-    return canDeleteOperationalExpense(expense.status, expense.created_by || 0);
+    return canDeleteOperationalExpense(expense.status);
   };
 
   const getCategoryName = (categoryId: number) => {

@@ -219,27 +219,29 @@ export const canReopenFiscalPeriod = (): boolean => {
 
 /**
  * Check if user can create operational expense
- * Allowed: superadmin, admin, manager, staff (all users can create)
+ * Allowed: all authenticated users (superadmin, admin, manager, staff, viewer)
  */
 export const canCreateOperationalExpense = (): boolean => {
-  return hasAnyRole(['superadmin', 'admin', 'manager', 'staff']);
+  // All authenticated users can create
+  return true;
 };
 
 /**
  * Check if user can update operational expense
- * Allowed: owner (if pending) or superadmin, admin
+ * Allowed: all authenticated users (if status is pending)
  */
-export const canUpdateOperationalExpense = (expenseStatus: string, createdBy: number): boolean => {
-  const isOwner = getCurrentUserId() === createdBy;
-  return expenseStatus === 'pending' && (isOwner || hasAnyRole(['superadmin', 'admin']));
+export const canUpdateOperationalExpense = (expenseStatus: string): boolean => {
+  // All authenticated users can update if status is pending
+  return expenseStatus === 'pending';
 };
 
 /**
  * Check if user can delete operational expense
- * Allowed: owner (if pending) or superadmin, admin
+ * Allowed: all authenticated users (if status is pending)
  */
-export const canDeleteOperationalExpense = (expenseStatus: string, createdBy: number): boolean => {
-  return canUpdateOperationalExpense(expenseStatus, createdBy);
+export const canDeleteOperationalExpense = (expenseStatus: string): boolean => {
+  // All authenticated users can delete if status is pending
+  return expenseStatus === 'pending';
 };
 
 /**
