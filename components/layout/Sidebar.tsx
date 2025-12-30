@@ -17,6 +17,7 @@ const navItems: NavItem[] = [
     href: '/dashboard',
     children: [
       { label: 'Finance Dashboard', href: '/finance/dashboard' },
+      { label: 'Ad Expenses Dashboard', href: '/finance/ad-dashboard' },
       // { label: 'Sales Dashboard', href: '/sales/dashboard' },
     ],
   },
