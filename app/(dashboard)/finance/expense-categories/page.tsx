@@ -7,12 +7,22 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
 import { formatDateTime } from '@/lib/utils/formatters';
+import {
+  canCreateExpenseCategory,
+  canUpdateExpenseCategory,
+  canDeleteExpenseCategory,
+} from '@/lib/authHelpers';
 import type { ExpenseCategory } from '@/lib/types/finance';
 
 export default function ExpenseCategoriesPage() {
   useEffect(() => {
     document.title = 'Expense Categories - Finance Management';
   }, []);
+
+  // Permission checks
+  const canCreate = canCreateExpenseCategory();
+  const canUpdate = canUpdateExpenseCategory();
+  const canDelete = canDeleteExpenseCategory();
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -153,7 +163,12 @@ export default function ExpenseCategoriesPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Expense Categories</h1>
-        <Button onClick={handleCreate} variant="primary">
+        <Button 
+          onClick={handleCreate} 
+          variant="primary"
+          disabled={!canCreate}
+          className={!canCreate ? 'opacity-50 cursor-not-allowed' : ''}
+        >
           + Add Expense Category
         </Button>
       </div>
@@ -232,10 +247,22 @@ export default function ExpenseCategoriesPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(category)}>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleEdit(category)}
+                          disabled={!canUpdate}
+                          className={!canUpdate ? 'opacity-50 cursor-not-allowed' : ''}
+                        >
                           Edit
                         </Button>
-                        <Button variant="danger" size="sm" onClick={() => handleDelete(category.id)}>
+                        <Button 
+                          variant="danger" 
+                          size="sm" 
+                          onClick={() => handleDelete(category.id)}
+                          disabled={!canDelete}
+                          className={!canDelete ? 'opacity-50 cursor-not-allowed' : ''}
+                        >
                           Delete
                         </Button>
                       </div>

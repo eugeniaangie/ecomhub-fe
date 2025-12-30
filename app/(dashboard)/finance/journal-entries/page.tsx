@@ -14,6 +14,14 @@ import {
   JOURNAL_ENTRY_STATUS_OPTIONS,
   CHANNEL_OPTIONS,
 } from '@/lib/utils/constants';
+import {
+  canCreateJournalEntry,
+  canUpdateJournalEntry,
+  canDeleteJournalEntry,
+  canApproveJournalEntry,
+  canRejectJournalEntry,
+  canPostJournalEntry,
+} from '@/lib/authHelpers';
 import type {
   JournalEntry,
   FiscalPeriod,
@@ -69,9 +77,8 @@ export default function JournalEntriesPage() {
     ] as Array<{ account_id: number; description: string; debit: number; credit: number }>,
   });
 
-  // TODO: Get user role from auth context
-  const userRole = 'admin'; // Temporary: 'staff' | 'admin' | 'superadmin'
-  const canApprove = userRole === 'admin' || userRole === 'superadmin';
+  // Permission checks
+  const canCreate = canCreateJournalEntry();
 
   useEffect(() => {
     loadData();
@@ -507,11 +514,11 @@ export default function JournalEntriesPage() {
   };
 
   const canEdit = (entry: JournalEntry) => {
-    return entry.status === 'draft';
+    return canUpdateJournalEntry(entry.status);
   };
 
   const canDelete = (entry: JournalEntry) => {
-    return entry.status === 'draft';
+    return canDeleteJournalEntry(entry.status);
   };
 
   const getAccountName = (accountId: number) => {
@@ -534,7 +541,12 @@ export default function JournalEntriesPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Journal Entries</h1>
-        <Button onClick={handleCreate} variant="primary">
+        <Button 
+          onClick={handleCreate} 
+          variant="primary"
+          disabled={!canCreate}
+          className={!canCreate ? 'opacity-50 cursor-not-allowed' : ''}
+        >
           + Add Journal Entry
         </Button>
       </div>
@@ -668,28 +680,54 @@ export default function JournalEntriesPage() {
                         <Button variant="ghost" size="sm" onClick={() => handleView(entry)}>
                           View
                         </Button>
-                        {canEdit(entry) && (
-                          <Button variant="ghost" size="sm" onClick={() => handleEdit(entry)}>
-                            Edit
-                          </Button>
-                        )}
-                        {canDelete(entry) && (
-                          <Button variant="danger" size="sm" onClick={() => handleDelete(entry.id, entry)}>
-                            Delete
-                          </Button>
-                        )}
-                        {canApprove && entry.status === 'draft' && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleEdit(entry)}
+                          disabled={!canEdit(entry)}
+                          className={!canEdit(entry) ? 'opacity-50 cursor-not-allowed' : ''}
+                        >
+                          Edit
+                        </Button>
+                        <Button 
+                          variant="danger" 
+                          size="sm" 
+                          onClick={() => handleDelete(entry.id, entry)}
+                          disabled={!canDelete(entry)}
+                          className={!canDelete(entry) ? 'opacity-50 cursor-not-allowed' : ''}
+                        >
+                          Delete
+                        </Button>
+                        {entry.status === 'draft' && (
                           <>
-                            <Button variant="primary" size="sm" onClick={() => handleApprove(entry.id)}>
+                            <Button 
+                              variant="primary" 
+                              size="sm" 
+                              onClick={() => handleApprove(entry.id)}
+                              disabled={!canApproveJournalEntry(entry.status)}
+                              className={!canApproveJournalEntry(entry.status) ? 'opacity-50 cursor-not-allowed' : ''}
+                            >
                               Approve
                             </Button>
-                            <Button variant="danger" size="sm" onClick={() => handleReject(entry.id)}>
+                            <Button 
+                              variant="danger" 
+                              size="sm" 
+                              onClick={() => handleReject(entry.id)}
+                              disabled={!canRejectJournalEntry(entry.status)}
+                              className={!canRejectJournalEntry(entry.status) ? 'opacity-50 cursor-not-allowed' : ''}
+                            >
                               Reject
                             </Button>
                           </>
                         )}
-                        {canApprove && entry.status === 'approved' && (
-                          <Button variant="primary" size="sm" onClick={() => handlePost(entry.id)}>
+                        {entry.status === 'approved' && (
+                          <Button 
+                            variant="primary" 
+                            size="sm" 
+                            onClick={() => handlePost(entry.id)}
+                            disabled={!canPostJournalEntry(entry.status)}
+                            className={!canPostJournalEntry(entry.status) ? 'opacity-50 cursor-not-allowed' : ''}
+                          >
                             Post
                           </Button>
                         )}

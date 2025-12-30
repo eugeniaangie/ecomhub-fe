@@ -25,6 +25,22 @@ export interface User {
   name?: string;
 }
 
+// Auth Me Response
+export interface UserInfo {
+  id: number;
+  username: string;
+  email: string;
+  full_name: string;
+  phone: string;
+  is_active: boolean;
+  last_login: string;
+}
+
+export interface GetMeResponse {
+  user: UserInfo;
+  roles: string[];
+}
+
 // Financial Records
 export interface Transaction {
   id: string;

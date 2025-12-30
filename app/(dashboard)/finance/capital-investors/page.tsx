@@ -17,6 +17,13 @@ import {
   INVESTOR_STATUS_LABELS,
   INVESTOR_STATUS_OPTIONS,
 } from '@/lib/utils/constants';
+import {
+  canCreateCapitalInvestor,
+  canUpdateCapitalInvestor,
+  canDeleteCapitalInvestor,
+  canUpdateCapitalInvestorReturnPaid,
+  canUpdateCapitalInvestorStatus,
+} from '@/lib/authHelpers';
 import type { CapitalInvestor, InvestmentType, InvestorStatus } from '@/lib/types/finance';
 
 export default function CapitalInvestorsPage() {
@@ -76,9 +83,12 @@ export default function CapitalInvestorsPage() {
     status: 'active' as InvestorStatus,
   });
 
-  // TODO: Get user role from auth context
-  const userRole = 'admin'; // Temporary: 'staff' | 'admin' | 'superadmin'
-  const canEdit = userRole === 'admin' || userRole === 'superadmin';
+  // Permission checks
+  const canCreate = canCreateCapitalInvestor();
+  const canUpdate = canUpdateCapitalInvestor();
+  const canDelete = canDeleteCapitalInvestor();
+  const canUpdateReturn = canUpdateCapitalInvestorReturnPaid();
+  const canUpdateStatus = canUpdateCapitalInvestorStatus();
 
   useEffect(() => {
     loadData();
@@ -378,11 +388,14 @@ export default function CapitalInvestorsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Capital Investors</h1>
-        {canEdit && (
-          <Button onClick={handleCreate} variant="primary">
-            + Add Capital Investor
-          </Button>
-        )}
+        <Button 
+          onClick={handleCreate} 
+          variant="primary"
+          disabled={!canCreate}
+          className={!canCreate ? 'opacity-50 cursor-not-allowed' : ''}
+        >
+          + Add Capital Investor
+        </Button>
       </div>
 
       {error && (
@@ -511,30 +524,42 @@ export default function CapitalInvestorsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end gap-2">
-                        {canEdit && (
-                          <>
-                            <Button variant="ghost" size="sm" onClick={() => handleEdit(investor)}>
-                              Edit
-                            </Button>
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => handleUpdateReturn(investor)}
-                            >
-                              Update Return
-                            </Button>
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => handleUpdateStatus(investor)}
-                            >
-                              Update Status
-                            </Button>
-                            <Button variant="danger" size="sm" onClick={() => handleDelete(investor.id)}>
-                              Delete
-                            </Button>
-                          </>
-                        )}
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleEdit(investor)}
+                          disabled={!canUpdate}
+                          className={!canUpdate ? 'opacity-50 cursor-not-allowed' : ''}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleUpdateReturn(investor)}
+                          disabled={!canUpdateReturn}
+                          className={!canUpdateReturn ? 'opacity-50 cursor-not-allowed' : ''}
+                        >
+                          Update Return
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleUpdateStatus(investor)}
+                          disabled={!canUpdateStatus}
+                          className={!canUpdateStatus ? 'opacity-50 cursor-not-allowed' : ''}
+                        >
+                          Update Status
+                        </Button>
+                        <Button 
+                          variant="danger" 
+                          size="sm" 
+                          onClick={() => handleDelete(investor.id)}
+                          disabled={!canDelete}
+                          className={!canDelete ? 'opacity-50 cursor-not-allowed' : ''}
+                        >
+                          Delete
+                        </Button>
                       </div>
                     </td>
                   </tr>

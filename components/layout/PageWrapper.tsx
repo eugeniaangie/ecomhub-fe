@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { auth } from '@/lib/auth';
+import { authApi } from '@/lib/api';
+import { setUserRoles, setCurrentUserId } from '@/lib/authHelpers';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 
@@ -16,13 +18,31 @@ export const PageWrapper: React.FC<PageWrapperProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // Check authentication on mount
-    const authenticated = auth.isAuthenticated();
-    setIsAuthenticated(authenticated);
+    // Check authentication and fetch roles
+    const checkAuthAndFetchRoles = async () => {
+      const authenticated = auth.isAuthenticated();
+      
+      if (!authenticated) {
+        setIsAuthenticated(false);
+        router.replace(`/login?redirect=${pathname}`);
+        return;
+      }
 
-    if (!authenticated) {
-      router.replace(`/login?redirect=${pathname}`);
-    }
+      setIsAuthenticated(true);
+
+      // Always fetch user roles to ensure they're up to date
+      try {
+        const meData = await authApi.getMe();
+        console.log('[PageWrapper] Fetched user roles:', meData.roles);
+        setUserRoles(meData.roles);
+        setCurrentUserId(meData.user.id);
+      } catch (err) {
+        console.error('Error fetching user info:', err);
+        // Continue even if getMe fails
+      }
+    };
+
+    checkAuthAndFetchRoles();
   }, [pathname, router]);
 
   // Show loading state during initial check (prevents hydration mismatch)

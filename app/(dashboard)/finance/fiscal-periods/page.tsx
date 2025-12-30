@@ -17,6 +17,13 @@ import {
   isValidDate,
 } from '@/lib/utils/formatters';
 import { FISCAL_PERIOD_STATUS_COLORS } from '@/lib/utils/constants';
+import {
+  canCreateFiscalPeriod,
+  canUpdateFiscalPeriod,
+  canDeleteFiscalPeriod,
+  canCloseFiscalPeriod,
+  canReopenFiscalPeriod,
+} from '@/lib/authHelpers';
 import type { FiscalPeriod } from '@/lib/types/finance';
 
 export default function FiscalPeriodsPage() {
@@ -51,7 +58,12 @@ export default function FiscalPeriodsPage() {
   });
 
   // TODO: Get user role from auth context
-  const userRole: 'staff' | 'admin' | 'superadmin' = 'admin'; // Temporary
+  // Permission checks
+  const canCreate = canCreateFiscalPeriod();
+  const canUpdate = canUpdateFiscalPeriod();
+  const canDelete = canDeleteFiscalPeriod();
+  const canClose = canCloseFiscalPeriod();
+  const canReopen = canReopenFiscalPeriod();
 
   useEffect(() => {
     loadData();
@@ -234,8 +246,6 @@ export default function FiscalPeriodsPage() {
     setFormError('');
   };
 
-  const canClose = userRole === 'admin' || userRole === 'superadmin';
-  const canReopen = (userRole as string) === 'superadmin';
 
   if (isLoading && periods.length === 0 && !error) {
     return (
@@ -249,7 +259,12 @@ export default function FiscalPeriodsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Fiscal Periods</h1>
-        <Button onClick={handleCreate} variant="primary">
+        <Button 
+          onClick={handleCreate} 
+          variant="primary"
+          disabled={!canCreate}
+          className={!canCreate ? 'opacity-50 cursor-not-allowed' : ''}
+        >
           + Add Fiscal Period
         </Button>
       </div>
@@ -345,21 +360,43 @@ export default function FiscalPeriodsPage() {
                       <div className="flex justify-end gap-2 flex-wrap">
                         {!period.is_closed && (
                           <>
-                            <Button variant="ghost" size="sm" onClick={() => handleEdit(period)}>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleEdit(period)}
+                              disabled={!canUpdate}
+                              className={!canUpdate ? 'opacity-50 cursor-not-allowed' : ''}
+                            >
                               Edit
                             </Button>
-                            <Button variant="danger" size="sm" onClick={() => handleDelete(period.id, period)}>
+                            <Button 
+                              variant="danger" 
+                              size="sm" 
+                              onClick={() => handleDelete(period.id, period)}
+                              disabled={!canDelete}
+                              className={!canDelete ? 'opacity-50 cursor-not-allowed' : ''}
+                            >
                               Delete
                             </Button>
-                            {canClose && (
-                              <Button variant="secondary" size="sm" onClick={() => handleClose(period.id)}>
-                                Close
-                              </Button>
-                            )}
+                            <Button 
+                              variant="secondary" 
+                              size="sm" 
+                              onClick={() => handleClose(period.id)}
+                              disabled={!canClose}
+                              className={!canClose ? 'opacity-50 cursor-not-allowed' : ''}
+                            >
+                              Close
+                            </Button>
                           </>
                         )}
-                        {period.is_closed && canReopen && (
-                          <Button variant="secondary" size="sm" onClick={() => handleReopen(period.id)}>
+                        {period.is_closed && (
+                          <Button 
+                            variant="secondary" 
+                            size="sm" 
+                            onClick={() => handleReopen(period.id)}
+                            disabled={!canReopen}
+                            className={!canReopen ? 'opacity-50 cursor-not-allowed' : ''}
+                          >
                             Reopen
                           </Button>
                         )}

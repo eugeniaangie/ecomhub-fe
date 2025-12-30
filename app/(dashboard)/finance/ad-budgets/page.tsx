@@ -8,6 +8,12 @@ import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
 import { formatCurrency, formatDate, formatNumber, parseFormattedNumber } from '@/lib/utils/formatters';
 import { AD_PLATFORM_OPTIONS, AD_PLATFORM_LABELS } from '@/lib/utils/constants';
+import {
+  canCreateAdBudget,
+  canUpdateAdBudget,
+  canDeleteAdBudget,
+  canUpdateAdBudgetSpent,
+} from '@/lib/authHelpers';
 import type { AdBudget, AdPlatform } from '@/lib/types/finance';
 
 export default function AdBudgetsPage() {
@@ -70,9 +76,11 @@ export default function AdBudgetsPage() {
     spent_amount: 0,
   });
 
-  // TODO: Get user role from auth context
-  const userRole = 'admin'; // Temporary: 'staff' | 'admin' | 'superadmin'
-  const canEdit = userRole === 'admin' || userRole === 'superadmin';
+  // Permission checks
+  const canCreate = canCreateAdBudget();
+  const canUpdate = canUpdateAdBudget();
+  const canDelete = canDeleteAdBudget();
+  const canUpdateSpent = canUpdateAdBudgetSpent();
 
   useEffect(() => {
     loadData();
@@ -293,11 +301,14 @@ export default function AdBudgetsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Ad Budgets</h1>
-        {canEdit && (
-          <Button onClick={handleCreate} variant="primary">
-            + Add Ad Budget
-          </Button>
-        )}
+        <Button 
+          onClick={handleCreate} 
+          variant="primary"
+          disabled={!canCreate}
+          className={!canCreate ? 'opacity-50 cursor-not-allowed' : ''}
+        >
+          + Add Ad Budget
+        </Button>
       </div>
 
       {error && (
@@ -443,23 +454,33 @@ export default function AdBudgetsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end gap-2">
-                          {canEdit && (
-                            <>
-                              <Button variant="ghost" size="sm" onClick={() => handleEdit(budget)}>
-                                Edit
-                              </Button>
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => handleUpdateSpent(budget)}
-                              >
-                                Update Spent
-                              </Button>
-                              <Button variant="danger" size="sm" onClick={() => handleDelete(budget.id)}>
-                                Delete
-                              </Button>
-                            </>
-                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleEdit(budget)}
+                            disabled={!canUpdate}
+                            className={!canUpdate ? 'opacity-50 cursor-not-allowed' : ''}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleUpdateSpent(budget)}
+                            disabled={!canUpdateSpent}
+                            className={!canUpdateSpent ? 'opacity-50 cursor-not-allowed' : ''}
+                          >
+                            Update Spent
+                          </Button>
+                          <Button 
+                            variant="danger" 
+                            size="sm" 
+                            onClick={() => handleDelete(budget.id)}
+                            disabled={!canDelete}
+                            className={!canDelete ? 'opacity-50 cursor-not-allowed' : ''}
+                          >
+                            Delete
+                          </Button>
                         </div>
                       </td>
                     </tr>
