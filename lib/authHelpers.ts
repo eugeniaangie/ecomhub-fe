@@ -1,5 +1,7 @@
 // Auth helper functions and hooks
 
+import { authApi, ApiError } from './api';
+import { auth } from './auth';
 import { UserRole } from './types/finance';
 
 /**
@@ -59,5 +61,33 @@ export const isAdmin = (): boolean => {
  */
 export const isSuperadmin = (): boolean => {
   return getUserRole() === 'superadmin';
+};
+
+/**
+ * Logout user - calls logout API and clears auth token
+ */
+export const logout = async (): Promise<void> => {
+  try {
+    await authApi.logout();
+  } catch (error) {
+    // Handle expected errors after logout (token revoked is normal)
+    if (error instanceof ApiError && 
+        error.status === 403 && 
+        (error.message?.toLowerCase().includes('token has been revoked') ||
+         (error.data as { business_code?: string })?.business_code === '93')) {
+      // Token already revoked - this is expected, just clear local data
+      // Don't log as error since this is normal behavior
+    } else {
+      // Other errors - log but still proceed with clearing local data
+      console.warn('Logout API error:', error);
+    }
+  } finally {
+    // Always clear token and user data from local storage
+    auth.clearToken();
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user_role');
+      localStorage.removeItem('user_id');
+    }
+  }
 };
 
