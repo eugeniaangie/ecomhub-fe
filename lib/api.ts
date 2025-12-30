@@ -32,7 +32,13 @@ async function handleResponse<T>(response: Response): Promise<T> {
     } else if (response.status === 401) {
       errorMessage = 'Unauthorized. Please login again.';
     } else if (response.status === 403) {
-      errorMessage = 'Access denied. You do not have permission to perform this action.';
+      // Check if token has been revoked (common after logout)
+      if (errorData.message?.toLowerCase().includes('token has been revoked') || 
+          errorData.business_code === '93') {
+        errorMessage = 'Token has been revoked. Please login again.';
+      } else {
+        errorMessage = 'Access denied. You do not have permission to perform this action.';
+      }
     } else if (response.status === 400) {
       errorMessage = `Invalid request: ${errorData.message || 'Please check your input'}`;
     }
@@ -185,6 +191,9 @@ export const authApi = {
       username,
       password,
     });
+  },
+  logout: async () => {
+    return api.post<null>(`${API_VERSION}/auth/logout`);
   },
 };
 
