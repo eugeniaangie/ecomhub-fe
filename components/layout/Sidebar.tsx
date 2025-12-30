@@ -28,6 +28,7 @@ const navItems: NavItem[] = [
       { label: 'Categories', href: '/master/categories' },
       { label: 'Chart of Accounts', href: '/finance/accounts' },
       { label: 'Expense Categories', href: '/finance/expense-categories' },
+      { label: 'Fiscal Periods', href: '/finance/fiscal-periods' },
       // { label: 'Users & Roles', href: '/master/users' },
       // { label: 'Product Attributes', href: '/master/product-attributes' },
       // { label: 'Pricing Rules', href: '/master/pricing-rules' },
@@ -46,6 +47,16 @@ const navItems: NavItem[] = [
     label: 'Finance Management',
     href: '/finance',
     children: [
+      { label: 'Capital & Investors', href: '/finance/capital-investors' },
+      {
+        label: 'Budget Planning',
+        href: '/finance/budget',
+        children: [
+          { label: 'Ad Budgets', href: '/finance/ad-budgets' },
+          // { label: 'Monthly Budgets', href: '/finance/monthly-budgets' },
+        ],
+      },
+      { label: 'Operational Expenses', href: '/finance/operational-expenses' },
       {
         label: 'Transactions',
         href: '/finance/transactions',
@@ -56,17 +67,6 @@ const navItems: NavItem[] = [
           // { label: 'Transfers', href: '/finance/transactions/transfers' },
         ],
       },
-      { label: 'Operational Expenses', href: '/finance/operational-expenses' },
-      {
-        label: 'Budget Planning',
-        href: '/finance/budget',
-        children: [
-          { label: 'Ad Budgets', href: '/finance/ad-budgets' },
-          // { label: 'Monthly Budgets', href: '/finance/monthly-budgets' },
-        ],
-      },
-      { label: 'Capital & Investors', href: '/finance/capital-investors' },
-      { label: 'Fiscal Periods', href: '/finance/fiscal-periods' },
       // {
       //   label: 'Financial Reports',
       //   href: '/finance/reports',
