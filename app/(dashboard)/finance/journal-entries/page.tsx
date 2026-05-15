@@ -39,6 +39,7 @@ export default function JournalEntriesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<JournalEntry | null>(null);
+  const [isCopyMode, setIsCopyMode] = useState(false);
   const [viewingItem, setViewingItem] = useState<JournalEntry | null>(null);
 
   // Pagination
@@ -128,8 +129,48 @@ export default function JournalEntriesPage() {
     setCurrentPage(1);
   };
 
+  const formatEntryDateForInput = (entryDate: string) => {
+    const date = new Date(entryDate);
+    if (!isNaN(date.getTime())) {
+      return date.toISOString().split('T')[0];
+    }
+    return '';
+  };
+
+  const applyEntryToForm = (completeItem: JournalEntry, entryDate: string) => {
+    const lines =
+      completeItem.lines && completeItem.lines.length > 0
+        ? completeItem.lines.map((line) => ({
+            account_id: line.account_id,
+            description: line.description || '',
+            debit: line.debit || 0,
+            credit: line.credit || 0,
+          }))
+        : [
+            { account_id: 0, description: '', debit: 0, credit: 0 },
+            { account_id: 0, description: '', debit: 0, credit: 0 },
+          ];
+
+    setForm({
+      entry_date: entryDate,
+      fiscal_period_id: completeItem.fiscal_period_id || 0,
+      description: completeItem.description || '',
+      reference_number: completeItem.reference_number || '',
+      channel: completeItem.channel || 'general',
+      lines,
+    });
+
+    setLineDisplays(
+      lines.map((line) => ({
+        debit: line.debit > 0 ? formatNumber(line.debit.toString()) : '',
+        credit: line.credit > 0 ? formatNumber(line.credit.toString()) : '',
+      }))
+    );
+  };
+
   const handleCreate = () => {
     setEditingItem(null);
+    setIsCopyMode(false);
     const today = new Date().toISOString().split('T')[0];
     setForm({
       entry_date: today,
@@ -147,106 +188,64 @@ export default function JournalEntriesPage() {
     setIsModalOpen(true);
   };
 
+  const loadEntryForForm = async (item: JournalEntry) => {
+    const fullDetails = await journalEntriesApi.getById(item.id);
+    return {
+      ...item,
+      ...fullDetails,
+      lines: fullDetails.lines || item.lines,
+      fiscal_period: fullDetails.fiscal_period || item.fiscal_period,
+    };
+  };
+
   const handleEdit = async (item: JournalEntry) => {
     if (item.status !== 'draft') {
       setError('Can only edit journal entries with draft status');
       return;
     }
-    
+
     try {
-      // Fetch full details including lines and relations
-      const fullDetails = await journalEntriesApi.getById(item.id);
-      // Merge with item from list to ensure all fields are present
-      const completeItem = {
-        ...item,
-        ...fullDetails,
-        lines: fullDetails.lines || item.lines,
-        fiscal_period: fullDetails.fiscal_period || item.fiscal_period,
-      };
-      
+      const completeItem = await loadEntryForForm(item);
       setEditingItem(completeItem);
-      const lines = completeItem.lines && completeItem.lines.length > 0
-        ? completeItem.lines.map((line) => ({
-            account_id: line.account_id,
-            description: line.description || '',
-            debit: line.debit || 0,
-            credit: line.credit || 0,
-          }))
-        : [
-            { account_id: 0, description: '', debit: 0, credit: 0 },
-            { account_id: 0, description: '', debit: 0, credit: 0 },
-          ];
-      
-      // Format entry_date to YYYY-MM-DD for input type="date"
-      let formattedDate = '';
-      if (completeItem.entry_date) {
-        const date = new Date(completeItem.entry_date);
-        if (!isNaN(date.getTime())) {
-          formattedDate = date.toISOString().split('T')[0];
-        }
-      }
-      
-      setForm({
-        entry_date: formattedDate,
-        fiscal_period_id: completeItem.fiscal_period_id || 0,
-        description: completeItem.description || '',
-        reference_number: completeItem.reference_number || '',
-        channel: completeItem.channel || 'general',
-        lines,
-      });
-      
-      setLineDisplays(
-        lines.map((line) => ({
-          debit: line.debit > 0 ? formatNumber(line.debit.toString()) : '',
-          credit: line.credit > 0 ? formatNumber(line.credit.toString()) : '',
-        }))
-      );
-      
+      setIsCopyMode(false);
+      const formattedDate = completeItem.entry_date
+        ? formatEntryDateForInput(completeItem.entry_date)
+        : '';
+      applyEntryToForm(completeItem, formattedDate);
       setFormError('');
       setIsModalOpen(true);
     } catch (err: unknown) {
       console.error('Error loading journal entry details for edit:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load details';
       setError(errorMessage);
-      // Fallback to item from list if fetch fails
       setEditingItem(item);
-      const lines = item.lines
-        ? item.lines.map((line) => ({
-            account_id: line.account_id,
-            description: line.description || '',
-            debit: line.debit || 0,
-            credit: line.credit || 0,
-          }))
-        : [
-            { account_id: 0, description: '', debit: 0, credit: 0 },
-            { account_id: 0, description: '', debit: 0, credit: 0 },
-          ];
-      
-      // Format entry_date to YYYY-MM-DD for input type="date"
-      let formattedDate = '';
-      if (item.entry_date) {
-        const date = new Date(item.entry_date);
-        if (!isNaN(date.getTime())) {
-          formattedDate = date.toISOString().split('T')[0];
-        }
-      }
-      
-      setForm({
-        entry_date: formattedDate,
-        fiscal_period_id: item.fiscal_period_id || 0,
-        description: item.description || '',
-        reference_number: item.reference_number || '',
-        channel: item.channel || 'general',
-        lines,
-      });
-      
-      setLineDisplays(
-        lines.map((line) => ({
-          debit: line.debit > 0 ? formatNumber(line.debit.toString()) : '',
-          credit: line.credit > 0 ? formatNumber(line.credit.toString()) : '',
-        }))
-      );
-      
+      setIsCopyMode(false);
+      const formattedDate = item.entry_date ? formatEntryDateForInput(item.entry_date) : '';
+      applyEntryToForm(item, formattedDate);
+      setFormError('');
+      setIsModalOpen(true);
+    }
+  };
+
+  const handleCopy = async (item: JournalEntry) => {
+    if (!canCreate) return;
+
+    try {
+      const completeItem = await loadEntryForForm(item);
+      const today = new Date().toISOString().split('T')[0];
+      setEditingItem(null);
+      setIsCopyMode(true);
+      applyEntryToForm(completeItem, today);
+      setFormError('');
+      setIsModalOpen(true);
+    } catch (err: unknown) {
+      console.error('Error loading journal entry details for copy:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load details';
+      setError(errorMessage);
+      const today = new Date().toISOString().split('T')[0];
+      setEditingItem(null);
+      setIsCopyMode(true);
+      applyEntryToForm(item, today);
       setFormError('');
       setIsModalOpen(true);
     }
@@ -475,6 +474,7 @@ export default function JournalEntriesPage() {
         await journalEntriesApi.create(payload);
       }
       setIsModalOpen(false);
+      setIsCopyMode(false);
       setForm({
         entry_date: '',
         fiscal_period_id: 0,
@@ -498,6 +498,7 @@ export default function JournalEntriesPage() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingItem(null);
+    setIsCopyMode(false);
     setForm({
       entry_date: '',
       fiscal_period_id: 0,
@@ -680,6 +681,15 @@ export default function JournalEntriesPage() {
                         <Button variant="ghost" size="sm" onClick={() => handleView(entry)}>
                           View
                         </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCopy(entry)}
+                          disabled={!canCreate}
+                          className={!canCreate ? 'opacity-50 cursor-not-allowed' : ''}
+                        >
+                          Copy
+                        </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
@@ -758,7 +768,13 @@ export default function JournalEntriesPage() {
       <Modal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        title={editingItem ? 'Edit Journal Entry' : 'Create Journal Entry'}
+        title={
+          editingItem
+            ? 'Edit Journal Entry'
+            : isCopyMode
+              ? 'Copy Journal Entry'
+              : 'Create Journal Entry'
+        }
         size="xl"
         footer={
           <>
