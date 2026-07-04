@@ -8,6 +8,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
 import { StatusBadge } from '@/components/finance/StatusBadge';
 import { formatDate, formatDateTime, formatCurrency, isValidDate, formatNumber, parseFormattedNumber } from '@/lib/utils/formatters';
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/lib/utils/pagination';
 import {
   JOURNAL_ENTRY_STATUS_COLORS,
   JOURNAL_ENTRY_STATUS_LABELS,
@@ -43,10 +44,10 @@ export default function JournalEntriesPage() {
   const [viewingItem, setViewingItem] = useState<JournalEntry | null>(null);
 
   // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(DEFAULT_PAGE);
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');

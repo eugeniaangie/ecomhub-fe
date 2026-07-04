@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
 import { formatCurrency, formatDate, formatNumber, parseFormattedNumber } from '@/lib/utils/formatters';
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/lib/utils/pagination';
 import { AD_PLATFORM_OPTIONS, AD_PLATFORM_LABELS } from '@/lib/utils/constants';
 import {
   canCreateAdBudget,
@@ -30,10 +31,10 @@ export default function AdBudgetsPage() {
   const [updatingSpentItem, setUpdatingSpentItem] = useState<AdBudget | null>(null);
 
   // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(DEFAULT_PAGE);
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
