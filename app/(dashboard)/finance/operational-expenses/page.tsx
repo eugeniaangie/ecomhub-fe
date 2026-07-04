@@ -8,6 +8,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
 import { StatusBadge } from '@/components/finance/StatusBadge';
 import { formatDate, formatDateTime, formatCurrency, getTodayFormatted, isValidDate, formatNumber, parseFormattedNumber } from '@/lib/utils/formatters';
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/lib/utils/pagination';
 import { EXPENSE_STATUS_COLORS, EXPENSE_STATUS_LABELS, EXPENSE_STATUS_OPTIONS, CHANNEL_OPTIONS } from '@/lib/utils/constants';
 import {
   canCreateOperationalExpense,
@@ -33,10 +34,10 @@ export default function OperationalExpensesPage() {
   const [viewingItem, setViewingItem] = useState<OperationalExpense | null>(null);
 
   // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(DEFAULT_PAGE);
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');

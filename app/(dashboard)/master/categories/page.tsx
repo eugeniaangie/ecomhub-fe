@@ -11,6 +11,7 @@ import {
   canUpdateCategory,
   canDeleteCategory,
 } from '@/lib/authHelpers';
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/lib/utils/pagination';
 import type { MasterCategory } from '@/lib/types';
 
 export default function MasterDataPage() {
@@ -31,10 +32,10 @@ export default function MasterDataPage() {
   const [editingItem, setEditingItem] = useState<MasterCategory | null>(null);
 
   // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(DEFAULT_PAGE);
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   // Data states
   const [categories, setCategories] = useState<MasterCategory[]>([]);

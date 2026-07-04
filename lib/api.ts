@@ -2,6 +2,7 @@
 
 import { auth } from './auth';
 import type { ApiResponse } from './types';
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from './utils/pagination';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://ecomhub-core-production.up.railway.app';
 const API_VERSION = '/api/v1';
@@ -240,8 +241,8 @@ export const categoriesApi = {
     // Note: Backend doesn't support type filter, so parameter removed
     // Add default pagination parameters
     const params = new URLSearchParams({
-      page: '1',
-      limit: '10', // Get all categories
+      page: DEFAULT_PAGE.toString(),
+      limit: DEFAULT_PAGE_SIZE.toString(),
     });
     const response = await api.get<import('./types').PaginatedResponse<import('./types').MasterCategory>>(
       `${API_VERSION}/categories?${params.toString()}`
@@ -330,7 +331,7 @@ export const masterCategoryApi = {
   getTree: async () => {
     return api.get<Array<import('./types').MasterCategoryTree>>(`${API_VERSION}/categories/tree`);
   },
-  getAll: async (page: number = 1, limit: number = 10, search?: string) => {
+  getAll: async (page: number = DEFAULT_PAGE, limit: number = DEFAULT_PAGE_SIZE, search?: string) => {
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),

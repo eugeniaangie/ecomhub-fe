@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { PAGE_SIZE_OPTIONS } from '@/lib/utils/pagination';
 
 interface PaginationProps {
   currentPage: number;
@@ -19,7 +20,7 @@ export const Pagination: React.FC<PaginationProps> = ({
   pageSize,
   onPageChange,
   onPageSizeChange,
-  pageSizeOptions = [10, 20, 50, 100],
+  pageSizeOptions = [...PAGE_SIZE_OPTIONS],
 }) => {
   // Calculate item range
   const startItem = totalResults === 0 ? 0 : (currentPage - 1) * pageSize + 1;

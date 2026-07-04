@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { formatCurrency, formatDate, formatDateForAPI } from '@/lib/utils/formatters';
 import { financeReportsApi } from '@/lib/services/financeApi';
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/lib/utils/pagination';
 import type { AccountTransactionBalance, AccountTransaction } from '@/lib/types/finance';
 
 export default function FinanceDashboardPage() {
@@ -12,6 +13,7 @@ export default function FinanceDashboardPage() {
   const [bankShopeeBalance, setBankShopeeBalance] = useState<AccountTransactionBalance | null>(null);
   const [walletBalance, setWalletBalance] = useState<AccountTransactionBalance | null>(null);
   const [transactions, setTransactions] = useState<AccountTransaction[]>([]);
+  const [transactionsTotal, setTransactionsTotal] = useState(0);
   const [startDate, setStartDate] = useState('2025-11-01');
   const [endDate, setEndDate] = useState(formatDateForAPI(new Date()));
   const [error, setError] = useState<string | null>(null);
@@ -33,13 +35,16 @@ export default function FinanceDashboardPage() {
         financeReportsApi.getTransactionsShopee({
           start_date: startDate,
           end_date: endDate,
+          page: DEFAULT_PAGE,
+          limit: DEFAULT_PAGE_SIZE,
         }),
       ]);
 
-      // API returns array, get first item
+      // Balance endpoints return array, get first item
       setBankShopeeBalance(bankData[0] || null);
       setWalletBalance(walletData[0] || null);
-      setTransactions(transactionsData);
+      setTransactions(transactionsData.results);
+      setTransactionsTotal(transactionsData.total_results);
     } catch (err) {
       console.error('Error fetching finance data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load finance data');
@@ -225,7 +230,14 @@ export default function FinanceDashboardPage() {
           {/* All Transactions */}
           <Card>
             <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">All Transactions</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">Latest Transactions</h2>
+                {transactionsTotal > 0 && (
+                  <span className="text-sm text-gray-500">
+                    Showing {transactions.length} of {transactionsTotal}
+                  </span>
+                )}
+              </div>
 
               {transactions.length > 0 ? (
                 <div className="overflow-x-auto">

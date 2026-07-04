@@ -16,6 +16,7 @@ import {
   getLastDayOfCurrentMonth,
   isValidDate,
 } from '@/lib/utils/formatters';
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/lib/utils/pagination';
 import { FISCAL_PERIOD_STATUS_COLORS } from '@/lib/utils/constants';
 import {
   canCreateFiscalPeriod,
@@ -38,10 +39,10 @@ export default function FiscalPeriodsPage() {
   const [editingItem, setEditingItem] = useState<FiscalPeriod | null>(null);
 
   // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(DEFAULT_PAGE);
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   // Search
   const [searchQuery, setSearchQuery] = useState('');
