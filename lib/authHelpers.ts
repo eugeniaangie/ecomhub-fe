@@ -299,10 +299,11 @@ export const canCreateJournalEntry = (): boolean => {
 
 /**
  * Check if user can update journal entry
- * Allowed: superadmin, admin (if draft)
+ * Allowed: superadmin (any status), admin (if draft)
  */
 export const canUpdateJournalEntry = (entryStatus: string): boolean => {
-  return entryStatus === 'draft' && hasAnyRole(['superadmin', 'admin']);
+  if (hasRole('superadmin')) return true;
+  return entryStatus === 'draft' && hasRole('admin');
 };
 
 /**
