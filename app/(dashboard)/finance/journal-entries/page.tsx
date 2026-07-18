@@ -200,8 +200,8 @@ export default function JournalEntriesPage() {
   };
 
   const handleEdit = async (item: JournalEntry) => {
-    if (item.status !== 'draft') {
-      setError('Can only edit journal entries with draft status');
+    if (!canUpdateJournalEntry(item.status)) {
+      setError('You do not have permission to edit this journal entry');
       return;
     }
 
