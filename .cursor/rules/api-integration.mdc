@@ -1,0 +1,73 @@
+---
+description: Rules for calling the ecomhub-core API, typing responses, auth, and rendering financial figures
+globs: lib/**,app/**,components/**
+alwaysApply: false
+---
+
+# API Integration Rules
+
+The backend in the sibling repo `ecomhub-core` is the contract. This repo renders what it returns.
+
+## Before writing or changing a client method
+
+**Read the backend handler or its Swagger annotation.** Do not infer a response shape from the endpoint name, from an existing TypeScript interface, or from what a screen currently renders — interfaces here have drifted from the API before.
+
+Check specifically:
+
+- Required vs optional query parameters, and what happens when a required one is missing
+- Whether the response is an array, an object, or a paginated envelope
+- Which fields are nullable or `omitempty` on the Go side — those are optional in TypeScript
+- Whether the route is role-restricted
+
+## Layering
+
+```
+app/ (page) → lib/services/*Api → lib/api.ts → HTTP
+```
+
+- A page or component must **never** call `fetch` directly or build an `Authorization` header.
+- A new endpoint gets a method on the matching client in `lib/services/`, with its types in `lib/types/`.
+- Base URL, auth header, envelope unwrapping and error mapping belong in `lib/api.ts` and nowhere else. If a change has to be applied to more than one HTTP method there, the duplication is the bug — fix it separately first.
+
+## Response envelope
+
+Every response is wrapped:
+
+```json
+{ "code": 200, "business_code": "00", "status": "success", "message": "...", "data": {} }
+```
+
+`lib/api.ts` returns `data`. Paginated endpoints put `{ results, page, limit, total_pages, total_results }` inside `data`.
+
+## Errors
+
+The backend sends **both** an HTTP status and a `business_code`. They do not always agree — some handlers set the status directly rather than through the shared mapping.
+
+| `business_code` | Meaning |
+|---|---|
+| `00` | Success |
+| `90` | Rate limited |
+| `93` | Authenticated but not authorised — also used for a revoked token |
+| `94` | Unauthenticated |
+
+**Branch on `business_code` where it is available**, and verify the actual status/body pair against a running backend before relying on either. Do not add a new error branch keyed only on an HTTP status you have not observed.
+
+## Auth
+
+- The access token is a Bearer JWT issued by the backend; storage lives in `lib/auth.ts` and nothing else should read or write it.
+- **Client-side role checks decide what to render, not what is permitted.** The backend enforces its own role rules. Never work around a 403 in the UI, and never use a stored role as a security boundary — it is client-writable.
+- Role predicates go in `lib/authHelpers.ts` as `can*` functions, mirroring the rules the backend actually enforces. Do not inline a role comparison in a component.
+- **Token lifecycle changes are breaking and coordinated with the backend.** Do not invent a refresh, rotation, or expiry scheme ahead of the backend contract.
+
+## Rendering financial figures
+
+- **Do not compute accounting values in the UI.** If the API returns a total, render it; summing rows client-side will eventually disagree with the server, silently.
+- **Do not re-negate amounts.** The API normalises sign by account type.
+- **A balance is not a movement.** A balance is cumulative from inception and takes an as-of date; a movement is bounded by a date range. Do not wire a cumulative figure to a range picker, and do not label one as the other.
+- Format money only at the render boundary, using the shared formatters. Never round before display.
+- Dates are `YYYY-MM-DD` on the wire for report parameters; entity timestamps come back as ISO datetimes.
+- **Switching a screen from one endpoint to another can change the number a person reads.** Say so explicitly and compare before/after against the same data.
+
+## Retiring endpoints
+
+Some backend routes exist only because this FE still calls them. Migrate the screen first, confirm nothing imports the old client method, then ask for the backend route to be removed. Never the other way round.

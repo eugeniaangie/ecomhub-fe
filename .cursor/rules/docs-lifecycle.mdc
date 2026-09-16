@@ -1,0 +1,47 @@
+---
+description: Append-only docs lifecycle for FE tasks, findings, and open questions
+alwaysApply: true
+---
+
+# Docs lifecycle — tasks, findings, open questions
+
+Applies when editing the backlog, module docs, testing checklists, or any planning markdown in this repo.
+
+## Track, do not invent
+
+- Keep **tasks**, **findings** and **open questions** written down with enough context that a later reader knows what blocked progress.
+- Prefer updating the existing doc over creating a parallel "recap" that will drift.
+- **Do not renumber or reuse `FE*` IDs.** Add new IDs for new work. Retire IDs; never reuse them.
+- Backend tasks are `T*` and live in `ecomhub-core`. Reference them by ID; do not copy their status here.
+
+## Resolve by appending, not rewriting
+
+When a task or open question is answered or implemented:
+
+1. **Update status** in place (Open → Done / blocked / deferred) and include a **date**.
+2. **Leave the earlier notes** — problem statement, evidence, rejected approaches. Do not delete them to make the doc look clean.
+3. **Append** a short resolution line, e.g. `**Done (YYYY-MM-DD):** switched the balance cards to /accounts/balance; figures unchanged for the default range.`
+4. Tick the checklist row **and** set the task's `Status` line — both, or they drift.
+
+## Two doc kinds (do not confuse them)
+
+| Kind | Examples | How to update |
+|---|---|---|
+| **Status / history** | `docs/roadmap/task-list.md` | Append resolution; **do not delete** completed entries |
+| **Current-state snapshots** | `MENU_ENDPOINTS.md`, module docs, `README.md` | Update in place to match **today's** behaviour, present tense. Stale present-tense claims are worse than none |
+
+Delivery-log phrasing — "what has been delivered", "production-ready", "all features implemented" — does not belong in a current-state doc. It is true on the day it is written and misleading afterwards.
+
+## Anti-patterns
+
+- Rewriting a finding so only the final answer remains
+- Quietly deleting open questions once answered
+- Creating a new markdown file that duplicates the backlog
+- Marking something done without the date or the chosen approach
+- Recording a temporary bug in `AGENTS.md` or `.cursor/rules/` — those hold stable principles only
+
+## Where status lives
+
+- **Task tracker** — [`docs/roadmap/task-list.md`](../../docs/roadmap/task-list.md) (checklist + per-task **Status**; keep both in sync)
+- **Screen → endpoint map** — `MENU_ENDPOINTS.md`, updated in place
+- **Rules / `AGENTS.md`** — stable principles only; new tasks and bugs go in the backlog
