@@ -10,33 +10,22 @@ import { UserRole } from './types/finance';
  */
 export const getUserRoles = (): string[] => {
   if (typeof window === 'undefined') return [];
-  
+
   const rolesStr = localStorage.getItem('user_roles');
   if (rolesStr) {
     try {
-      const roles = JSON.parse(rolesStr);
-      // Debug: log roles to help troubleshoot
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[getUserRoles] Roles from localStorage:', roles);
-      }
-      return roles;
+      return JSON.parse(rolesStr);
     } catch {
       return [];
     }
   }
-  
+
   // Fallback: check if user_role exists (backward compatibility)
   const role = localStorage.getItem('user_role');
   if (role) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[getUserRoles] Fallback to user_role:', role);
-    }
     return [role];
   }
-  
-  if (process.env.NODE_ENV === 'development') {
-    console.warn('[getUserRoles] No roles found in localStorage');
-  }
+
   return [];
 };
 
@@ -121,11 +110,7 @@ export const hasRole = (role: string): boolean => {
  */
 export const hasAnyRole = (requiredRoles: string[]): boolean => {
   const userRoles = getUserRoles();
-  const hasRole = requiredRoles.some(role => userRoles.includes(role));
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[hasAnyRole]', { userRoles, requiredRoles, hasRole });
-  }
-  return hasRole;
+  return requiredRoles.some((role) => userRoles.includes(role));
 };
 
 /**
