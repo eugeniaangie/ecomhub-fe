@@ -87,10 +87,10 @@ app/ (routes) → lib/services/*Api → lib/api.ts → backend HTTP API
 | Topic | Document |
 |---|---|
 | **Task backlog and live status** | [`docs/roadmap/task-list.md`](docs/roadmap/task-list.md) |
-| Menu → endpoint map | [`MENU_ENDPOINTS.md`](MENU_ENDPOINTS.md) |
+| Menu → endpoint map | [`docs/menu-endpoints.md`](docs/menu-endpoints.md) |
 | Menu structure and implementation status | [`README.md`](README.md) |
-| Finance module behaviour and role rules | the finance module docs at the repo root |
-| Manual verification steps | [`TESTING_CHECKLIST.md`](TESTING_CHECKLIST.md) |
+| Finance module behaviour and role rules | [`docs/finance/module.md`](docs/finance/module.md) |
+| Manual verification steps | [`docs/finance/testing-checklist.md`](docs/finance/testing-checklist.md) |
 | Backend API contract | `ecomhub-core` — handlers plus generated Swagger |
 
 Task IDs are `FE*` and are stable. Use them when discussing work.

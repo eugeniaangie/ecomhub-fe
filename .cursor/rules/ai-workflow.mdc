@@ -63,7 +63,7 @@ Goal: evidence that the change does what you claim.
 Update in the **same change**:
 
 - **Completing a task** → set its **Status** and tick its checklist row
-- Endpoint a screen calls changed → `MENU_ENDPOINTS.md`
+- Endpoint a screen calls changed → `docs/menu-endpoints.md`
 - Screen behaviour, routes, or role rules changed → the relevant module doc
 - New significant issue found → add it to the backlog with the same Problem / Why it matters / Affected area / Next action format
 
