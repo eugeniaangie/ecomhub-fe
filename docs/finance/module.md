@@ -10,7 +10,7 @@ Client-side `can*` checks only control what to render. The backend owns authoris
 
 ## Information architecture (2026-09-26)
 
-Chrome is a **dark top bar** with domains `Dashboard · Finance · Marketing · Catalog` (decision **D7** in [`../design/`](../design/); grouping from **D6**). Clicking a domain opens a **hub** of feature cards; the caret opens the same list as a dropdown.
+Chrome is a **dark top bar** with domains `Dashboard · Catalog · Marketing · Finance` (decision **D7** in [`../design/`](../design/); grouping from **D6**). Clicking a domain opens a **hub** of feature cards; the caret opens the same list as a dropdown.
 
 - **Home** `/dashboard` — ops / profit pulse (empty until report APIs; gaps G1–G3). Leaf in the top bar (no hub).
 - **Finance** `/finance` — hub cards: Overview, Accounts, Transactions, Channels, Journal Entries, Operational Expenses, Capital & Investors. Gear → `/finance/setup` (Chart of Accounts, Expense Categories, Fiscal Periods).
@@ -28,8 +28,8 @@ Chrome is a **dark top bar** with domains `Dashboard · Finance · Marketing · 
 | `/dashboard` | Home ops dashboard — empty KPI / trend shells |
 | `/finance` | Finance domain hub (feature cards) |
 | `/finance/setup` | Finance setup hub — CoA, expense categories, fiscal periods |
-| `/finance/overview` | Finance Overview — Total Cash / channel strip placeholders (FE8, T32) |
-| `/finance/balances` | Account balances (“where is my money?”) — empty until FE8 |
+| `/finance/overview` | Finance Overview — Total cash + period movement (FE8 / T31); channel strip empty until T32 |
+| `/finance/balances` | Account balances + period movement (FE8 / T31); drill-down needs FE15 |
 | `/finance/transactions` | Unified transactions feed — empty until T33 / FE15 |
 | `/finance/channels` | Per-channel financial view — empty until T32 / FE14; Fees slot null (G4) |
 | `/marketing/ad-expenses` | Ad spend totals by platform (was `/finance/ad-dashboard`) |

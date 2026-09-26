@@ -31,6 +31,35 @@ export const navDomains: NavDomain[] = [
     leaf: true,
   },
   {
+    id: 'catalog',
+    label: 'Catalog',
+    href: '/catalog',
+    items: [
+      {
+        label: 'Categories',
+        href: '/master/categories',
+        description: 'Product and expense category master data.',
+      },
+    ],
+  },
+  {
+    id: 'marketing',
+    label: 'Marketing',
+    href: '/marketing',
+    items: [
+      {
+        label: 'Ad Budgets',
+        href: '/marketing/ad-budgets',
+        description: 'Plan and track ad spend budgets by platform.',
+      },
+      {
+        label: 'Ad Expenses',
+        href: '/marketing/ad-expenses',
+        description: 'Ad spend totals by platform.',
+      },
+    ],
+  },
+  {
     id: 'finance',
     label: 'Finance',
     href: '/finance',
@@ -86,35 +115,6 @@ export const navDomains: NavDomain[] = [
         label: 'Fiscal Periods',
         href: '/finance/fiscal-periods',
         description: 'Open and close accounting periods.',
-      },
-    ],
-  },
-  {
-    id: 'marketing',
-    label: 'Marketing',
-    href: '/marketing',
-    items: [
-      {
-        label: 'Ad Budgets',
-        href: '/marketing/ad-budgets',
-        description: 'Plan and track ad spend budgets by platform.',
-      },
-      {
-        label: 'Ad Expenses',
-        href: '/marketing/ad-expenses',
-        description: 'Ad spend totals by platform.',
-      },
-    ],
-  },
-  {
-    id: 'catalog',
-    label: 'Catalog',
-    href: '/catalog',
-    items: [
-      {
-        label: 'Categories',
-        href: '/master/categories',
-        description: 'Product and expense category master data.',
       },
     ],
   },

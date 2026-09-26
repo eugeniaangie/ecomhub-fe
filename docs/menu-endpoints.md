@@ -28,11 +28,17 @@ Ops / profit pulse. **No report endpoints wired yet** — KPI and chart shells r
 
 ### Finance Overview (`/finance/overview`)
 
-Accounting overview shells (Total cash, channel performance). Cash will use `GET /accounts/balance` (FE8 / T31); channel strip needs T32. Gaps **G4, G5, G7**.
+- `GET /reports/dashboard/finance/accounts/balance` *(query: optional `as_of`)* — Total cash (sum of rows) + drives as-of label
+- `GET /reports/dashboard/finance/accounts/movement` *(query: `start_date`, `end_date`; optional `channel` unused on this screen)* — period debit / credit / net
+
+Channel strip and Fees remain empty (gaps **G4, G5, G7**).
 
 ### Accounts — balances (`/finance/balances`)
 
-“Where is the money?” Empty until FE8 wires `GET /accounts/balance` (+ drill-down via T33 later).
+- `GET /reports/dashboard/finance/accounts/balance` *(optional `as_of`)* — per-account table
+- `GET /reports/dashboard/finance/accounts/movement` *(required `start_date`, `end_date`)* — period debit / credit / net per account
+
+Drill-down to transactions still needs T33 / FE15 (gap **G6**).
 
 ### Transactions (`/finance/transactions`)
 

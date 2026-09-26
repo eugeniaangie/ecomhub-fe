@@ -20,7 +20,7 @@ Production (Vercel) must set `NEXT_PUBLIC_API_BASE_URL` to the Railway API host 
 Dark **top bar** + domain **hubs** (decision **D7** in [`docs/design/`](docs/design/)).  supplies the navigation *pattern*; menus and features are EcomHub's.
 
 ```
-[ EcomHub | Dashboard | Finance ▾ | Marketing ▾ | Catalog ▾ | Logout ]
+[ EcomHub | Dashboard | Catalog ▾ | Marketing ▾ | Finance ▾ | Logout ]
 
 Finance hub          Overview · Accounts · Transactions · Channels
                      Journal Entries · Operational Expenses · Capital & Investors
