@@ -4,8 +4,13 @@ import { auth } from './auth';
 import type { ApiResponse } from './types';
 import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from './utils/pagination';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://ecomhub-core-production.up.railway.app';
+// Default to local ecomhub-core. Production (Vercel) must set NEXT_PUBLIC_API_BASE_URL.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 const API_VERSION = '/api/v1';
+
+if (process.env.NODE_ENV === 'development') {
+  console.info(`[api] base URL: ${API_BASE_URL}`);
+}
 
 class ApiError extends Error {
   constructor(

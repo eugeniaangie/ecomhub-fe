@@ -1,5 +1,20 @@
 # EcomHub - Internal Dashboard
 
+## Local development
+
+1. Copy `.env.example` to `.env.local` (already gitignored).
+2. Point at a local backend (default if unset):
+
+```bash
+NEXT_PUBLIC_API_BASE_URL=http://localhost:4000
+```
+
+Do not append `/api/v1` — that prefix is added in `lib/api.ts`. Restart `next dev` after changing the env. In development the resolved base URL is logged to the browser/server console as `[api] base URL: …`.
+
+Production (Vercel) must set `NEXT_PUBLIC_API_BASE_URL` to the Railway API host (e.g. `https://ecomhub-core-production.up.railway.app`).
+
+---
+
 ## Menu Structure
 
 ### 📊 DASHBOARD
