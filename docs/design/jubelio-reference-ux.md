@@ -84,8 +84,8 @@ One job per horizontal band · gray canvas vs white panels · blue accent only f
 ## 4. EcomHub blueprint (conceptual)
 
 ### Shell
-- Sidebar: **Dashboard** (one home) · Master · **Finance** (Overview, Accounts, Transactions, Channels, then CRUD)
-- Remove Finance/Ad dashboards from under home Dashboard
+- Sidebar: **Dashboard** (one home) · Master · **Finance** (Overview, Accounts, Transactions, Channels, **Ad Expenses**, then CRUD)
+- Remove Finance/Ad dashboards from under home Dashboard (**D2 = C**, 2026-09-26 — Ad Expenses stays a named Finance peer)
 - Calmer page background + white content panels
 
 ### Home Dashboard
@@ -103,14 +103,14 @@ One job per horizontal band · gray canvas vs white panels · blue accent only f
 - Breadcrumb · title · secondary + primary actions
 - Left filter rail · right table (ID as link)
 
-### Suggested phases (still no code commitment)
-| Phase | Work | Depends |
-|---|---|---|
-| A | IA + shell chrome | — |
-| B | List pattern on Journals / Expenses | A |
-| C | Finance Overview / Accounts on T31 | A, FE8 |
-| D | Home Dashboard composition | A; report APIs TBD |
-| E | Channels + unified Transactions | T32, T33, FE14–16 |
+### Suggested phases
+| Phase | Work | Depends | Status |
+|---|---|---|---|
+| A | IA + shell chrome | — | **Done (2026-09-26)** — FE17 |
+| B | List pattern on Journals / Expenses | A | Open |
+| C | Finance Overview / Accounts on T31 | A, FE8 | Open |
+| D | Home Dashboard composition (real metrics) | A; report APIs TBD | Shell empty KPIs exist; defs open (D1) |
+| E | Channels + unified Transactions | T32, T33, FE14–16 | Shell routes exist; data blocked |
 
 ---
 
@@ -122,7 +122,7 @@ Numbering matches the decision round on 2026-09-25.
 
 **Agreed direction (2026-09-25):** layout can ship with empty / coming-soon; do **not** invent profit math in the UI. Exact KPI definitions + endpoints still TBD before wiring real numbers. Tracked as gaps **G1–G3** in [`ui-backend-gaps.md`](./ui-backend-gaps.md).
 
-### D2 — Where Ad Expenses live (still open — pick one)
+### D2 — Where Ad Expenses live — **Done (2026-09-26)**
 
 After removing “Finance Dashboard / Ad Expenses” from under home Dashboard, choose:
 
@@ -132,7 +132,9 @@ After removing “Finance Dashboard / Ad Expenses” from under home Dashboard, 
 | B · Fold into Channels | Ad spend appears as part of channel performance (T32); separate ad dashboard retired |
 | C · Own page under Finance group | Same as A, but kept as a named peer next to Overview / Accounts |
 
-**Not decided yet** — need an explicit A/B/C.
+**Decided (2026-09-26):** **C** — Ad Expenses remains its own page, listed as a **named peer** under the Finance sidebar group (alongside Overview, Accounts, Transactions, Channels, CRUD), **not** nested under home Dashboard. Do not fold solely into Channels for now; T32 may still surface ad spend later without retiring this page.
+
+~~Superseded later the same day by **D6** — ads moved out of Finance into a top-level **Marketing** group.~~ The reasoning above still holds for *not* folding ads into Channels; only the parent group changed.
 
 ### D3 — Finance hub landing? — **Done (2026-09-25)**
 
@@ -148,6 +150,8 @@ Clicking Finance (or the first Finance item) opens **Overview** immediately (Tot
 Overview is default, but Overview *page* starts with a thin row of shortcuts to Accounts / Transactions / Channels — not a separate `/finance` tile page.
 
 **Decided (2026-09-25):** **B** — langsung Finance Overview (dashboard finance), bukan menu visual / hub dulu. No separate `/finance` tile landing.
+
+~~Superseded same day by **D7** — hub berkartu restored as the Jubelio navigation pattern (option A).~~ `/finance` is the Finance hub again; Overview is one card among others.
 
 ### D4 — Marketplace fees in T32? — **Done (2026-09-25)** direction
 
@@ -169,6 +173,58 @@ CoA fee accounts (former option B) remain a **later** backend decision — see c
 
 **Decided:** English only. Not bilingual.
 
+### D6 — Sidebar information architecture — **Done (2026-09-26)** · supersedes **D2**
+
+**Why raised.** After the Phase A shell landed, the sidebar was still a flat-ish list: every feature sat close to the top level, `Master Data` mixed product categories with accounting setup, and the planned work (Shopee Open API and other channel integrations) would each have added another top-level entry. The developer asked for Jubelio-style *grouping* — hierarchical domains — while explicitly keeping the **dark sidebar and EcomHub's visual identity**. Grouping concept only; not a visual clone.
+
+**Decided structure (live today):**
+
+```
+Dashboard                → /dashboard
+Finance
+  Views    → Overview · Accounts (/finance/balances) · Transactions · Channels
+  Records  → Journal Entries · Operational Expenses · Capital & Investors
+  Setup    → Chart of Accounts · Expense Categories · Fiscal Periods
+Marketing  → Ad Budgets (/marketing/ad-budgets) · Ad Expenses (/marketing/ad-expenses)
+Catalog    → Categories (/master/categories)
+```
+
+**Rules this encodes (the point of the change):**
+
+1. **Top level = business domains, few of them.** A new feature joins an existing domain unless it is a new noun of the business.
+2. **Two clickable levels maximum.** Further grouping uses non-clickable section captions (`Views` / `Records` / `Setup`) inside an expanded group — not a third accordion.
+3. **Marketplaces never become top-level.** Shopee / TikTok / future channels go under **Integrations** (connection, API keys, sync); their money is read through **Finance › Channels**, consistent with core `T34` treating channel as a reporting dimension.
+4. **Unbuilt areas are not rendered.** Catalog › Products/Inventory, Operations, Integrations and Settings stay out of the sidebar until they have a screen — no dead ends.
+
+**Consequences accepted:**
+
+- **`Master Data` retired as a top-level group.** Categories moved under **Catalog**; Chart of Accounts, Expense Categories and Fiscal Periods moved under **Finance › Setup** because only Finance consumes them. Route `/master/categories` unchanged for now; a later `/catalog/*` rename would need redirects.
+- **Ads moved to Marketing** — supersedes D2's "peer under Finance". Routes moved to `/marketing/ad-budgets` and `/marketing/ad-expenses`. Temporary redirects from old `/finance/ad-*` paths were later dropped (FE-only; no prod bookmarks to preserve).
+- `app/(dashboard)/master/page.tsx` (an older standalone categories CRUD) is now unlinked, like `/finance/dashboard`. Left in place; retire separately.
+- No page logic, service client, or API call changed.
+
+**Still open:** when Products/Inventory land, decide whether Inventory graduates to its own top-level group or stays inside Catalog. When Shopee Ads Automation (core `F1`) lands, Marketing is already the right home.
+
+~~Layout half of D6 superseded by **D7**~~ — domain grouping and Marketing split stay; the *chrome* moves from dark sidebar + section captions to dark top bar + domain hubs.
+
+### D7 — Top-bar navigation + domain hubs — **Done (2026-09-26)** · supersedes **D3** and the layout half of **D6**
+
+**Why raised.** Developer clarified the Jubelio reference was for the **navigation layout pattern**, not for renaming menus inside a sidebar. Clarification: keep EcomHub's **dark** chrome, but place it **on top** (not a side rail). Domain click → hub with feature cards; caret → dropdown shortcuts. Features, grouping and visual identity remain EcomHub's.
+
+**Live pattern:**
+
+```
+[ dark top bar: EcomHub | Dashboard | Finance ▾ | Marketing ▾ | Catalog ▾ | Logout ]
+     ↓ click domain label
+[ hub page: title + card grid (+ gear → Finance setup) ]
+     ↓ click card or dropdown item
+[ existing feature page — unchanged logic ]
+```
+
+**What changed in code:** `AppNav` + `DomainHub` replace `Sidebar` / `Topbar`. Hubs at `/finance`, `/marketing`, `/catalog`. Finance setup at `/finance/setup` (Chart of Accounts, Expense Categories, Fiscal Periods). `/finance` no longer redirects to Overview. Nav config lives in `lib/nav.ts`.
+
+**What did not change:** page CRUD/report logic, service clients, API calls, Marketing routes (`/marketing/ad-*`), or EcomHub accent (`#6A89A7`).
+
 ---
 
-When D2 is answered, append a dated resolution under it — do not delete the option tables above.
+When further decisions appear, append dated resolutions — do not delete the option tables above.

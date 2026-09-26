@@ -82,7 +82,7 @@ Smoke / regression checks for finance screens. There is no automated FE test sui
 
 ## 6. Ad budgets & capital investors
 
-- [ ] `/finance/ad-budgets`: list, create, update, spent patch, delete (per role)
+- [ ] `/marketing/ad-budgets`: list, create, update, spent patch, delete (per role)
 - [ ] `/finance/capital-investors`: list, create, update, return-paid / status, delete (per role)
 
 ---
@@ -90,14 +90,17 @@ Smoke / regression checks for finance screens. There is no automated FE test sui
 ## 7. Dashboards
 
 - [ ] `/finance/dashboard`: balances and transactions for a date range
-- [ ] `/finance/ad-dashboard`: totals / per-platform sections load without client-side totals inventing numbers
+- [ ] `/marketing/ad-expenses`: totals / per-platform sections load without client-side totals inventing numbers
+- [ ] Old `/finance/ad-*` paths are unused (pages live only under `/marketing/*`)
 
 ---
 
 ## 8. Landing & shell
 
 - [ ] `/finance` links reach the screens above
-- [ ] Sidebar entries match routes in `components/layout/Sidebar.tsx`
+- [ ] Top-bar domains match `lib/nav.ts`; Finance / Marketing / Catalog hubs open from the domain label
+- [ ] Finance gear opens `/finance/setup`; setup cards reach CoA / expense categories / fiscal periods
+- [ ] Dropdown caret lists the same destinations as the hub cards
 
 ---
 

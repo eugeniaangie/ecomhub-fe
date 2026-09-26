@@ -42,30 +42,15 @@ Unified feed placeholder. Needs T33 / FE15. Gap **G6**. Legacy Shopee transactio
 
 Per-channel Revenue / Expense / Net / Fees shells. Needs T32 / FE14. Fees amount stays null (G4) until fee accounts exist.
 
-### Legacy Finance Dashboard (`/finance/dashboard`) — not in sidebar
+### Legacy Finance Dashboard (`/finance/dashboard`) — not in top nav
 
 - `GET /reports/dashboard/finance/shopee/current-balance`
 - `GET /reports/dashboard/finance/shopee/wallet/current-balance`
 - `GET /reports/dashboard/finance/shopee/transactions` *(query: `start_date`, `end_date`, `page`, `limit` — FE uses `DEFAULT_PAGE` / `DEFAULT_PAGE_SIZE` from `lib/utils/pagination.ts`)*
 
-### Ad Expenses (`/finance/ad-dashboard`)
-
-- `GET /reports/dashboard/finance/ad-expenses/total`
-- `GET /reports/dashboard/finance/ad-expenses/shopee`
-- `GET /reports/dashboard/finance/ad-expenses/meta`
-- `GET /reports/dashboard/finance/ad-expenses/tiktok`
-- `GET /reports/dashboard/finance/ad-expenses/detail`
-
 ---
 
-## Master Data
-
-### Categories (`/master/categories`)
-
-- `GET /categories`
-- `POST /categories`
-- `PUT /categories/:id`
-- `DELETE /categories/:id`
+## Finance › Setup
 
 ### Chart of Accounts (`/finance/accounts`)
 
@@ -93,9 +78,9 @@ Per-channel Revenue / Expense / Net / Fees shells. Needs T32 / FE14. Fees amount
 
 ---
 
-## Finance Management
+## Finance › Records
 
-CRUD and workflow screens under the Finance sidebar group (peers after Overview / Accounts / Transactions / Channels / Ad Expenses).
+CRUD and workflow screens under the Finance sidebar group, after the Views section.
 
 ### Capital & Investors (`/finance/capital-investors`)
 
@@ -106,16 +91,6 @@ CRUD and workflow screens under the Finance sidebar group (peers after Overview 
 - `PATCH /capital-investors/:id/return-paid`
 - `PATCH /capital-investors/:id/status`
 - `DELETE /capital-investors/:id`
-
-### Budget Planning (dropdown)
-
-#### Ad Budgets (`/finance/ad-budgets`)
-
-- `GET /ad-budgets`
-- `POST /ad-budgets`
-- `PUT /ad-budgets/:id`
-- `PATCH /ad-budgets/:id/spent`
-- `DELETE /ad-budgets/:id`
 
 ### Operational Expenses (`/finance/operational-expenses`)
 
@@ -129,9 +104,7 @@ CRUD and workflow screens under the Finance sidebar group (peers after Overview 
 - `POST /operational-expenses/:id/reject`
 - `POST /operational-expenses/:id/pay`
 
-### Transactions (dropdown)
-
-#### Journal Entries (`/finance/journal-entries`)
+### Journal Entries (`/finance/journal-entries`)
 
 - `GET /journal-entries`
 - `GET /journal-entries/:id`
@@ -146,12 +119,49 @@ CRUD and workflow screens under the Finance sidebar group (peers after Overview 
 
 ---
 
+## Marketing
+
+### Ad Budgets (`/marketing/ad-budgets`)
+
+- `GET /ad-budgets`
+- `POST /ad-budgets`
+- `PUT /ad-budgets/:id`
+- `PATCH /ad-budgets/:id/spent`
+- `DELETE /ad-budgets/:id`
+
+### Ad Expenses (`/marketing/ad-expenses`)
+
+- `GET /reports/dashboard/finance/ad-expenses/total`
+- `GET /reports/dashboard/finance/ad-expenses/shopee`
+- `GET /reports/dashboard/finance/ad-expenses/meta`
+- `GET /reports/dashboard/finance/ad-expenses/tiktok`
+- `GET /reports/dashboard/finance/ad-expenses/detail`
+
+---
+
+## Catalog
+
+### Categories (`/master/categories`)
+
+- `GET /categories`
+- `POST /categories`
+- `PUT /categories/:id`
+- `DELETE /categories/:id`
+
+Route still lives under `/master/*`; only the sidebar group changed (decision **D6**).
+
+---
+
 ## Pages without API calls
 
 | Path | Note |
 |------|------|
-| `/` | Redirect to Finance Dashboard |
-| `/finance` | Landing page (links only) |
+| `/` | Redirect to `/dashboard` |
+| `/finance` | Finance domain hub (cards only) |
+| `/finance/setup` | Finance setup hub (cards only) |
+| `/marketing` | Marketing domain hub |
+| `/catalog` | Catalog domain hub |
+| `/master` | Older standalone categories CRUD — unlinked, retire separately |
 
 ---
 

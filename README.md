@@ -15,182 +15,71 @@ Production (Vercel) must set `NEXT_PUBLIC_API_BASE_URL` to the Railway API host 
 
 ---
 
-## Menu Structure
+## Navigation structure
 
-### 📊 DASHBOARD
-- **Overview** (sales, stock, alerts)
-  - *Status: Not yet implemented*
+Dark **top bar** + domain **hubs** (decision **D7** in [`docs/design/jubelio-reference-ux.md`](docs/design/jubelio-reference-ux.md)). Jubelio supplies the navigation *pattern*; menus and features are EcomHub's.
 
----
+```
+[ EcomHub | Dashboard | Finance ▾ | Marketing ▾ | Catalog ▾ | Logout ]
 
-### 🏢 MASTER DATA
-Master data untuk data referensi yang digunakan di seluruh sistem.
+Finance hub          Overview · Accounts · Transactions · Channels
+                     Journal Entries · Operational Expenses · Capital & Investors
+                     ⚙ Setup → Chart of Accounts · Expense Categories · Fiscal Periods
 
-- **👤 Users & Roles**
-  - *Status: Not yet implemented*
-  
-- **📁 Categories**
-  - *Status: ✅ Implemented*
-  - Path: `/master/categories`
-  - Description: Manage product categories with hierarchical structure
+Marketing hub        Ad Budgets · Ad Expenses
 
-- **🎨 Product Attributes**
-  - *Status: Not yet implemented*
+Catalog hub          Categories
+```
 
-- **💰 Pricing Rules**
-  - *Status: Not yet implemented*
+Rules that keep this from sprawling:
 
-- **🏦 Accounts (Chart of Accounts)**
-  - *Status: ✅ Implemented*
-  - Path: `/finance/accounts`
-  - Description: Manage chart of accounts with hierarchical structure and 7 account types
-
-- **📋 Expense Categories**
-  - *Status: ✅ Implemented*
-  - Path: `/finance/expense-categories`
-  - Description: Organize expenses into categories for better tracking
+1. **Top level = domains, few of them.** A new feature joins an existing domain unless it is a new noun of the business.
+2. **Domain label → hub; caret → dropdown** of the same items. No third accordion level.
+3. **Marketplaces never become top-level.** Connections go under **Integrations**; money is read through **Finance › Channels** (backend `T34`).
+4. **Unbuilt areas are not rendered** in the top bar until they have a screen.
 
 ---
 
-### 📦 INVENTORY
-- **🛍️ Products**
-  - Product List
-  - Add Product
-  - Product Variants
-  - *Status: Not yet implemented*
+## Implemented screens
 
-- **📊 Stock Management**
-  - Current Stock
-  - Stock Movements
-  - Stock Opname
-  - *Status: Not yet implemented*
+| Domain | Screen | Path |
+|---|---|---|
+| Dashboard | Home (ops shell — figures pending APIs) | `/dashboard` |
+| Finance | Domain hub | `/finance` |
+| Finance | Setup hub | `/finance/setup` |
+| Finance | Overview (shell) | `/finance/overview` |
+| Finance | Accounts / balances (shell) | `/finance/balances` |
+| Finance | Transactions (shell) | `/finance/transactions` |
+| Finance | Channels (shell) | `/finance/channels` |
+| Finance | Journal Entries | `/finance/journal-entries` |
+| Finance | Operational Expenses | `/finance/operational-expenses` |
+| Finance | Capital & Investors | `/finance/capital-investors` |
+| Finance | Chart of Accounts | `/finance/accounts` |
+| Finance | Expense Categories | `/finance/expense-categories` |
+| Finance | Fiscal Periods | `/finance/fiscal-periods` |
+| Marketing | Domain hub | `/marketing` |
+| Marketing | Ad Budgets | `/marketing/ad-budgets` |
+| Marketing | Ad Expenses | `/marketing/ad-expenses` |
+| Catalog | Domain hub | `/catalog` |
+| Catalog | Categories | `/master/categories` |
 
-- **⚠️ Low Stock Alerts**
-  - *Status: Not yet implemented*
+Unlinked but still reachable by URL: `/finance/dashboard` (legacy Shopee summary) and `/master` (older standalone categories CRUD). Ads live only under `/marketing/*`.
 
----
-
-### 🛒 ORDERS (Future)
-- Order List
-- Process Orders
-- Fake Orders / Fraud
-- *Status: Not yet implemented*
-
----
-
-### 🏪 MARKETPLACE (Future)
-- Connected Stores
-- Sync Products
-- Settlements
-- *Status: Not yet implemented*
+"Shell" means the layout exists and figures render empty on purpose — see [`docs/design/ui-backend-gaps.md`](docs/design/ui-backend-gaps.md).
 
 ---
 
-### 💰 FINANCIAL
-Modul keuangan untuk mengelola transaksi, anggaran, dan laporan keuangan.
+## Planned areas (not in the top bar yet)
 
-#### 💸 Transactions
-- **Income**
-  - *Status: Not yet implemented*
+| Area | Likely contents | Home in the IA |
+|---|---|---|
+| Catalog | Products, Product Attributes, Pricing Rules, Inventory | inside **Catalog** (Inventory may graduate to its own domain) |
+| Operations | Orders, Fulfillment, Fraud review | new top-level **Operations** |
+| Integrations | Shopee Open API, TikTok, other channels, sync status, settlements | new top-level **Integrations** |
+| Settings | Users & Roles, Profile, Preferences | new top-level **Settings** |
+| Finance reports | Profit & Loss, Cash Flow, Balance Sheet | **Finance** hub cards |
 
-- **Expenses**
-  - *Status: Not yet implemented*
-
-- **Transfers**
-  - *Status: Not yet implemented*
-
-- **Journal Entries**
-  - *Status: ✅ Implemented*
-  - Path: `/finance/journal-entries`
-  - Description: Double-entry bookkeeping with approval workflow
-
-#### 💵 Operational Expenses
-- *Status: ✅ Implemented*
-- Path: `/finance/operational-expenses`
-- Description: Track and approve operational expenses with workflow
-
-#### 💳 Account Balances
-- *Status: Not yet implemented*
-- (Can be derived from Chart of Accounts)
-
-#### 🎯 Budget Planning (Optional)
-- **Ad Budgets**
-  - *Status: ✅ Implemented*
-  - Path: `/finance/ad-budgets`
-  - Description: Track marketing and advertising budgets per platform
-
-- **Monthly Budgets**
-  - *Status: Not yet implemented*
-
-#### 🤝 Capital & Investors
-- *Status: ✅ Implemented*
-- Path: `/finance/capital-investors`
-- Description: Manage capital investments and investor relationships
-
-#### 📊 Financial Reports
-- **Profit & Loss**
-  - *Status: Not yet implemented*
-
-- **Cash Flow**
-  - *Status: Not yet implemented*
-
-- **Balance Sheet**
-  - *Status: Not yet implemented*
-
-#### 📅 Fiscal Periods
-- *Status: ✅ Implemented*
-- Path: `/finance/fiscal-periods`
-- Description: Manage fiscal periods, close and reopen accounting periods
-
----
-
-### 📈 REPORTS
-- Sales Report
-- Stock Report
-- Product Performance
-- Expense Summary
-- *Status: Not yet implemented*
-
----
-
-### ⚙️ SETTINGS
-- Profile
-- Store Settings
-- Integrations (Shopee API)
-- Preferences
-- *Status: Not yet implemented*
-
----
-
-## Implementation Status
-
-### ✅ Implemented Modules
-1. **Master Data**
-   - Categories
-   - Chart of Accounts
-   - Expense Categories
-
-2. **Financial**
-   - Fiscal Periods
-   - Operational Expenses
-   - Ad Budgets
-   - Capital Investors
-   - Journal Entries
-
-### 🚧 In Progress
-- None currently
-
-### 📋 Planned
-- Dashboard Overview
-- Users & Roles
-- Product Attributes
-- Pricing Rules
-- Inventory Management
-- Orders Management
-- Marketplace Integration
-- Financial Reports
-- General Reports
-- Settings
+Status for frontend work is tracked in [`docs/roadmap/task-list.md`](docs/roadmap/task-list.md), not here.
 
 ---
 
@@ -202,14 +91,5 @@ Modul keuangan untuk mengelola transaksi, anggaran, dan laporan keuangan.
 | [`docs/finance/module.md`](docs/finance/module.md) | Finance screens, roles, behaviour |
 | [`docs/menu-endpoints.md`](docs/menu-endpoints.md) | Screen → API endpoint map |
 | [`docs/finance/testing-checklist.md`](docs/finance/testing-checklist.md) | Manual verification |
-| [`docs/design/`](docs/design/) | UX reference and UI/backend gaps |
+| [`docs/design/`](docs/design/) | UX reference, navigation decisions, UI/backend gaps |
 | [`AGENTS.md`](AGENTS.md) | Conventions for contributors / agents |
-
----
-
-## Notes
-
-- Master Data modules are for reference data that doesn't change frequently
-- Financial modules handle transactions, budgets, and financial reporting
-- Future modules (Orders, Marketplace) are marked as "Future" in the menu structure
-- Some modules may be optional based on business needs (e.g., Budget Planning)

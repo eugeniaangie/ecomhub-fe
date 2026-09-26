@@ -56,7 +56,7 @@ app/ (routes) → lib/services/*Api → lib/api.ts → backend HTTP API
 | `app/(auth)/` | Unauthenticated routes — login |
 | `app/(dashboard)/` | Authenticated routes; `layout.tsx` wraps them in the app shell |
 | `components/ui/` | Generic, domain-free primitives — `Button`, `Input`, `Modal`, `Card`, `Pagination`, `DatePicker` |
-| `components/layout/` | App shell — `Sidebar`, `Topbar`, `PageWrapper` |
+| `components/layout/` | App shell — `AppNav`, `DomainHub`, `PageWrapper` |
 | `components/<domain>/` | Domain-specific components (`finance/`, `categories/`) |
 | `lib/api.ts` | HTTP wrapper: base URL, auth header, response envelope unwrapping, error mapping |
 | `lib/services/` | Endpoint clients grouped by domain |

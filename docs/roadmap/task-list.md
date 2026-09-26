@@ -39,6 +39,10 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [ ] | FE15 | FEATURE | Unified transactions screen | T33 |
 | [ ] | FE16 | FEATURE | Restructure Finance UI — Overview · Accounts · Transactions · Channels | T34 |
 | [x] | FE17 | FEATURE | Phase A shell — sidebar IA + empty Overview/Accounts/Transactions/Channels | design |
+| [x] | FE18 | FEATURE | Hierarchical sidebar IA — domain groups, section captions, Marketing split | design D6 |
+| [x] | FE19 | FEATURE | Dark top-bar nav + domain hubs (Jubelio pattern, EcomHub features) | design D7 |
+| [ ] | FE20 | P2 | Default list page size = 5 | — |
+| [ ] | FE21 | FEATURE | Wire Home Dashboard ops KPIs (sales / profit / by-channel) | gaps G1–G3 |
 
 **P0 left:** none (FE1 Done).
 
@@ -256,11 +260,11 @@ The backend auth middleware returns **HTTP 401** with `business_code: "93"` for 
 
 **Response shape.** Both return an array; balance rows are `account_code`, `account_name`, `account_type`, `is_active`, `total_debit`, `total_credit`, `current_balance`. Movement rows are identical except `net_movement` replaces `current_balance`. Sign is already normalised by account type, quiet accounts return `0`, and inactive accounts are included with `is_active: false`.
 
-**Affected area.** `lib/services/financeApi.ts`, `lib/types/finance.ts` (needs `AccountBalance` / `AccountMovement` — the existing `AccountTransactionBalance` has neither `account_code` nor `is_active`), `app/(dashboard)/finance/dashboard/page.tsx`, `docs/menu-endpoints.md`.
+**Affected area.** `lib/services/financeApi.ts`, `lib/types/finance.ts` (needs `AccountBalance` / `AccountMovement` — the existing `AccountTransactionBalance` has neither `account_code` nor `is_active`), **`/finance/overview` and `/finance/balances`** (v2 targets), plus the unlinked legacy `app/(dashboard)/finance/dashboard/page.tsx` until FE16 retires it. Update `docs/menu-endpoints.md`.
 
-**Dependencies.** None — the endpoints exist. Do **not** delete the legacy client methods here; `T34` retires the routes once nothing calls them.
+**Dependencies.** None — the endpoints exist. Do **not** delete the legacy client methods here; `T34` / `FE16` retire the routes once nothing calls them.
 
-**Next action.** Add the two typed client methods and switch the dashboard's balance cards over. Label the card as a balance "as of" a date rather than tied to the range picker, since a balance is cumulative.
+**Next action.** Add the two typed client methods and wire **Finance Overview** Total Cash (and Accounts balances) to `/accounts/balance`. Label as balance "as of" a date rather than tied to the range picker. Do not treat the legacy Shopee dashboard as the long-term home for these cards.
 
 ---
 
@@ -369,11 +373,39 @@ Order: **FE17 (shell) → FE8 → FE14 / FE15 → FE16 (wire real data / retire 
 
 ---
 
+### FE18 — Hierarchical sidebar IA (domain groups)
+
+**Category:** FEATURE · **Status:** Done (2026-09-26) · **Decision:** `D6` in [`../design/jubelio-reference-ux.md`](../design/jubelio-reference-ux.md)
+
+**Problem.** After `FE17` the sidebar was still close to a flat list, `Master Data` mixed product categories with accounting setup, and every planned integration (Shopee Open API, other channels) would have added another top-level entry. Developer asked for Jubelio-style **grouping** while explicitly keeping the dark sidebar and EcomHub's visual identity — grouping as UX inspiration, not a visual clone.
+
+**Done (2026-09-26):** Top level is now `Dashboard · Finance · Marketing · Catalog`. Finance is subdivided by non-clickable section captions (`Views` / `Records` / `Setup`), so depth stays at two clickable levels. `Master Data` retired: Categories → Catalog, accounting setup → Finance › Setup. Ads moved to a top-level **Marketing** group **and** to matching routes — `/marketing/ad-budgets`, `/marketing/ad-expenses`. Unbuilt areas (Products, Inventory, Operations, Integrations, Settings) are deliberately not rendered.
+
+**Note (2026-09-26):** Temporary `/finance/ad-*` → `/marketing/*` redirects in `next.config.ts` were removed; ads are Marketing routes only.
+
+**Not changed.** No page logic, service client, API call, or role predicate. Page files were moved, not rewritten.
+
+**Follow-ups.** `/master/categories` → `/catalog/categories` rename (needs redirect); retire the unlinked `/master` page and `/finance/dashboard` once nothing needs them; decide whether Inventory graduates to its own group when Products land.
+
+~~Layout chrome superseded by **FE19** / **D7**~~ — domain grouping and Marketing routes from FE18 remain.
+
+---
+
+### FE19 — Dark top-bar nav + domain hubs
+
+**Category:** FEATURE · **Status:** Done (2026-09-26) · **Decision:** `D7` in [`../design/jubelio-reference-ux.md`](../design/jubelio-reference-ux.md)
+
+**Problem.** FE18 put Jubelio-style *grouping* into a sidebar. The intended reference was Jubelio's **navigation layout**: domains on a top bar, domain click → hub of cards, caret → dropdown shortcuts — while keeping EcomHub's dark identity on that bar and EcomHub's own features.
+
+**Done (2026-09-26):** Removed `Sidebar` / `Topbar`. Added `AppNav` (dark top bar), `DomainHub`, and `lib/nav.ts`. Hubs at `/finance`, `/marketing`, `/catalog`; Finance setup at `/finance/setup`. `/finance` is a hub again (reverses D3). No page CRUD/report logic, service client, or API call changed.
+
+---
+
 ### FE14 — Channels screen
 
 **Category:** FEATURE · **Status:** Blocked on backend `T32`
 
-Revenue, expense and net per channel over a date range, replacing the three near-identical ad-expense cards in `app/(dashboard)/finance/ad-dashboard/page.tsx`.
+Revenue, expense and net per channel over a date range, replacing the three near-identical ad-expense cards in `app/(dashboard)/marketing/ad-expenses/page.tsx` (moved there by `FE18`).
 
 **Open question carried from the backend.** There is no marketplace fee account in the chart of accounts, so a truthful "Fees" amount has no source. **FE direction (2026-09-25):** the Channels layout **may** reserve a Fees row/label with a **null / empty** value; do not invent fees client-side. Tracked as gap **G4** in [`../design/ui-backend-gaps.md`](../design/ui-backend-gaps.md). Revenue / Expense / Net stay empty until `T32` lands (gap **G5**).
 
@@ -400,6 +432,43 @@ One transactions feed across all accounts and channels, filterable by account, c
 | **Transactions** | Unified feed across accounts and channels | `FE15` | `/finance/transactions` |
 | **Channels** | "Where is my activity coming from?" | `FE14` | `/finance/channels` |
 
-**Current state (after FE17).** Shell routes and sidebar exist with empty placeholders. Legacy Shopee summary at `/finance/dashboard` is unlinked; `financeApi.ts` still calls legacy report routes from that page and Ad Expenses. Wire real data in FE8/FE14/FE15; FE16 finishes migration and retirement.
+**Current state (after FE17 / FE19).** Shell routes and top-bar hubs exist with empty placeholders. Legacy Shopee summary at `/finance/dashboard` is **unlinked** (not a v2 nav destination).
+
+**Where the old “Finance Dashboard” totals go in v2**
+
+| Old behaviour | v2 home | Tasks that fill it |
+|---|---|---|
+| Cash / balance cards | **Finance → Overview** (`/finance/overview`) + **Accounts** (`/finance/balances`) | `FE8` (T31), then Overview polish in this task |
+| Channel activity | **Finance → Channels** (+ strip on Overview) | `FE14` (T32) |
+| Transaction list | **Finance → Transactions** | `FE15` (T33) |
+| Shopee-only page | retired | this task (`FE16`) once nothing calls the legacy routes |
+
+So v2 does **not** keep a single “Finance Dashboard” nav item. The purpose splits across Overview / Accounts / Transactions / Channels. Until those are wired, Overview is an empty shell; the old page still exists only as a URL for migration.
+
+Wire real data in FE8/FE14/FE15; FE16 finishes migration and retirement of `/finance/dashboard` + legacy `shopee/*` client calls.
 
 **Retire when unreferenced.** `shopee/current-balance`, `shopee/wallet/current-balance`, `shopee/transactions`. The `ad-expenses/*` routes stay until `T32` supersedes them. **Do not ask for a backend route to be deleted while `financeApi.ts` still calls it** — the backend is holding those routes open specifically for this FE.
+
+---
+
+### FE20 — Default list page size = 5
+
+**Category:** P2 · **Status:** Open
+
+**Problem.** List screens (journal entries, accounts, operational expenses, categories, ad budgets, capital investors, etc.) use `DEFAULT_PAGE_SIZE = 10` from `lib/utils/pagination.ts`, and `PAGE_SIZE_OPTIONS` starts at 10. With growing data the first paint feels like “everything showed up”; product wants the default denser at **5** rows.
+
+**Next action.** Change `DEFAULT_PAGE_SIZE` to `5`, add `5` to `PAGE_SIZE_OPTIONS` (e.g. `[5, 10, 20, 50, 100]`), confirm every list that uses those constants picks up the new default without per-page hardcodes. Update `docs/finance/testing-checklist.md` if it asserts page size.
+
+**Not in scope.** Changing backend default limits; inventing pagination on screens that still call unbound `getAll()` for dropdowns only.
+
+---
+
+### FE21 — Wire Home Dashboard ops KPIs
+
+**Category:** FEATURE · **Status:** Open · **Gaps:** G1–G3 in [`../design/ui-backend-gaps.md`](../design/ui-backend-gaps.md)
+
+**Problem.** Top-bar **Dashboard** (`/dashboard`) is the ops / profit pulse (Gross sales, Discount, Returns, Net sales, Profit, COGS/ads, trend, by-channel). Shell exists (FE17) but every slot is empty. This is **not** the old Finance Dashboard — that maps to Finance Overview (see FE16). Home Dashboard needs report APIs that do not exist yet; definitions still open under design D1.
+
+**Next action.** When KPI definitions + endpoints are agreed, wire `/dashboard` only — do not invent figures client-side. Until then keep `—` / gap ids.
+
+**Dependencies.** Backend report work (not yet a single `T*` for ops GMV); do not block Finance Overview (`FE8` / `FE14`) on this.
