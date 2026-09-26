@@ -31,9 +31,9 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE7 | P1 | Refresh client — short access + HttpOnly cookie rotation | T28b |
 | [x] | FE8 | P1 | Adopt account balance / movement endpoints | T31 |
 | [x] | FE9 | P2 | Single request helper in `lib/api.ts` | — |
-| [ ] | FE10 | P2 | Delete API clients for endpoints the backend does not expose | — |
+| [x] | FE10 | P2 | Delete API clients for endpoints the backend does not expose | — |
 | [x] | FE11 | P2 | Consolidate the root markdown files into `docs/` | — |
-| [ ] | FE12 | P2 | Small-fixes cleanup bundle | — |
+| [x] | FE12 | P2 | Small-fixes cleanup bundle | — |
 | [ ] | FE13 | P3 | Add a test setup and wire lint/build into CI | — |
 | [ ] | FE14 | FEATURE | Channels screen | T32 |
 | [ ] | FE15 | FEATURE | Unified transactions screen | T33 |
@@ -43,7 +43,7 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE19 | FEATURE | Dark top-bar nav + domain hubs (Jubelio pattern, EcomHub features) | design D7 |
 | [ ] | FE20 | P2 | Default list page size = 5 | — |
 | [ ] | FE21 | FEATURE | Wire Home Dashboard ops KPIs (sales / profit / by-channel) | gaps G1–G3 |
-| [ ] | FE22 | P1 | Wire paginated `ad-expenses/detail` | T15 |
+| [ ] | FE22 | P1 | Wire paginated `ad-expenses/detail` | T15 s1 done |
 
 **P0 left:** none (FE1 Done).
 
@@ -298,7 +298,7 @@ No `middleware.ts`. Leftover access-token cookie write was already removed in FE
 
 ### FE10 — Delete API clients for endpoints the backend does not expose
 
-**Category:** P2 · **Status:** Open
+**Category:** P2 · **Status:** Done (2026-09-26)
 
 **Problem.** `lib/api.ts` exports `dashboardApi`, `transactionsApi`, `paymentMethodsApi` and `accountsApi` (plus the legacy `categoriesApi` wrapper). None is imported anywhere under `app/` or `components/`, and the routes they call — `/dashboard/summary`, `/transactions`, `/payment-methods`, `/accounts` without the `/api/v1` prefix — are commented out in the backend's `cmd/endpoint.go`. They would 404 if called.
 
@@ -309,6 +309,8 @@ No `middleware.ts`. Leftover access-token cookie write was already removed in FE
 **Dependencies.** None. Verify nothing imports them at the time of deletion, not just today.
 
 **Next action.** Delete the dead clients and their orphaned types. Keep `authApi`. Decide separately whether `categoriesApi` is still needed or whether every caller can use `masterCategoryApi` directly.
+
+**Done (2026-09-26):** Removed `dashboardApi`, `transactionsApi`, `paymentMethodsApi`, `accountsApi`, and legacy `categoriesApi` from `lib/api.ts`. Kept `authApi` and `masterCategoryApi` (all category screens already use the latter). Deleted orphaned types from `lib/types.ts`: `Transaction*` / `Category` / `PaymentMethod` / legacy `Account` / `DashboardSummary`.
 
 ---
 
@@ -332,7 +334,7 @@ No `middleware.ts`. Leftover access-token cookie write was already removed in FE
 
 ### FE12 — Small-fixes cleanup bundle
 
-**Category:** P2 · **Status:** Open
+**Category:** P2 · **Status:** Done (2026-09-26)
 
 One session for the trivial, independent fixes. Deliberately bundled — none deserves its own ticket.
 
@@ -342,6 +344,8 @@ One session for the trivial, independent fixes. Deliberately bundled — none de
 - `app/admin/` is an empty directory with no route in it.
 
 **Dependencies.** None. The doc items overlap with `FE11` — do them in whichever lands first, not both.
+
+**Done (2026-09-26):** `UserInfo.phone` → `phone?: string | null`. Removed debug `console.log` / `console.warn` from `getUserRoles` and `hasAnyRole`. Deleted empty `app/admin/` (and nested `categories/`). Doc item already done via FE11.
 
 ---
 
@@ -485,12 +489,14 @@ Wire real data in FE8/FE14/FE15; FE16 finishes migration and retirement of `/fin
 
 ### FE22 — Wire paginated `ad-expenses/detail`
 
-**Category:** P1 · **Status:** Open · **Blocked on backend `T15`**
+**Category:** P1 · **Status:** Open · **Unblocked — backend T15 slice 1 (2026-09-26)**
 
 **Problem.** `GET …/ad-expenses/detail` today returns an unbounded array. Backend **T15** will change it to the same paginated envelope as `shopee/transactions` (`page` / `limit` → `PaginatedResponse`). Until then the FE cannot safely page the detail table.
 
+**Backend landed (2026-09-26):** Response is now `PaginatedResponse` (`data.results`, `page`, `limit`, `total_*`). Query params `page` / `limit` (defaults same as other lists). Bare-array callers break until this task wires them.
+
 **Affected area.** `lib/services/financeApi.ts` (`getAdExpensesDetail`), `app/(dashboard)/marketing/ad-expenses/page.tsx`, legacy `app/(dashboard)/finance/ad-dashboard/page.tsx` if still reachable.
 
-**Next action.** After T15 lands: pass `page`/`limit`, unwrap `results` + totals, add the shared `Pagination` control. Do not invent client-side slicing of the old unbounded response.
+**Next action.** Pass `page`/`limit`, unwrap `results` + totals, add the shared `Pagination` control. Do not invent client-side slicing of the old unbounded response.
 
 **Not in scope.** Date-span validation UX (backend rejects); retiring the ad-expenses cards when T32/FE14 land.
