@@ -23,12 +23,12 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | | ID | Pri | Task | Driven by |
 |:---:|---|---|---|---|
 | [ ] | FE1 | P0 | Global 401 handling — force re-login instead of dead UI | T28a |
-| [ ] | FE2 | P1 | Point dev builds at the right API base URL | — |
+| [x] | FE2 | P1 | Point dev builds at the right API base URL | — |
 | [ ] | FE3 | P1 | Fix logout leaving `user_roles` in `localStorage` | — |
 | [ ] | FE4 | P1 | Handle 429 from the login rate limiter | T28a |
 | [ ] | FE5 | P1 | Fix revoked-token detection (checks 403, backend sends 401) | T28a |
 | [ ] | FE6 | P1 | Route guard for `(dashboard)` — no auth check exists today | — |
-| [ ] | FE7 | P1 | Refresh-token client: short access token + rotation | T28b |
+| [ ] | FE7 | P1 | Refresh client — short access + HttpOnly cookie rotation | T28b |
 | [ ] | FE8 | P1 | Adopt account balance / movement endpoints | T31 |
 | [ ] | FE9 | P2 | Single request helper in `lib/api.ts` | — |
 | [ ] | FE10 | P2 | Delete API clients for endpoints the backend does not expose | — |
@@ -89,7 +89,7 @@ The result for a user holding a stale token is every screen failing with an erro
 
 ### FE2 — Point dev builds at the right API base URL
 
-**Category:** P1 · **Status:** Open
+**Category:** P1 · **Status:** Done
 
 **Problem.** `lib/api.ts` defaults to the production API when the env var is unset:
 
@@ -106,6 +106,8 @@ There is no `.env.example` in the repo, so a fresh clone runs `npm run dev` agai
 **Dependencies.** None.
 
 **Next action.** Default to `http://localhost:4000` for development, keep the production URL supplied via `NEXT_PUBLIC_API_BASE_URL` in the Vercel project, and add `.env.example` documenting the variable. Note `.gitignore` currently ignores `.env*`, so committing the example needs a `!.env.example` negation. Surface the resolved base URL in the console during development so the target is never ambiguous.
+
+**Done (2026-09-25):** fallback in `lib/api.ts` is now `http://localhost:4000`; `.env.example` + `.env.local` document `NEXT_PUBLIC_API_BASE_URL`; `.gitignore` allows committing `.env.example`; README covers local setup; resolved base URL is logged in development as `[api] base URL: …`. Production still supplies the Railway URL via Vercel env.
 
 ---
 
@@ -189,22 +191,42 @@ The backend auth middleware returns **HTTP 401** with `business_code: "93"` for 
 
 ---
 
-### FE7 — Refresh-token client: short access token + rotation
+### FE7 — Refresh-token client: short access + HttpOnly cookie rotation
 
-**Category:** P1 · **Status:** Blocked · **Driven by:** `T28b` (backend, Open) · **Breaking**
+**Category:** P1 · **Status:** Open · **Driven by:** `T28b` (backend) · **Breaking**
 
-**Problem.** `T28b` replaces the single 24-hour access JWT with a ~15-minute access token plus a persistent refresh token, adding `POST /auth/refresh` and making `POST /auth/logout` revoke server-side. The FE currently assumes one long-lived token:
+**Contract (signed with backend T28b, 2026-09-21):**
 
-- `lib/auth.ts` stores exactly one token and writes the cookie with a hardcoded 1-day expiry (`setCookie('access_token', cleanToken, 1)`) — which matches today's 24h TTL and stops matching the moment the TTL shortens.
-- No request retries after a 401, so every in-flight call fails the moment the access token expires.
+| Piece | FE responsibility |
+|---|---|
+| Access token | JWT in memory / `sessionStorage` only — **not** a client-writable cookie. Sent as `Authorization: Bearer`. Response field renamed: `access_token` (was `token`). |
+| Refresh token | **HttpOnly Secure SameSite cookie** set by the API — FE never reads or writes it. Every auth-related `fetch` must use `credentials: 'include'`. |
+| Login / Register | Persist `access_token` (+ `expires_in`); cookie arrives automatically. |
+| `POST /auth/refresh` | No body. Cookie sent automatically. Response: new `access_token` (+ cookie rotated). Call once on 401, then retry the original request. |
+| `POST /auth/logout` | Cookie sent automatically; clear local access token. Backend revokes the refresh row. |
+| Reuse detection | If refresh returns 401 after a reuse, treat as full logout — clear access, redirect to login. Do not loop. |
 
-**Why it matters.** Without this, `T28b` logs users out every 15 minutes. The backend task is explicitly marked as breaking the FE.
+**Problem.** The FE assumes one long-lived token:
 
-**Affected area.** `lib/auth.ts`, `lib/api.ts`, `app/(auth)/login/page.tsx`, `lib/authHelpers.ts`.
+- `lib/auth.ts` stores one token and writes a non-httpOnly `access_token` cookie with a hardcoded 1-day expiry — wrong for a 15m access JWT and fights the new HttpOnly refresh cookie.
+- `lib/api.ts` does not send `credentials: 'include'`, so the refresh cookie never leaves the browser on cross-origin calls (Vercel → Railway).
+- No 401 → refresh → retry path; concurrent 401s would fire multiple rotations and trip reuse detection.
 
-**Dependencies.** **Backend `T28b` must define the contract first** — endpoint shape, refresh transport (body vs cookie), rotation semantics. Build on `FE1`'s single 401 interception point.
+**Why it matters.** Without this, T28b logs users out every 15 minutes (or immediately, if cookies never attach).
 
-**Next action.** Wait for the `T28b` contract. Then: store access and refresh separately, retry a failed request **once** after a successful refresh, and serialise concurrent refreshes behind a single in-flight promise so a page issuing five parallel requests does not fire five rotations — with rotation, the losers would be revoked.
+**Affected area.** `lib/auth.ts`, `lib/api.ts`, `app/(auth)/login/page.tsx`, `lib/authHelpers.ts`, `lib/types.ts` (`LoginResponse`).
+
+**Dependencies.** Backend `T28b` must be deployed (or running locally) with CORS `AllowCredentials` + explicit FE origin — `AllowOrigins: "*"` cannot coexist with credentialed cookies. Build on `FE1`'s single 401 interception point; do `FE9` (single request helper) first or in the same change so retry has one home.
+
+**Production gate.** Backend ops + this task: [`ecomhub-core/docs/roadmap/production-cutover.md`](../../../ecomhub-core/docs/roadmap/production-cutover.md). **FE7 + FE1 are CRITICAL** for the T28b cutover; FE3/FE9 IMPORTANT in the same release.
+
+**Next action.** After T28b lands:
+
+1. Drop the client-set `access_token` cookie; keep access JWT in memory + `sessionStorage` only.
+2. Add `credentials: 'include'` to all `fetch` calls in `lib/api.ts`.
+3. On 401 (except login/refresh themselves): single-flight `POST /auth/refresh`, update access token, retry once.
+4. Update login/register to read `access_token` / `expires_in`.
+5. Logout: call API (cookie attaches), then clear local access + user keys (`FE3`).
 
 ---
 
@@ -328,7 +350,7 @@ Order: **FE8 → FE14 / FE15 → FE16.**
 
 Revenue, expense and net per channel over a date range, replacing the three near-identical ad-expense cards in `app/(dashboard)/finance/ad-dashboard/page.tsx`.
 
-**Open question carried from the backend.** There is no marketplace fee account in the chart of accounts, so a "Fees" metric has no source data. The screen ships as Revenue / Expense / Net unless the accounts are created first — do not design a Fees column on the assumption it will exist.
+**Open question carried from the backend.** There is no marketplace fee account in the chart of accounts, so a truthful "Fees" amount has no source. **FE direction (2026-09-25):** the Channels layout **may** reserve a Fees row/label with a **null / empty** value; do not invent fees client-side. Tracked as gap **G4** in [`../design/ui-backend-gaps.md`](../design/ui-backend-gaps.md). Revenue / Expense / Net stay empty until `T32` lands (gap **G5**).
 
 ---
 
