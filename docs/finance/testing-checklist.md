@@ -110,7 +110,8 @@ Smoke / regression checks for finance screens. There is no automated FE test sui
 ## 9. Cross-cutting
 
 - [ ] Loading and API error banners are dismissible
-- [ ] Unauthenticated / expired token behaviour matches current `lib/api.ts` (see **FE1** / **FE7** if broken)
+- [ ] Unauthenticated / expired token behaviour matches current `lib/api.ts` (see **FE1** / **FE6** / **FE7** if broken)
+- [ ] New browser tab on a dashboard URL recovers session via refresh cookie (no forced re-login) when refresh is still valid (FE6)
 - [ ] Modals: Escape / cancel close; form state resets
 
 ---

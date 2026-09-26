@@ -27,7 +27,7 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE3 | P1 | Fix logout leaving `user_roles` in `localStorage` | — |
 | [x] | FE4 | P1 | Handle 429 from the login rate limiter | T28a |
 | [x] | FE5 | P1 | Fix revoked-token detection (checks 403, backend sends 401) | T28a |
-| [ ] | FE6 | P1 | Route guard for `(dashboard)` — no auth check exists today | — |
+| [x] | FE6 | P1 | Route guard for `(dashboard)` — client session + silent refresh | — |
 | [x] | FE7 | P1 | Refresh client — short access + HttpOnly cookie rotation | T28b |
 | [x] | FE8 | P1 | Adopt account balance / movement endpoints | T31 |
 | [x] | FE9 | P2 | Single request helper in `lib/api.ts` | — |
@@ -43,6 +43,7 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE19 | FEATURE | Dark top-bar nav + domain hubs ( pattern, EcomHub features) | design D7 |
 | [ ] | FE20 | P2 | Default list page size = 5 | — |
 | [ ] | FE21 | FEATURE | Wire Home Dashboard ops KPIs (sales / profit / by-channel) | gaps G1–G3 |
+| [ ] | FE22 | P1 | Wire paginated `ad-expenses/detail` | T15 |
 
 **P0 left:** none (FE1 Done).
 
@@ -188,7 +189,7 @@ The backend auth middleware returns **HTTP 401** with `business_code: "93"` for 
 
 ### FE6 — Route guard for `(dashboard)`
 
-**Category:** P1 · **Status:** Open
+**Category:** P1 · **Status:** Done (2026-09-26)
 
 **Problem.** `app/(dashboard)/layout.tsx` renders `PageWrapper` with no authentication check, and the repo has no `middleware.ts`. `lib/auth.ts` writes the `access_token` cookie with the comment "for middleware access", but the middleware it was written for does not exist. An unauthenticated visitor loads the dashboard shell and only discovers the problem when each request fails.
 
@@ -200,6 +201,13 @@ The backend auth middleware returns **HTTP 401** with `business_code: "93"` for 
 
 **Next action.** Pick one mechanism and remove the other's leftovers. If middleware is chosen, the cookie stays and the guard is a redirect; if a client guard is chosen, drop the cookie and rely on `sessionStorage`.
 
+**Done (2026-09-26):** Chose **client guard** (middleware is not viable after FE7 — access JWT is `sessionStorage` only; refresh is HttpOnly). `PageWrapper` already redirected when no access token; hardened to:
+
+1. `ensureAccessToken()` in `lib/api.ts` — use existing access token, else single-flight `POST /auth/refresh` (same path as FE7) so a **new tab** can recover the session from the refresh cookie.
+2. Encode `?redirect=` and bounce unauthenticated visitors to `/login`.
+3. `/login` — if session already recoverable, redirect out (relative paths only; block open redirects).
+
+No `middleware.ts`. Leftover access-token cookie write was already removed in FE7.
 ---
 
 ### FE7 — Refresh-token client: short access + HttpOnly cookie rotation
@@ -472,3 +480,17 @@ Wire real data in FE8/FE14/FE15; FE16 finishes migration and retirement of `/fin
 **Next action.** When KPI definitions + endpoints are agreed, wire `/dashboard` only — do not invent figures client-side. Until then keep `—` / gap ids.
 
 **Dependencies.** Backend report work (not yet a single `T*` for ops GMV); do not block Finance Overview (`FE8` / `FE14`) on this.
+
+---
+
+### FE22 — Wire paginated `ad-expenses/detail`
+
+**Category:** P1 · **Status:** Open · **Blocked on backend `T15`**
+
+**Problem.** `GET …/ad-expenses/detail` today returns an unbounded array. Backend **T15** will change it to the same paginated envelope as `shopee/transactions` (`page` / `limit` → `PaginatedResponse`). Until then the FE cannot safely page the detail table.
+
+**Affected area.** `lib/services/financeApi.ts` (`getAdExpensesDetail`), `app/(dashboard)/marketing/ad-expenses/page.tsx`, legacy `app/(dashboard)/finance/ad-dashboard/page.tsx` if still reachable.
+
+**Next action.** After T15 lands: pass `page`/`limit`, unwrap `results` + totals, add the shared `Pagination` control. Do not invent client-side slicing of the old unbounded response.
+
+**Not in scope.** Date-span validation UX (backend rejects); retiring the ad-expenses cards when T32/FE14 land.
