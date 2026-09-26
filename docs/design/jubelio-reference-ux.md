@@ -214,7 +214,7 @@ Catalog    → Categories (/master/categories)
 **Live pattern:**
 
 ```
-[ dark top bar: EcomHub | Dashboard | Finance ▾ | Marketing ▾ | Catalog ▾ | Logout ]
+[ dark top bar: EcomHub | Dashboard | Catalog ▾ | Marketing ▾ | Finance ▾ | Logout ]
      ↓ click domain label
 [ hub page: title + card grid (+ gear → Finance setup) ]
      ↓ click card or dropdown item

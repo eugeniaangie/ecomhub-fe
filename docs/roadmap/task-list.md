@@ -29,7 +29,7 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE5 | P1 | Fix revoked-token detection (checks 403, backend sends 401) | T28a |
 | [ ] | FE6 | P1 | Route guard for `(dashboard)` — no auth check exists today | — |
 | [x] | FE7 | P1 | Refresh client — short access + HttpOnly cookie rotation | T28b |
-| [ ] | FE8 | P1 | Adopt account balance / movement endpoints | T31 |
+| [x] | FE8 | P1 | Adopt account balance / movement endpoints | T31 |
 | [x] | FE9 | P2 | Single request helper in `lib/api.ts` | — |
 | [ ] | FE10 | P2 | Delete API clients for endpoints the backend does not expose | — |
 | [x] | FE11 | P2 | Consolidate the root markdown files into `docs/` | — |
@@ -245,7 +245,7 @@ The backend auth middleware returns **HTTP 401** with `business_code: "93"` for 
 
 ### FE8 — Adopt account balance / movement endpoints
 
-**Category:** P1 · **Status:** Open · **Driven by:** `T31` (backend, Done 2026-09-06)
+**Category:** P1 · **Status:** Done (2026-09-26) · **Driven by:** `T31` (backend, Done 2026-09-06)
 
 **Problem.** `T31` established that the Shopee balance endpoints the finance dashboard calls are **period net movement filtered to one channel**, not cumulative balances, and shipped replacements:
 
@@ -260,11 +260,11 @@ The backend auth middleware returns **HTTP 401** with `business_code: "93"` for 
 
 **Response shape.** Both return an array; balance rows are `account_code`, `account_name`, `account_type`, `is_active`, `total_debit`, `total_credit`, `current_balance`. Movement rows are identical except `net_movement` replaces `current_balance`. Sign is already normalised by account type, quiet accounts return `0`, and inactive accounts are included with `is_active: false`.
 
-**Affected area.** `lib/services/financeApi.ts`, `lib/types/finance.ts` (needs `AccountBalance` / `AccountMovement` — the existing `AccountTransactionBalance` has neither `account_code` nor `is_active`), **`/finance/overview` and `/finance/balances`** (v2 targets), plus the unlinked legacy `app/(dashboard)/finance/dashboard/page.tsx` until FE16 retires it. Update `docs/menu-endpoints.md`.
+**Done (2026-09-26):** Added `AccountBalance` / `AccountMovement` types and `financeReportsApi.getAccountBalances` / `getAccountMovements`. Wired **Finance → Overview** (Total cash as sum of T31 balance rows + period debit/credit/net from movement; as-of + range pickers) and **Finance → Accounts** (`/finance/balances` table). Channel strip / Fees stay empty (G4/G5/G7). Legacy Shopee methods kept for `/finance/dashboard` until FE16. Sign not re-negated in the UI.
 
-**Dependencies.** None — the endpoints exist. Do **not** delete the legacy client methods here; `T34` / `FE16` retire the routes once nothing calls them.
+**Not done here.** Switching or deleting the unlinked legacy dashboard page; channel performance (FE14); transaction drill-down (FE15).
 
-**Next action.** Add the two typed client methods and wire **Finance Overview** Total Cash (and Accounts balances) to `/accounts/balance`. Label as balance "as of" a date rather than tied to the range picker. Do not treat the legacy Shopee dashboard as the long-term home for these cards.
+**Manual check.** Compare Overview Total cash and Accounts rows against the same `as_of` via API (or legacy dashboard under a long history range where opening balance matters).
 
 ---
 

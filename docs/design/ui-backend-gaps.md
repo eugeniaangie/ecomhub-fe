@@ -32,7 +32,7 @@ Related: [`jubelio-reference-ux.md`](./jubelio-reference-ux.md) · FE FE14–FE1
 | G4 | Finance → Channels (and Overview channel strip) — **Fees** line | Null / “—” / omit amount | No marketplace fee `account_code`s; T32 must not invent fees | CoA fee accounts + T32 (core Decision 11) | Open |
 | G5 | Finance → Channels — full Revenue / Expense / Net | Empty until T32 lands | `T32` channel performance endpoint | T32 | Open |
 | G6 | Finance → Transactions (unified feed) + Accounts drill-down | Empty list / keep legacy Shopee feed until migrate | `T33` unified transactions endpoint | T33 · FE15 | Open |
-| G7 | Finance → Overview — channel performance side-by-side | Cash (T31) can be real; channel strip empty until T32 | T32 | T32 · FE8/FE16 | Open |
+| G7 | Finance → Overview — channel performance side-by-side | Cash (T31) wired on Overview/Accounts (FE8); channel strip empty until T32 | T32 | T32 · FE14/FE16 | Partial (2026-09-26): cash via FE8; channel strip still Open |
 
 **Cash / account balances** via T31 (`/accounts/balance`, `/accounts/movement`) are **not** gaps once FE8 wires them — do not list those as missing.
 
@@ -48,4 +48,6 @@ Related: [`jubelio-reference-ux.md`](./jubelio-reference-ux.md) · FE FE14–FE1
 
 ## Resolved / filled
 
-_(none yet)_
+| ID | Note |
+|---|---|
+| G7 (cash only) | **Partial (2026-09-26):** FE8 wired `/accounts/balance` + `/accounts/movement` on Overview and Accounts. Channel half of G7 remains Open. |

@@ -90,6 +90,9 @@ Smoke / regression checks for finance screens. There is no automated FE test sui
 ## 7. Dashboards
 
 - [ ] `/finance/dashboard`: balances and transactions for a date range
+- [ ] `/finance/overview`: Total cash loads from `/accounts/balance` for chosen as-of; period debit/credit/net from `/accounts/movement`; channel/Fees stay empty
+- [ ] `/finance/balances`: per-account balance table + period movement table; as-of independent of movement range
+- [ ] Changing as-of does not change movement totals; changing movement range does not change Total cash
 - [ ] `/marketing/ad-expenses`: totals / per-platform sections load without client-side totals inventing numbers
 - [ ] Old `/finance/ad-*` paths are unused (pages live only under `/marketing/*`)
 

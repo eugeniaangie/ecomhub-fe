@@ -29,6 +29,8 @@ import type {
   UpdateJournalEntry,
   PaginatedResponseFinance,
   AccountTransactionBalance,
+  AccountBalance,
+  AccountMovement,
   AccountTransaction,
   AdExpenses,
 } from '../types/finance';
@@ -536,7 +538,42 @@ export const journalEntriesApi = {
 // ===== Finance Reports =====
 export const financeReportsApi = {
   /**
+   * Cumulative cash-subtree balances (Kas / Bank / E-Wallet). Optional as_of (YYYY-MM-DD).
+   */
+  getAccountBalances: async (params?: { as_of?: string }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.as_of) {
+      queryParams.set('as_of', params.as_of);
+    }
+    const qs = queryParams.toString();
+    return api.get<AccountBalance[]>(
+      `${API_VERSION}/reports/dashboard/finance/accounts/balance${qs ? `?${qs}` : ''}`
+    );
+  },
+
+  /**
+   * Period cash-subtree movement. start_date / end_date required; channel optional.
+   */
+  getAccountMovements: async (params: {
+    start_date: string;
+    end_date: string;
+    channel?: string;
+  }) => {
+    const queryParams = new URLSearchParams({
+      start_date: params.start_date,
+      end_date: params.end_date,
+    });
+    if (params.channel) {
+      queryParams.set('channel', params.channel);
+    }
+    return api.get<AccountMovement[]>(
+      `${API_VERSION}/reports/dashboard/finance/accounts/movement?${queryParams.toString()}`
+    );
+  },
+
+  /**
    * Get current balance for Bank Shopee
+   * @deprecated Prefer getAccountBalances / getAccountMovements (T31). Kept until FE16.
    */
   getCurrentBalanceBankShopee: async (params: {
     start_date: string;
@@ -554,6 +591,7 @@ export const financeReportsApi = {
 
   /**
    * Get current balance for Shopee Wallet
+   * @deprecated Prefer getAccountBalances / getAccountMovements (T31). Kept until FE16.
    */
   getCurrentBalanceShopeeWallet: async (params: {
     start_date: string;
