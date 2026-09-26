@@ -194,6 +194,19 @@ Modul keuangan untuk mengelola transaksi, anggaran, dan laporan keuangan.
 
 ---
 
+## Docs
+
+| Doc | Purpose |
+|-----|---------|
+| [`docs/roadmap/task-list.md`](docs/roadmap/task-list.md) | FE backlog and live status (`FE*`) |
+| [`docs/finance/module.md`](docs/finance/module.md) | Finance screens, roles, behaviour |
+| [`docs/menu-endpoints.md`](docs/menu-endpoints.md) | Screen → API endpoint map |
+| [`docs/finance/testing-checklist.md`](docs/finance/testing-checklist.md) | Manual verification |
+| [`docs/design/`](docs/design/) | UX reference and UI/backend gaps |
+| [`AGENTS.md`](AGENTS.md) | Conventions for contributors / agents |
+
+---
+
 ## Notes
 
 - Master Data modules are for reference data that doesn't change frequently

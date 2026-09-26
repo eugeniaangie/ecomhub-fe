@@ -32,7 +32,7 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [ ] | FE8 | P1 | Adopt account balance / movement endpoints | T31 |
 | [ ] | FE9 | P2 | Single request helper in `lib/api.ts` | — |
 | [ ] | FE10 | P2 | Delete API clients for endpoints the backend does not expose | — |
-| [ ] | FE11 | P2 | Consolidate the root markdown files into `docs/` | — |
+| [x] | FE11 | P2 | Consolidate the root markdown files into `docs/` | — |
 | [ ] | FE12 | P2 | Small-fixes cleanup bundle | — |
 | [ ] | FE13 | P3 | Add a test setup and wire lint/build into CI | — |
 | [ ] | FE14 | FEATURE | Channels screen | T32 |
@@ -53,9 +53,9 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 
 | If the change touched | Also update |
 |---|---|
-| Which endpoint a screen calls | `MENU_ENDPOINTS.md` |
-| A screen's behaviour, routes, or role rules | the relevant finance/module doc |
-| Manual verification steps | `TESTING_CHECKLIST.md` |
+| Which endpoint a screen calls | `docs/menu-endpoints.md` |
+| A screen's behaviour, routes, or role rules | `docs/finance/module.md` (or the relevant module doc) |
+| Manual verification steps | `docs/finance/testing-checklist.md` |
 | Stable conventions (not status) | `AGENTS.md` / `.cursor/rules/` — principles only |
 
 **Do not** delete a resolved task or renumber `FE*` IDs. Append a `**Done.** YYYY-MM-DD — …` line instead.
@@ -247,7 +247,7 @@ The backend auth middleware returns **HTTP 401** with `business_code: "93"` for 
 
 **Response shape.** Both return an array; balance rows are `account_code`, `account_name`, `account_type`, `is_active`, `total_debit`, `total_credit`, `current_balance`. Movement rows are identical except `net_movement` replaces `current_balance`. Sign is already normalised by account type, quiet accounts return `0`, and inactive accounts are included with `is_active: false`.
 
-**Affected area.** `lib/services/financeApi.ts`, `lib/types/finance.ts` (needs `AccountBalance` / `AccountMovement` — the existing `AccountTransactionBalance` has neither `account_code` nor `is_active`), `app/(dashboard)/finance/dashboard/page.tsx`, `MENU_ENDPOINTS.md`.
+**Affected area.** `lib/services/financeApi.ts`, `lib/types/finance.ts` (needs `AccountBalance` / `AccountMovement` — the existing `AccountTransactionBalance` has neither `account_code` nor `is_active`), `app/(dashboard)/finance/dashboard/page.tsx`, `docs/menu-endpoints.md`.
 
 **Dependencies.** None — the endpoints exist. Do **not** delete the legacy client methods here; `T34` retires the routes once nothing calls them.
 
@@ -291,7 +291,7 @@ The backend auth middleware returns **HTTP 401** with `business_code: "93"` for 
 
 ### FE11 — Consolidate the root markdown files into `docs/`
 
-**Category:** P2 · **Status:** Open
+**Category:** P2 · **Status:** Done
 
 **Problem.** Seven markdown files sit at the repo root — `README.md`, `README_FINANCE.md`, `FINANCE_MODULE.md`, `FINANCE_QUICK_REFERENCE.md`, `IMPLEMENTATION_SUMMARY.md`, `MENU_ENDPOINTS.md`, `TESTING_CHECKLIST.md` — roughly 1,900 lines with substantial overlap, and six of the seven are untracked in git.
 
@@ -303,6 +303,8 @@ The backend auth middleware returns **HTTP 401** with `business_code: "93"` for 
 
 **Next action.** Keep `README.md` at the root as the entry point. Move the rest under `docs/`, merge `README_FINANCE.md` / `IMPLEMENTATION_SUMMARY.md` / `FINANCE_QUICK_REFERENCE.md` into one module guide, keep `MENU_ENDPOINTS.md` (it is the screen-to-endpoint map and stays useful), and **commit them**. Delivery-log phrasing — "what has been delivered", "production-ready" — should not survive the merge; write present-tense current state.
 
+**Done (2026-09-26):** Kept root `README.md`. Merged finance delivery notes into `docs/finance/module.md` (present tense; covers current screens including journal / capital / ad / dashboards). Moved endpoint map to `docs/menu-endpoints.md` and checklist to `docs/finance/testing-checklist.md` (removed stale localStorage role instructions). Deleted `README_FINANCE.md`, `FINANCE_MODULE.md`, `FINANCE_QUICK_REFERENCE.md`, `IMPLEMENTATION_SUMMARY.md`, and the old root copies of the moved files. Updated `AGENTS.md` / docs-impact paths.
+
 ---
 
 ### FE12 — Small-fixes cleanup bundle
@@ -312,7 +314,7 @@ The backend auth middleware returns **HTTP 401** with `business_code: "93"` for 
 One session for the trivial, independent fixes. Deliberately bundled — none deserves its own ticket.
 
 - `UserInfo.phone` is typed `string` in `lib/types.ts`, but the backend sends `phone` as nullable with `omitempty`, so it can be absent. Type it `string | null | undefined`.
-- `TESTING_CHECKLIST.md` and `README_FINANCE.md` still instruct setting `localStorage.setItem('user_role', 'admin')` by hand. Roles have come from `/auth/me` since the login flow landed; the instructions are stale and now actively misleading.
+- ~~`TESTING_CHECKLIST.md` and `README_FINANCE.md` still instruct setting `localStorage.setItem('user_role', 'admin')` by hand.~~ **Done with FE11 (2026-09-26):** those docs were removed/rewritten; checklist now says login via `/auth/me`.
 - Debug `console.log` calls in `lib/authHelpers.ts` are dev-gated but noisy; decide whether they stay.
 - `app/admin/` is an empty directory with no route in it.
 

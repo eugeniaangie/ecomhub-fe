@@ -28,7 +28,7 @@ When a task or open question is answered or implemented:
 | Kind | Examples | How to update |
 |---|---|---|
 | **Status / history** | `docs/roadmap/task-list.md` | Append resolution; **do not delete** completed entries |
-| **Current-state snapshots** | `MENU_ENDPOINTS.md`, module docs, `README.md` | Update in place to match **today's** behaviour, present tense. Stale present-tense claims are worse than none |
+| **Current-state snapshots** | `docs/menu-endpoints.md`, `docs/finance/module.md`, `README.md` | Update in place to match **today's** behaviour, present tense. Stale present-tense claims are worse than none |
 
 Delivery-log phrasing — "what has been delivered", "production-ready", "all features implemented" — does not belong in a current-state doc. It is true on the day it is written and misleading afterwards.
 
@@ -43,5 +43,5 @@ Delivery-log phrasing — "what has been delivered", "production-ready", "all fe
 ## Where status lives
 
 - **Task tracker** — [`docs/roadmap/task-list.md`](../../docs/roadmap/task-list.md) (checklist + per-task **Status**; keep both in sync)
-- **Screen → endpoint map** — `MENU_ENDPOINTS.md`, updated in place
+- **Screen → endpoint map** — `docs/menu-endpoints.md`, updated in place
 - **Rules / `AGENTS.md`** — stable principles only; new tasks and bugs go in the backlog
