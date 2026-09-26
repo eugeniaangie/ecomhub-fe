@@ -87,6 +87,16 @@ async function tryRefreshAccessToken(): Promise<boolean> {
   return refreshInFlight;
 }
 
+/**
+ * FE6 — true if an access token is already in sessionStorage, or a silent
+ * refresh (HttpOnly cookie) succeeds. Used by the dashboard route guard so a
+ * new tab can recover the session without forcing login.
+ */
+export async function ensureAccessToken(): Promise<boolean> {
+  if (auth.isAuthenticated()) return true;
+  return tryRefreshAccessToken();
+}
+
 function mapErrorMessage(status: number, errorData: ErrorBody): string {
   let errorMessage = errorData.message || `HTTP error! status: ${status}`;
 

@@ -14,7 +14,7 @@ Current-state map of what each screen calls. When a screen’s endpoints change,
 | Register | `POST /auth/register` → same session shape as login |
 | Silent renew | `POST /auth/refresh` (cookie only; `credentials: 'include'`) |
 | Logout | `POST /auth/logout` (revokes refresh cookie server-side) |
-| Global (dashboard) | `Authorization: Bearer <access_token>`; on 401 → single-flight `POST /auth/refresh` then retry once; if refresh fails → clear session + redirect `/login?redirect=…` (FE1/FE7) |
+| Global (dashboard) | `Authorization: Bearer <access_token>`; `(dashboard)` shell via `PageWrapper` + `ensureAccessToken()` (FE6: access token or silent refresh); on 401 → single-flight `POST /auth/refresh` then retry once; if refresh fails → clear session + redirect `/login?redirect=…` (FE1/FE7) |
 
 See FE task **FE7** and backend **T28b**.
 

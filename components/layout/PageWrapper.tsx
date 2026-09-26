@@ -2,8 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { auth } from '@/lib/auth';
-import { authApi } from '@/lib/api';
+import { ensureAccessToken, authApi } from '@/lib/api';
 import { setUserRoles, setCurrentUserId } from '@/lib/authHelpers';
 import { AppNav } from './AppNav';
 
@@ -18,11 +17,12 @@ export const PageWrapper: React.FC<PageWrapperProps> = ({ children }) => {
 
   useEffect(() => {
     const checkAuthAndFetchRoles = async () => {
-      const authenticated = auth.isAuthenticated();
+      const ok = await ensureAccessToken();
 
-      if (!authenticated) {
+      if (!ok) {
         setIsAuthenticated(false);
-        router.replace(`/login?redirect=${pathname}`);
+        const redirect = encodeURIComponent(pathname || '/');
+        router.replace(`/login?redirect=${redirect}`);
         return;
       }
 
