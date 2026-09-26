@@ -23,7 +23,7 @@ function LoginForm() {
 
     try {
       const response = await authApi.login(username, password);
-      auth.setToken(response.token);
+      auth.setToken(response.access_token);
       
       // Fetch user info and roles after login
       try {

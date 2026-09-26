@@ -22,15 +22,15 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 
 | | ID | Pri | Task | Driven by |
 |:---:|---|---|---|---|
-| [ ] | FE1 | P0 | Global 401 handling — force re-login instead of dead UI | T28a |
+| [x] | FE1 | P0 | Global 401 handling — force re-login instead of dead UI | T28a |
 | [x] | FE2 | P1 | Point dev builds at the right API base URL | — |
-| [ ] | FE3 | P1 | Fix logout leaving `user_roles` in `localStorage` | — |
-| [ ] | FE4 | P1 | Handle 429 from the login rate limiter | T28a |
-| [ ] | FE5 | P1 | Fix revoked-token detection (checks 403, backend sends 401) | T28a |
+| [x] | FE3 | P1 | Fix logout leaving `user_roles` in `localStorage` | — |
+| [x] | FE4 | P1 | Handle 429 from the login rate limiter | T28a |
+| [x] | FE5 | P1 | Fix revoked-token detection (checks 403, backend sends 401) | T28a |
 | [ ] | FE6 | P1 | Route guard for `(dashboard)` — no auth check exists today | — |
-| [ ] | FE7 | P1 | Refresh client — short access + HttpOnly cookie rotation | T28b |
+| [x] | FE7 | P1 | Refresh client — short access + HttpOnly cookie rotation | T28b |
 | [ ] | FE8 | P1 | Adopt account balance / movement endpoints | T31 |
-| [ ] | FE9 | P2 | Single request helper in `lib/api.ts` | — |
+| [x] | FE9 | P2 | Single request helper in `lib/api.ts` | — |
 | [ ] | FE10 | P2 | Delete API clients for endpoints the backend does not expose | — |
 | [x] | FE11 | P2 | Consolidate the root markdown files into `docs/` | — |
 | [ ] | FE12 | P2 | Small-fixes cleanup bundle | — |
@@ -38,8 +38,9 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [ ] | FE14 | FEATURE | Channels screen | T32 |
 | [ ] | FE15 | FEATURE | Unified transactions screen | T33 |
 | [ ] | FE16 | FEATURE | Restructure Finance UI — Overview · Accounts · Transactions · Channels | T34 |
+| [x] | FE17 | FEATURE | Phase A shell — sidebar IA + empty Overview/Accounts/Transactions/Channels | design |
 
-**P0 left:** FE1.
+**P0 left:** none (FE1 Done).
 
 ---
 
@@ -66,7 +67,7 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 
 ### FE1 — Global 401 handling: force re-login instead of dead UI
 
-**Category:** P0 · **Status:** Open · **Driven by:** `T28a` (backend, Done 2026-09-10)
+**Category:** P0 · **Status:** Done (2026-09-26) · **Driven by:** `T28a` (backend, Done 2026-09-10)
 
 **Problem.** `T28a` changed the JWT claim set: tokens now carry `sub` / `iss` / `aud` / `type=access` and no longer carry `username` / `user_id`. Any token issued before that change is rejected by the backend middleware. The FE has no global 401 path:
 
@@ -81,7 +82,7 @@ The result for a user holding a stale token is every screen failing with an erro
 
 **Dependencies.** None. Should land **before** `FE7`, which builds the refresh flow on top of the same interception point.
 
-**Next action.** Centralise the 401 branch: clear the token and all user keys, then redirect to `/login?redirect=<current path>`. Do **not** redirect on the login request itself, or a wrong password becomes a redirect loop.
+**Done (2026-09-26):** After failed refresh (or hard 401/`93` on non-login routes), clear access token + user keys and `location.replace` to `/login?redirect=…`. Login / refresh / register 401s do not redirect. Implemented together with `FE7`.
 
 ---
 
@@ -113,7 +114,7 @@ There is no `.env.example` in the repo, so a fresh clone runs `npm run dev` agai
 
 ### FE3 — Fix logout leaving `user_roles` in `localStorage`
 
-**Category:** P1 · **Status:** Open
+**Category:** P1 · **Status:** Done (2026-09-26)
 
 **Problem.** `setUserRoles` writes both `user_roles` (the array) and `user_role` (first role, kept for backward compatibility). `logout()` removes only `user_role` and `user_id`:
 
@@ -133,11 +134,13 @@ localStorage.removeItem('user_id');
 
 **Next action.** Clear every auth key in one helper (`clearUserData()`) and call it from both `logout()` and the 401 path. Also decide whether `user_role` is still needed, or whether `user_roles` alone is enough now that `/auth/me` always returns the array.
 
+**Done (2026-09-26):** `clearUserData()` removes `user_roles`, `user_role`, and `user_id`. Called from `logout()` and from the global session-clear path in `lib/api.ts`. Topbar uses `logout()` instead of only `clearToken()`.
+
 ---
 
 ### FE4 — Handle 429 from the login rate limiter
 
-**Category:** P1 · **Status:** Open · **Driven by:** `T28a`
+**Category:** P1 · **Status:** Done (2026-09-26) · **Driven by:** `T28a`
 
 **Problem.** `T28a` added rate limiting to `POST /auth/login`: 20 requests/minute per IP and 10/minute per username, answered with HTTP 429 and `business_code` `"90"`. `handleResponse` has branches for 500+, 404, 401, 403 and 400 — nothing for 429, so the user sees the raw `HTTP error! status: 429`.
 
@@ -149,11 +152,13 @@ localStorage.removeItem('user_id');
 
 **Next action.** Add a 429 branch with a clear "too many attempts, try again in a minute" message. Consider disabling the submit button briefly after a 429 rather than letting the user hammer a limiter that counts every attempt.
 
+**Done (2026-09-26):** `mapErrorMessage` handles HTTP 429 with a clear retry message (used by login via shared `request`). Optional submit cooldown left for later.
+
 ---
 
 ### FE5 — Fix revoked-token detection (checks 403, backend sends 401)
 
-**Category:** P1 · **Status:** Open · **Driven by:** `T28a`
+**Category:** P1 · **Status:** Done (2026-09-26) · **Driven by:** `T28a`
 
 **Problem.** `handleResponse` looks for a revoked token inside the **403** branch:
 
@@ -172,6 +177,8 @@ The backend auth middleware returns **HTTP 401** with `business_code: "93"` for 
 **Dependencies.** Fold into `FE1`; both edit the same error-mapping block.
 
 **Next action.** Key the revoked check on `business_code === '93'` regardless of HTTP status, and confirm the actual status/body pairs against a running backend before relying on either.
+
+**Done (2026-09-26):** Revoked detection keys on `business_code === '93'` (or message text) independent of HTTP status; session clear + re-login follows via FE1/FE7 path.
 
 ---
 
@@ -193,7 +200,7 @@ The backend auth middleware returns **HTTP 401** with `business_code: "93"` for 
 
 ### FE7 — Refresh-token client: short access + HttpOnly cookie rotation
 
-**Category:** P1 · **Status:** Open · **Driven by:** `T28b` (backend) · **Breaking**
+**Category:** P1 · **Status:** Done (2026-09-26) · **Driven by:** `T28b` (backend) · **Breaking**
 
 **Contract (signed with backend T28b, 2026-09-21):**
 
@@ -228,6 +235,8 @@ The backend auth middleware returns **HTTP 401** with `business_code: "93"` for 
 4. Update login/register to read `access_token` / `expires_in`.
 5. Logout: call API (cookie attaches), then clear local access + user keys (`FE3`).
 
+**Done (2026-09-26):** All five steps above in `lib/auth.ts` + `lib/api.ts` + login page. Login reads `access_token`. Refresh is single-flight via raw `fetch` + cookie. Bundled with FE1/FE3/FE5/FE9.
+
 ---
 
 ### FE8 — Adopt account balance / movement endpoints
@@ -259,7 +268,7 @@ The backend auth middleware returns **HTTP 401** with `business_code: "93"` for 
 
 ### FE9 — Single request helper in `lib/api.ts`
 
-**Category:** P2 · **Status:** Open
+**Category:** P2 · **Status:** Done (2026-09-26)
 
 **Problem.** `get`, `post`, `put`, `patch` and `delete` each repeat the same block: read the token, strip a `Bearer ` prefix, trim, build headers, fetch, hand off to `handleResponse`. Five copies, ~25 duplicated lines each.
 
@@ -270,6 +279,8 @@ The backend auth middleware returns **HTTP 401** with `business_code: "93"` for 
 **Dependencies.** Best done **before** `FE7`, so the retry logic has one home. Keep it separate from `FE1`: do not bundle a refactor with a behaviour fix.
 
 **Next action.** One private `request(method, endpoint, body?, options?)`; the five exported methods become thin wrappers. Public signatures must not change.
+
+**Done (2026-09-26):** Single `request()` with credentials, refresh, and error mapping; `get/post/put/patch/delete` are thin wrappers. Landed with FE7.
 
 ---
 
@@ -342,9 +353,21 @@ One session for the trivial, independent fixes. Deliberately bundled — none de
 
 ## FEATURE — Finance UI restructure
 
-The target shape is **Overview · Accounts · Transactions · Channels**, with channel as a reporting dimension rather than a top-level split — no separate "Shopee Finance" and "TikTok Finance" page trees, so adding Lazada or Blibli is data rather than new pages. The reasoning lives in the backend backlog under `T34`.
+The target shape is **Overview · Accounts · Transactions · Channels**, with channel as a reporting dimension rather than a top-level split — no separate "Shopee Finance" and "TikTok Finance" page trees, so adding Lazada or Blibli is data rather than new pages. The reasoning lives in the backend backlog under `T34`. Design decisions: [`../design/`](../design/).
 
-Order: **FE8 → FE14 / FE15 → FE16.**
+Order: **FE17 (shell) → FE8 → FE14 / FE15 → FE16 (wire real data / retire legacy).**
+
+### FE17 — Phase A shell: sidebar IA + empty finance pillars
+
+**Category:** FEATURE · **Status:** Done (2026-09-26)
+
+**Problem.** Home Dashboard and Finance were tangled (Finance/Ad dashboards under Dashboard; Finance hub tiles; no Overview · Accounts · Transactions · Channels routes).
+
+**Done (2026-09-26):** Sidebar IA per locked decisions D2–D5 — home `/dashboard` (empty ops KPIs), Finance peers Overview / Accounts (`/finance/balances`) / Transactions / Channels / Ad Expenses + CRUD; `/finance` → Overview; Chart of Accounts stays under Master; legacy `/finance/dashboard` unlinked; slate canvas chrome. Empty slots use `—` / gap ids (G1–G7), no invented figures.
+
+**Next.** FE8 wires balances/overview cash; FE14/FE15 fill Channels/Transactions when T32/T33 land; FE16 retires legacy Shopee dashboard consumers.
+
+---
 
 ### FE14 — Channels screen
 
@@ -368,15 +391,15 @@ One transactions feed across all accounts and channels, filterable by account, c
 
 ### FE16 — Restructure the Finance UI
 
-**Category:** FEATURE · **Status:** Blocked on `FE8`, `FE14`, `FE15` · **Backend counterpart:** `T34`
+**Category:** FEATURE · **Status:** Blocked on `FE8`, `FE14`, `FE15` · **Backend counterpart:** `T34` · **Shell:** `FE17` Done
 
-| Screen | Answers | Backed by |
-|---|---|---|
-| **Overview** | Total Cash plus channel performance side by side | `FE8` + `FE14` |
-| **Accounts** | "Where is my money?" — balance per account, drill down to its transactions | `FE8` + `FE15` |
-| **Transactions** | Unified feed across accounts and channels | `FE15` |
-| **Channels** | "Where is my activity coming from?" | `FE14` |
+| Screen | Answers | Backed by | Route (shell) |
+|---|---|---|---|
+| **Overview** | Total Cash plus channel performance side by side | `FE8` + `FE14` | `/finance/overview` |
+| **Accounts** | "Where is my money?" — balance per account, drill down to its transactions | `FE8` + `FE15` | `/finance/balances` (CoA remains `/finance/accounts`) |
+| **Transactions** | Unified feed across accounts and channels | `FE15` | `/finance/transactions` |
+| **Channels** | "Where is my activity coming from?" | `FE14` | `/finance/channels` |
 
-**Current state.** `app/(dashboard)/finance/` has `dashboard/`, `ad-dashboard/`, `accounts/`, `journal-entries/` and the supporting CRUD pages. The Shopee-specific report methods in `lib/services/financeApi.ts` are the last consumers of the legacy routes.
+**Current state (after FE17).** Shell routes and sidebar exist with empty placeholders. Legacy Shopee summary at `/finance/dashboard` is unlinked; `financeApi.ts` still calls legacy report routes from that page and Ad Expenses. Wire real data in FE8/FE14/FE15; FE16 finishes migration and retirement.
 
 **Retire when unreferenced.** `shopee/current-balance`, `shopee/wallet/current-balance`, `shopee/transactions`. The `ad-expenses/*` routes stay until `T32` supersedes them. **Do not ask for a backend route to be deleted while `financeApi.ts` still calls it** — the backend is holding those routes open specifically for this FE.

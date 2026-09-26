@@ -14,7 +14,7 @@ Current-state map of what each screen calls. When a screen’s endpoints change,
 | Register | `POST /auth/register` → same session shape as login |
 | Silent renew | `POST /auth/refresh` (cookie only; `credentials: 'include'`) |
 | Logout | `POST /auth/logout` (revokes refresh cookie server-side) |
-| Global (dashboard) | `Authorization: Bearer <access_token>`; on 401 → refresh once then retry |
+| Global (dashboard) | `Authorization: Bearer <access_token>`; on 401 → single-flight `POST /auth/refresh` then retry once; if refresh fails → clear session + redirect `/login?redirect=…` (FE1/FE7) |
 
 See FE task **FE7** and backend **T28b**.
 
@@ -22,13 +22,33 @@ See FE task **FE7** and backend **T28b**.
 
 ## Dashboard
 
-### Finance Dashboard (`/finance/dashboard`)
+### Home (`/dashboard`)
+
+Ops / profit pulse. **No report endpoints wired yet** — KPI and chart shells render as empty (`—`). See gaps **G1–G3** in [`design/ui-backend-gaps.md`](./design/ui-backend-gaps.md).
+
+### Finance Overview (`/finance/overview`)
+
+Accounting overview shells (Total cash, channel performance). Cash will use `GET /accounts/balance` (FE8 / T31); channel strip needs T32. Gaps **G4, G5, G7**.
+
+### Accounts — balances (`/finance/balances`)
+
+“Where is the money?” Empty until FE8 wires `GET /accounts/balance` (+ drill-down via T33 later).
+
+### Transactions (`/finance/transactions`)
+
+Unified feed placeholder. Needs T33 / FE15. Gap **G6**. Legacy Shopee transactions remain only on the unlinked `/finance/dashboard` page.
+
+### Channels (`/finance/channels`)
+
+Per-channel Revenue / Expense / Net / Fees shells. Needs T32 / FE14. Fees amount stays null (G4) until fee accounts exist.
+
+### Legacy Finance Dashboard (`/finance/dashboard`) — not in sidebar
 
 - `GET /reports/dashboard/finance/shopee/current-balance`
 - `GET /reports/dashboard/finance/shopee/wallet/current-balance`
 - `GET /reports/dashboard/finance/shopee/transactions` *(query: `start_date`, `end_date`, `page`, `limit` — FE uses `DEFAULT_PAGE` / `DEFAULT_PAGE_SIZE` from `lib/utils/pagination.ts`)*
 
-### Ad Expenses Dashboard (`/finance/ad-dashboard`)
+### Ad Expenses (`/finance/ad-dashboard`)
 
 - `GET /reports/dashboard/finance/ad-expenses/total`
 - `GET /reports/dashboard/finance/ad-expenses/shopee`
@@ -74,6 +94,8 @@ See FE task **FE7** and backend **T28b**.
 ---
 
 ## Finance Management
+
+CRUD and workflow screens under the Finance sidebar group (peers after Overview / Accounts / Transactions / Channels / Ad Expenses).
 
 ### Capital & Investors (`/finance/capital-investors`)
 

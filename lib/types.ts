@@ -14,7 +14,7 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  token: string;
+  access_token: string;
   token_type?: string;
   expires_in?: number;
 }
