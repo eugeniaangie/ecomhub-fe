@@ -3,17 +3,17 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function DashboardPage() {
+/** App home → ops Dashboard (not Finance). */
+export default function RootDashboardRedirect() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/finance/dashboard');
+    router.replace('/dashboard');
   }, [router]);
 
   return (
-    <div className="flex items-center justify-center h-64">
-      <div className="text-gray-500">Redirecting to Finance Dashboard...</div>
+    <div className="flex h-64 items-center justify-center">
+      <div className="text-gray-500">Redirecting…</div>
     </div>
   );
 }
-

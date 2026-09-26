@@ -25,7 +25,7 @@ app/ (routes) → lib/services/*Api → lib/api.ts → ecomhub-core HTTP API
 |---|---|
 | `app/(auth)/` · `app/(dashboard)/` | Route groups — unauthenticated vs authenticated |
 | `components/ui/` | Domain-free primitives |
-| `components/layout/` | App shell — Sidebar, Topbar, PageWrapper |
+| `components/layout/` | App shell — AppNav, DomainHub, PageWrapper |
 | `components/<domain>/` | Domain components (`finance/`, `categories/`) |
 | `lib/api.ts` | Base URL, auth header, envelope unwrapping, error mapping |
 | `lib/services/` | Endpoint clients by domain |
