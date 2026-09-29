@@ -141,7 +141,7 @@ CRUD and workflow screens under the Finance sidebar group, after the Views secti
 - `GET /reports/dashboard/finance/ad-expenses/shopee`
 - `GET /reports/dashboard/finance/ad-expenses/meta`
 - `GET /reports/dashboard/finance/ad-expenses/tiktok`
-- `GET /reports/dashboard/finance/ad-expenses/detail` — paginated (`page`/`limit` → `PaginatedResponse`; T15 slice 1). FE22 wires UI.
+- `GET /reports/dashboard/finance/ad-expenses/detail` — paginated (`page`/`limit` → `PaginatedResponse`; backend T15). FE22 Done (2026-09-29): Marketing Ad Expenses wires `Pagination`. Max date-range still deferred on BE Phase 5.
 
 ---
 
