@@ -1,6 +1,7 @@
 # Finance — manual testing checklist
 
-Smoke / regression checks for finance screens. There is no automated FE test suite yet (**FE13**).
+Smoke / regression checks for finance screens. Automated unit coverage starts with Vitest (`npm test`, **FE13**); this checklist remains the manual UI path.
+
 
 ## Environment
 
