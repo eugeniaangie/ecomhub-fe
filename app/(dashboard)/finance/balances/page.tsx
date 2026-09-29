@@ -7,15 +7,17 @@ import { DatePicker } from '@/components/ui/DatePicker';
 import { financeReportsApi } from '@/lib/services/financeApi';
 import type { AccountBalance, AccountMovement } from '@/lib/types/finance';
 import {
+  amountColorClass,
   formatCurrency,
   formatDateForAPI,
   getFirstDayOfCurrentMonth,
   getTodayFormatted,
+  LEDGER_START_DATE,
 } from '@/lib/utils/formatters';
 
 export default function FinanceBalancesPage() {
   const [asOf, setAsOf] = useState(getTodayFormatted());
-  const [startDate, setStartDate] = useState(getFirstDayOfCurrentMonth());
+  const [startDate, setStartDate] = useState(LEDGER_START_DATE);
   const [endDate, setEndDate] = useState(getTodayFormatted());
 
   const [balances, setBalances] = useState<AccountBalance[] | null>(null);
@@ -106,7 +108,7 @@ export default function FinanceBalancesPage() {
                     <td className="py-2 pr-4">{row.account_name}</td>
                     <td className="py-2 pr-4 text-gray-600">{row.account_type}</td>
                     <td className="py-2 pr-4">{row.is_active ? 'Yes' : 'No'}</td>
-                    <td className="py-2 text-right tabular-nums">
+                    <td className={`py-2 text-right tabular-nums font-medium ${amountColorClass(row.current_balance)}`}>
                       {formatCurrency(row.current_balance)}
                     </td>
                   </tr>
@@ -147,9 +149,19 @@ export default function FinanceBalancesPage() {
               setStartDate(getFirstDayOfCurrentMonth());
               setEndDate(getTodayFormatted());
             }}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             This month
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setStartDate(LEDGER_START_DATE);
+              setEndDate(getTodayFormatted());
+            }}
+            className="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            From start
           </button>
         </div>
 

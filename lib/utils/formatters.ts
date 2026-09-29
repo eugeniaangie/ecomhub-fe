@@ -95,6 +95,19 @@ export const getTodayFormatted = (): string => {
 };
 
 /**
+ * Earliest posted ledger activity in this deployment (YYYY-MM-DD).
+ * Used as the default movement range start and the "From start" preset.
+ */
+export const LEDGER_START_DATE = '2025-11-01';
+
+/** Positive → green, negative → red, zero → gray (display only — does not change the figure). */
+export const amountColorClass = (amount: number): string => {
+  if (amount > 0) return 'text-green-600';
+  if (amount < 0) return 'text-red-600';
+  return 'text-gray-900';
+};
+
+/**
  * Get first day of current month in YYYY-MM-DD format
  */
 export const getFirstDayOfCurrentMonth = (): string => {

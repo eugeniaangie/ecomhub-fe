@@ -7,10 +7,12 @@ import { DatePicker } from '@/components/ui/DatePicker';
 import { financeReportsApi } from '@/lib/services/financeApi';
 import type { AccountBalance, AccountMovement } from '@/lib/types/finance';
 import {
+  amountColorClass,
   formatCurrency,
   formatDateForAPI,
   getFirstDayOfCurrentMonth,
   getTodayFormatted,
+  LEDGER_START_DATE,
 } from '@/lib/utils/formatters';
 
 /**
@@ -33,9 +35,44 @@ function sumMovements(rows: AccountMovement[]) {
   );
 }
 
+function PlusIcon() {
+  return (
+    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
+      <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+      </svg>
+    </div>
+  );
+}
+
+function MinusIcon() {
+  return (
+    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
+      <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+      </svg>
+    </div>
+  );
+}
+
+function BalanceIcon() {
+  return (
+    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+      <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+    </div>
+  );
+}
+
 export default function FinanceOverviewPage() {
   const [asOf, setAsOf] = useState(getTodayFormatted());
-  const [startDate, setStartDate] = useState(getFirstDayOfCurrentMonth());
+  const [startDate, setStartDate] = useState(LEDGER_START_DATE);
   const [endDate, setEndDate] = useState(getTodayFormatted());
 
   const [balances, setBalances] = useState<AccountBalance[] | null>(null);
@@ -116,13 +153,16 @@ export default function FinanceOverviewPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="rounded-lg border border-gray-200 bg-white px-4 py-3">
-          <p className="text-sm text-gray-500">Total cash</p>
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-sm text-gray-500">Total cash</p>
+            <BalanceIcon />
+          </div>
           {loadingBalances ? (
             <p className="mt-1 text-2xl font-semibold text-gray-300">…</p>
           ) : balanceError ? (
             <p className="mt-1 text-sm text-red-600">{balanceError}</p>
           ) : totalCash !== null ? (
-            <p className="mt-1 text-2xl font-semibold tabular-nums text-gray-900">
+            <p className={`mt-1 text-2xl font-semibold tabular-nums ${amountColorClass(totalCash)}`}>
               {formatCurrency(totalCash)}
             </p>
           ) : (
@@ -164,9 +204,19 @@ export default function FinanceOverviewPage() {
               setStartDate(getFirstDayOfCurrentMonth());
               setEndDate(getTodayFormatted());
             }}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             This month
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setStartDate(LEDGER_START_DATE);
+              setEndDate(getTodayFormatted());
+            }}
+            className="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            From start
           </button>
         </div>
 
@@ -176,20 +226,29 @@ export default function FinanceOverviewPage() {
           <p className="text-sm text-gray-500">Loading movements…</p>
         ) : periodTotals ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div>
-              <p className="text-sm text-gray-500">In (debit)</p>
+            <div className="rounded-lg border border-gray-200 bg-white px-4 py-3">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-sm text-gray-500">In (debit)</p>
+                <PlusIcon />
+              </div>
               <p className="mt-1 text-xl font-semibold tabular-nums text-gray-900">
                 {formatCurrency(periodTotals.debit)}
               </p>
             </div>
-            <div>
-              <p className="text-sm text-gray-500">Out (credit)</p>
+            <div className="rounded-lg border border-gray-200 bg-white px-4 py-3">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-sm text-gray-500">Out (credit)</p>
+                <MinusIcon />
+              </div>
               <p className="mt-1 text-xl font-semibold tabular-nums text-gray-900">
                 {formatCurrency(periodTotals.credit)}
               </p>
             </div>
-            <div>
-              <p className="text-sm text-gray-500">Net movement</p>
+            <div className="rounded-lg border border-gray-200 bg-white px-4 py-3">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-sm text-gray-500">Net movement</p>
+                <BalanceIcon />
+              </div>
               <p className="mt-1 text-xl font-semibold tabular-nums text-gray-900">
                 {formatCurrency(periodTotals.net)}
               </p>
