@@ -34,7 +34,7 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE10 | P2 | Delete API clients for endpoints the backend does not expose | — |
 | [x] | FE11 | P2 | Consolidate the root markdown files into `docs/` | — |
 | [x] | FE12 | P2 | Small-fixes cleanup bundle | — |
-| [ ] | FE13 | P3 | Add a test setup and wire lint/build into CI | — |
+| [x] | FE13 | P3 | Add a test setup and wire lint/build into CI | — |
 | [ ] | FE14 | FEATURE | Channels screen | T32 |
 | [ ] | FE15 | FEATURE | Unified transactions screen | T33 |
 | [ ] | FE16 | FEATURE | Restructure Finance UI — Overview · Accounts · Transactions · Channels | T34 |
@@ -353,7 +353,7 @@ One session for the trivial, independent fixes. Deliberately bundled — none de
 
 ### FE13 — Add a test setup and wire lint/build into CI
 
-**Category:** P3 · **Status:** Open
+**Category:** P3 · **Status:** Done (2026-09-29)
 
 **Problem.** No test runner, no test files, no CI. `package.json` has `dev`, `build`, `start`, `lint`; nothing runs automatically.
 
@@ -364,6 +364,8 @@ One session for the trivial, independent fixes. Deliberately bundled — none de
 **Dependencies.** None, but more valuable after `FE7` exists to be tested.
 
 **Next action.** Vitest plus Testing Library, start with `authHelpers`, add a CI job running `npm run lint` and `npm run build` on push.
+
+**Done (2026-09-29):** Vitest + jsdom + Testing Library (`vitest.config.ts`, `vitest.setup.ts`). Scripts: `npm test` / `npm run test:watch`. Seed suite `lib/authHelpers.test.ts` (roles storage, `hasAnyRole` / admin checks, journal + operational-expense permission edges). CI: `.github/workflows/ci.yml` runs `lint` → `test` → `build` on push/PR to `main`/`master`. `handleResponse` / refresh-retry coverage deferred to a follow-up when worth extracting testable units. **Config note (same day):** dropped `@vitejs/plugin-react` / `vite-tsconfig-paths` — they pulled Vite 8 types against Vitest’s Vite 7; path alias `@` is set in `vitest.config.ts` instead.
 
 ---
 

@@ -11,6 +11,15 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:4000
 
 Do not append `/api/v1` — that prefix is added in `lib/api.ts`. Restart `next dev` after changing the env. In development the resolved base URL is logged to the browser/server console as `[api] base URL: …`.
 
+```bash
+npm run dev    # local app
+npm run lint
+npm test       # Vitest (authHelpers and growing unit suite)
+npm run build
+```
+
+CI (GitHub Actions) runs `lint` → `test` → `build` on push/PR to `main`/`master`.
+
 Production (Vercel) must set `NEXT_PUBLIC_API_BASE_URL` to the Railway API host (e.g. `https://ecomhub-core-production.up.railway.app`).
 
 ---
