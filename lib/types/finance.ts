@@ -324,6 +324,8 @@ export interface AccountTransaction {
   entry_date: string; // ISO 8601 format
   entry_description: string;
   reference_number?: string | null;
+  /** JE bookkeeping tag (general / shopee / …) — T33 */
+  channel?: string;
   account_debit: number;
   account_credit: number;
   net_amount: number;

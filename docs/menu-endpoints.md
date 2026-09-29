@@ -38,11 +38,11 @@ Channel strip and Fees remain empty (gaps **G4, G5, G7**).
 - `GET /reports/dashboard/finance/accounts/balance` *(optional `as_of`)* — per-account table
 - `GET /reports/dashboard/finance/accounts/movement` *(required `start_date`, `end_date`)* — period debit / credit / net per account
 
-Drill-down to transactions still needs T33 / FE15 (gap **G6**).
+Drill-down: account code/name links to `/finance/transactions?account_code=…` (FE15 / T33).
 
 ### Transactions (`/finance/transactions`)
 
-Unified feed placeholder. Needs T33 / FE15. Gap **G6**. Legacy Shopee transactions remain only on the unlinked `/finance/dashboard` page.
+- `GET /reports/dashboard/finance/transactions` — paginated (`page`/`limit`; optional `channel` JE tag, `account_code`; required `start_date`/`end_date`). **FE15 Done (2026-09-29).** Also `GET /accounts/no_page` for the account filter dropdown. Legacy Shopee transactions remain on unlinked `/finance/dashboard` until FE16.
 
 ### Channels (`/finance/channels`)
 

@@ -608,7 +608,34 @@ export const financeReportsApi = {
   },
 
   /**
+   * Unified posted journal-line transactions (T33 / FE15).
+   * Optional channel = JE tag; optional account_code = primary line account.
+   */
+  getTransactions: async (params: {
+    start_date: string;
+    end_date: string;
+    page: number;
+    limit: number;
+    channel?: string;
+    account_code?: string;
+  }) => {
+    const queryParams = new URLSearchParams({
+      start_date: params.start_date,
+      end_date: params.end_date,
+      page: params.page.toString(),
+      limit: params.limit.toString(),
+    });
+    if (params.channel) queryParams.set('channel', params.channel);
+    if (params.account_code) queryParams.set('account_code', params.account_code);
+
+    return api.get<PaginatedResponseFinance<AccountTransaction>>(
+      `${API_VERSION}/reports/dashboard/finance/transactions?${queryParams.toString()}`
+    );
+  },
+
+  /**
    * Get transactions for Shopee (paginated)
+   * @deprecated Prefer getTransactions (T33). Kept until FE16.
    */
   getTransactionsShopee: async (params: {
     start_date: string;
@@ -622,7 +649,7 @@ export const financeReportsApi = {
       page: params.page.toString(),
       limit: params.limit.toString(),
     });
-    
+
     return api.get<PaginatedResponseFinance<AccountTransaction>>(
       `${API_VERSION}/reports/dashboard/finance/shopee/transactions?${queryParams.toString()}`
     );

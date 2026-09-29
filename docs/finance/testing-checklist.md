@@ -93,6 +93,8 @@ Smoke / regression checks for finance screens. Automated unit coverage starts wi
 - [ ] `/finance/dashboard`: balances and transactions for a date range
 - [ ] `/finance/overview`: Total cash loads from `/accounts/balance` for chosen as-of; period debit/credit/net from `/accounts/movement`; channel/Fees stay empty
 - [ ] `/finance/balances`: per-account balance table + period movement table; as-of independent of movement range
+- [ ] Accounts balance row link opens `/finance/transactions?account_code=…` filtered to that account
+- [ ] `/finance/transactions`: paginated feed; date range + channel tag + account filters; This month / From start
 - [ ] Changing as-of does not change movement totals; changing movement range does not change Total cash
 - [ ] `/marketing/ad-expenses`: totals / per-platform sections load without client-side totals inventing numbers
 - [ ] Ad expenses detail table is paginated (`page`/`limit`); changing page size / next page refetches; default page size is 5 (FE20 / FE22)
