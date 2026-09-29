@@ -35,7 +35,7 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE11 | P2 | Consolidate the root markdown files into `docs/` | — |
 | [x] | FE12 | P2 | Small-fixes cleanup bundle | — |
 | [x] | FE13 | P3 | Add a test setup and wire lint/build into CI | — |
-| [ ] | FE14 | FEATURE | Channels screen | T32 |
+| [ ] | FE14 | FEATURE | Channels screen | T32 **Deferred** |
 | [ ] | FE15 | FEATURE | Unified transactions screen | T33 |
 | [ ] | FE16 | FEATURE | Restructure Finance UI — Overview · Accounts · Transactions · Channels | T34 |
 | [x] | FE17 | FEATURE | Phase A shell — sidebar IA + empty Overview/Accounts/Transactions/Channels | design |
@@ -417,11 +417,13 @@ Order: **FE17 (shell) → FE8 → FE14 / FE15 → FE16 (wire real data / retire 
 
 ### FE14 — Channels screen
 
-**Category:** FEATURE · **Status:** Blocked on backend `T32`
+**Category:** FEATURE · **Status:** Deferred · **Was blocked on backend `T32`**
 
 Revenue, expense and net per channel over a date range, replacing the three near-identical ad-expense cards in `app/(dashboard)/marketing/ad-expenses/page.tsx` (moved there by `FE18`).
 
 **Open question carried from the backend.** There is no marketplace fee account in the chart of accounts, so a truthful "Fees" amount has no source. **FE direction (2026-09-25):** the Channels layout **may** reserve a Fees row/label with a **null / empty** value; do not invent fees client-side. Tracked as gap **G4** in [`../design/ui-backend-gaps.md`](../design/ui-backend-gaps.md). Revenue / Expense / Net stay empty until `T32` lands (gap **G5**).
+
+**Deferred (2026-09-29):** Backend **T32** deferred — do not wire Channels to "P&L by `je.channel`". That tag is for classifying journals, not true Shopee/TikTok marketplace performance. Keep the Channels / Overview channel strip as empty placeholders (G5/G7). Real channel metrics later via marketplace/ads integrations; until then Ad Expenses page stays the interim ads view.
 
 ---
 

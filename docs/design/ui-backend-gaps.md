@@ -29,12 +29,14 @@ Related: [`jubelio-reference-ux.md`](./jubelio-reference-ux.md) · FE FE14–FE1
 | G1 | Home Dashboard — KPI strip (gross, discount, returns, net, profit, COGS/ads, …) | Empty cards / “—” | No ops/profit report API with signed-off metric definitions | Product defs (D1) + new report endpoints | Open |
 | G2 | Home Dashboard — sales vs returns trend | Empty chart frame | Trend series endpoint | Same as G1 | Open |
 | G3 | Home Dashboard — by channel panel (ops view) | Empty / “—” | Channel sales/profit series for **ops** dashboard (distinct from accounting T32 if needed) | Same as G1 | Open |
-| G4 | Finance → Channels (and Overview channel strip) — **Fees** line | Null / “—” / omit amount | No marketplace fee `account_code`s; T32 must not invent fees | CoA fee accounts + T32 (core Decision 11) | Open |
-| G5 | Finance → Channels — full Revenue / Expense / Net | Empty until T32 lands | `T32` channel performance endpoint | T32 | Open |
+| G4 | Finance → Channels (and Overview channel strip) — **Fees** line | Null / “—” / omit amount | No marketplace fee accounts; marketplace report not JE-tag T32 | CoA fees + future marketplace report (T32 Deferred; Decision 13) | Open |
+| G5 | Finance → Channels — full Revenue / Expense / Net | Empty (placeholder) | True marketplace channel metrics (not JE-tag P&L) | T32 **Deferred** (2026-09-29); later integrations | Deferred |
 | G6 | Finance → Transactions (unified feed) + Accounts drill-down | Empty list / keep legacy Shopee feed until migrate | `T33` unified transactions endpoint | T33 · FE15 | Open |
-| G7 | Finance → Overview — channel performance side-by-side | Cash (T31) wired on Overview/Accounts (FE8); channel strip empty until T32 | T32 | T32 · FE14/FE16 | Partial (2026-09-26): cash via FE8; channel strip still Open |
+| G7 | Finance → Overview — channel performance side-by-side | Cash (T31) wired (FE8); channel strip empty | Marketplace channel metrics (T32 Deferred) | FE14 Deferred · integrations later | Partial (2026-09-26): cash via FE8; channel strip Deferred with T32 |
 
 **Cash / account balances** via T31 (`/accounts/balance`, `/accounts/movement`) are **not** gaps once FE8 wires them — do not list those as missing.
+
+**Note (2026-09-29):** G5/G7 channel strip is **not** waiting on aggregating `journal_entries.channel`. That field is a JE bookkeeping tag; marketplace channel performance is a separate product (integrations). Core Decision 13 / T32 Deferred.
 
 ---
 
