@@ -29,8 +29,8 @@ Chrome is a **dark top bar** with domains `Dashboard · Catalog · Marketing · 
 | `/finance` | Finance domain hub (feature cards) |
 | `/finance/setup` | Finance setup hub — CoA, expense categories, fiscal periods |
 | `/finance/overview` | Finance Overview — Total cash + period movement (FE8 / T31); channel strip empty until T32 |
-| `/finance/balances` | Account balances + period movement (FE8 / T31); drill-down needs FE15 |
-| `/finance/transactions` | Unified transactions feed — empty until T33 / FE15 |
+| `/finance/balances` | Account balances + period movement (FE8 / T31); click account → Transactions filter (FE15) |
+| `/finance/transactions` | Unified posted lines — date / channel-tag / account filters + pagination (FE15 / T33) |
 | `/finance/channels` | Per-channel financial view — empty until T32 / FE14; Fees slot null (G4) |
 | `/marketing/ad-expenses` | Ad spend totals by platform (was `/finance/ad-dashboard`) |
 | `/finance/dashboard` | Legacy Shopee finance / wallet / transactions summary (unlinked) |

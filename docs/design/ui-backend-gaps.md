@@ -31,7 +31,7 @@ Related: [`jubelio-reference-ux.md`](./jubelio-reference-ux.md) · FE FE14–FE1
 | G3 | Home Dashboard — by channel panel (ops view) | Empty / “—” | Channel sales/profit series for **ops** dashboard (distinct from accounting T32 if needed) | Same as G1 | Open |
 | G4 | Finance → Channels (and Overview channel strip) — **Fees** line | Null / “—” / omit amount | No marketplace fee accounts; marketplace report not JE-tag T32 | CoA fees + future marketplace report (T32 Deferred; Decision 13) | Open |
 | G5 | Finance → Channels — full Revenue / Expense / Net | Empty (placeholder) | True marketplace channel metrics (not JE-tag P&L) | T32 **Deferred** (2026-09-29); later integrations | Deferred |
-| G6 | Finance → Transactions (unified feed) + Accounts drill-down | Empty list / keep legacy Shopee feed until migrate | `T33` unified transactions endpoint | T33 · FE15 | Open |
+| G6 | Finance → Transactions (unified feed) + Accounts drill-down | Wired FE15 | ~~`T33`~~ **Done** | FE15 | **Filled (2026-09-29)** |
 | G7 | Finance → Overview — channel performance side-by-side | Cash (T31) wired (FE8); channel strip empty | Marketplace channel metrics (T32 Deferred) | FE14 Deferred · integrations later | Partial (2026-09-26): cash via FE8; channel strip Deferred with T32 |
 
 **Cash / account balances** via T31 (`/accounts/balance`, `/accounts/movement`) are **not** gaps once FE8 wires them — do not list those as missing.
@@ -52,4 +52,5 @@ Related: [`jubelio-reference-ux.md`](./jubelio-reference-ux.md) · FE FE14–FE1
 
 | ID | Note |
 |---|---|
-| G7 (cash only) | **Partial (2026-09-26):** FE8 wired `/accounts/balance` + `/accounts/movement` on Overview and Accounts. Channel half of G7 remains Open. |
+| G7 (cash only) | **Partial (2026-09-26):** FE8 wired `/accounts/balance` + `/accounts/movement` on Overview and Accounts. Channel half of G7 remains Deferred with T32. |
+| G6 | **Filled (2026-09-29):** FE15 wired `GET …/transactions` on `/finance/transactions` + Accounts → `?account_code=` drill-down. |

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { PageChrome } from '@/components/finance/PageChrome';
 import { Card } from '@/components/ui/Card';
 import { DatePicker } from '@/components/ui/DatePicker';
@@ -104,8 +105,22 @@ export default function FinanceBalancesPage() {
               <tbody className="divide-y divide-gray-100">
                 {balances.map((row) => (
                   <tr key={row.account_code} className="text-gray-900">
-                    <td className="py-2 pr-4 font-mono text-xs">{row.account_code}</td>
-                    <td className="py-2 pr-4">{row.account_name}</td>
+                    <td className="py-2 pr-4 font-mono text-xs">
+                      <Link
+                        href={`/finance/transactions?account_code=${encodeURIComponent(row.account_code)}`}
+                        className="text-blue-600 hover:underline"
+                      >
+                        {row.account_code}
+                      </Link>
+                    </td>
+                    <td className="py-2 pr-4">
+                      <Link
+                        href={`/finance/transactions?account_code=${encodeURIComponent(row.account_code)}`}
+                        className="hover:text-blue-600 hover:underline"
+                      >
+                        {row.account_name}
+                      </Link>
+                    </td>
                     <td className="py-2 pr-4 text-gray-600">{row.account_type}</td>
                     <td className="py-2 pr-4">{row.is_active ? 'Yes' : 'No'}</td>
                     <td className={`py-2 text-right tabular-nums font-medium ${amountColorClass(row.current_balance)}`}>
@@ -119,6 +134,9 @@ export default function FinanceBalancesPage() {
         ) : (
           <p className="text-sm text-gray-500">No cash accounts returned.</p>
         )}
+        <p className="mt-3 text-xs text-gray-400">
+          Click an account code or name to open its posted lines on Finance → Transactions.
+        </p>
       </Card>
 
       <Card title="Period movement">
@@ -203,9 +221,6 @@ export default function FinanceBalancesPage() {
         ) : (
           <p className="text-sm text-gray-500">No movement rows for this range.</p>
         )}
-        <p className="mt-3 text-xs text-gray-400">
-          Transaction drill-down per account needs T33 / FE15 (gap G6).
-        </p>
       </Card>
     </PageChrome>
   );

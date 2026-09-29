@@ -36,7 +36,7 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE12 | P2 | Small-fixes cleanup bundle | — |
 | [x] | FE13 | P3 | Add a test setup and wire lint/build into CI | — |
 | [ ] | FE14 | FEATURE | Channels screen | T32 **Deferred** |
-| [ ] | FE15 | FEATURE | Unified transactions screen | T33 |
+| [x] | FE15 | FEATURE | Unified transactions screen | T33 Done |
 | [ ] | FE16 | FEATURE | Restructure Finance UI — Overview · Accounts · Transactions · Channels | T34 |
 | [x] | FE17 | FEATURE | Phase A shell — sidebar IA + empty Overview/Accounts/Transactions/Channels | design |
 | [x] | FE18 | FEATURE | Hierarchical sidebar IA — domain groups, section captions, Marketing split | design D6 |
@@ -429,12 +429,17 @@ Revenue, expense and net per channel over a date range, replacing the three near
 
 ### FE15 — Unified transactions screen
 
-**Category:** FEATURE · **Status:** Blocked on backend `T33`
+**Category:** FEATURE · **Status:** Done (2026-09-29) · **Backend:** T33 Done (2026-09-29)
 
 One transactions feed across all accounts and channels, filterable by account, channel and date — replacing the Shopee-only feed on the finance dashboard. The same endpoint backs the Accounts drill-down ("transactions affecting this account"), so one screen and one detail view come from one client method.
 
-**Note.** Backend **T15** is Done (2026-09-26) — report date parse + paginated `ad-expenses/detail` / `shopee/transactions` with `COUNT(*) OVER ()`. **T33** (unified transactions) and **T16** (partner self-join) remain open; when T33 lands, match whatever page/limit envelope it ships — do not invent a shape.
+**Note.** Backend **T15** is Done (2026-09-26) — report date parse + paginated `ad-expenses/detail` / `shopee/transactions` with `COUNT(*) OVER ()`. ~~**T33** / **T16** remain open.~~
 
+**Backend (T33 Done, 2026-09-29):** `GET /reports/dashboard/finance/transactions?start_date&end_date&page&limit` with optional `channel` (JE tag) and `account_code`. Envelope = `PaginatedResponse` of `AccountTransaction` (includes `channel`). Legacy `shopee/transactions` still exists until FE16 retires it.
+
+**Next action.** Add client method + wire `/finance/transactions` and Accounts drill-down; do not invent client-side paging of the old Shopee-only feed.
+
+**Done (2026-09-29):** `financeReportsApi.getTransactions` + `channel` on `AccountTransaction`. `/finance/transactions` — date range (default ledger start → today), channel-tag + account filters, pagination, This month / From start. Accounts (`/finance/balances`) links code/name → `?account_code=`. Gap **G6** closed for FE wiring. Legacy Shopee feed still on unlinked `/finance/dashboard` until FE16.
 ---
 
 ### FE16 — Restructure the Finance UI
