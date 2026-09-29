@@ -94,6 +94,7 @@ Smoke / regression checks for finance screens. There is no automated FE test sui
 - [ ] `/finance/balances`: per-account balance table + period movement table; as-of independent of movement range
 - [ ] Changing as-of does not change movement totals; changing movement range does not change Total cash
 - [ ] `/marketing/ad-expenses`: totals / per-platform sections load without client-side totals inventing numbers
+- [ ] Ad expenses detail table is paginated (`page`/`limit`); changing page size / next page refetches; default page size is 5 (FE20 / FE22)
 - [ ] Old `/finance/ad-*` paths are unused (pages live only under `/marketing/*`)
 
 ---

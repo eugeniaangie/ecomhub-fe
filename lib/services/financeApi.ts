@@ -697,18 +697,22 @@ export const financeReportsApi = {
   },
 
   /**
-   * Get ad expenses detail
+   * Get ad expenses detail (paginated — T15 / FE22)
    */
   getAdExpensesDetail: async (params: {
     start_date: string;
     end_date: string;
+    page: number;
+    limit: number;
   }) => {
     const queryParams = new URLSearchParams({
       start_date: params.start_date,
       end_date: params.end_date,
+      page: params.page.toString(),
+      limit: params.limit.toString(),
     });
-    
-    return api.get<AccountTransaction[]>(
+
+    return api.get<PaginatedResponseFinance<AccountTransaction>>(
       `${API_VERSION}/reports/dashboard/finance/ad-expenses/detail?${queryParams.toString()}`
     );
   },

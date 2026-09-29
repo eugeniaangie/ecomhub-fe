@@ -41,9 +41,9 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE17 | FEATURE | Phase A shell — sidebar IA + empty Overview/Accounts/Transactions/Channels | design |
 | [x] | FE18 | FEATURE | Hierarchical sidebar IA — domain groups, section captions, Marketing split | design D6 |
 | [x] | FE19 | FEATURE | Dark top-bar nav + domain hubs (Jubelio pattern, EcomHub features) | design D7 |
-| [ ] | FE20 | P2 | Default list page size = 5 | — |
+| [x] | FE20 | P2 | Default list page size = 5 | — |
 | [ ] | FE21 | FEATURE | Wire Home Dashboard ops KPIs (sales / profit / by-channel) | gaps G1–G3 |
-| [ ] | FE22 | P1 | Wire paginated `ad-expenses/detail` | T15 s1 done |
+| [x] | FE22 | P1 | Wire paginated `ad-expenses/detail` | T15 Done |
 
 **P0 left:** none (FE1 Done).
 
@@ -429,7 +429,7 @@ Revenue, expense and net per channel over a date range, replacing the three near
 
 One transactions feed across all accounts and channels, filterable by account, channel and date — replacing the Shopee-only feed on the finance dashboard. The same endpoint backs the Accounts drill-down ("transactions affecting this account"), so one screen and one detail view come from one client method.
 
-**Note.** `T33` is planned in the same backend session as `T15` (bounding report endpoints) and `T16` (rewriting the partner-account self-join). Pagination on this endpoint is part of that work, so the FE should not assume today's page/limit shape survives.
+**Note.** Backend **T15** is Done (2026-09-26) — report date parse + paginated `ad-expenses/detail` / `shopee/transactions` with `COUNT(*) OVER ()`. **T33** (unified transactions) and **T16** (partner self-join) remain open; when T33 lands, match whatever page/limit envelope it ships — do not invent a shape.
 
 ---
 
@@ -465,13 +465,15 @@ Wire real data in FE8/FE14/FE15; FE16 finishes migration and retirement of `/fin
 
 ### FE20 — Default list page size = 5
 
-**Category:** P2 · **Status:** Open
+**Category:** P2 · **Status:** Done (2026-09-29)
 
 **Problem.** List screens (journal entries, accounts, operational expenses, categories, ad budgets, capital investors, etc.) use `DEFAULT_PAGE_SIZE = 10` from `lib/utils/pagination.ts`, and `PAGE_SIZE_OPTIONS` starts at 10. With growing data the first paint feels like “everything showed up”; product wants the default denser at **5** rows.
 
 **Next action.** Change `DEFAULT_PAGE_SIZE` to `5`, add `5` to `PAGE_SIZE_OPTIONS` (e.g. `[5, 10, 20, 50, 100]`), confirm every list that uses those constants picks up the new default without per-page hardcodes. Update `docs/finance/testing-checklist.md` if it asserts page size.
 
 **Not in scope.** Changing backend default limits; inventing pagination on screens that still call unbound `getAll()` for dropdowns only.
+
+**Done (2026-09-29):** `DEFAULT_PAGE_SIZE = 5`; `PAGE_SIZE_OPTIONS = [5, 10, 20, 50, 100]`. All list screens that `useState(DEFAULT_PAGE_SIZE)` pick it up; no per-page hardcodes of `10` found. Testing checklist had no page-size assertion to rewrite.
 
 ---
 
@@ -489,14 +491,19 @@ Wire real data in FE8/FE14/FE15; FE16 finishes migration and retirement of `/fin
 
 ### FE22 — Wire paginated `ad-expenses/detail`
 
-**Category:** P1 · **Status:** Open · **Unblocked — backend T15 slice 1 (2026-09-26)**
+**Category:** P1 · **Status:** Done (2026-09-29) · **Backend:** T15 Done (2026-09-26)
 
-**Problem.** `GET …/ad-expenses/detail` today returns an unbounded array. Backend **T15** will change it to the same paginated envelope as `shopee/transactions` (`page` / `limit` → `PaginatedResponse`). Until then the FE cannot safely page the detail table.
+**Problem.** ~~`GET …/ad-expenses/detail` today returns an unbounded array. Backend **T15** will change it to the same paginated envelope as `shopee/transactions` (`page` / `limit` → `PaginatedResponse`). Until then the FE cannot safely page the detail table.~~
 
-**Backend landed (2026-09-26):** Response is now `PaginatedResponse` (`data.results`, `page`, `limit`, `total_*`). Query params `page` / `limit` (defaults same as other lists). Bare-array callers break until this task wires them.
+**Backend (T15 Done, 2026-09-26):**
+- Response is `PaginatedResponse` (`data.results`, `page`, `limit`, `total_*`); query params `page` / `limit` (same pattern as `shopee/transactions`). Bare-array callers break until this task wires them.
+- Report dates: required `YYYY-MM-DD`, `end_date >= start_date` → `CODE_ERR_VALIDATION` (400). Optional `as_of` on balances parsed the same way.
+- **Deferred on BE (Phase 5 — not a FE blocker):** no maximum date-range cap yet. Decade-wide ranges still accepted by the API; do not build FE UX that assumes a max-span error until the backend ships one.
 
-**Affected area.** `lib/services/financeApi.ts` (`getAdExpensesDetail`), `app/(dashboard)/marketing/ad-expenses/page.tsx`, legacy `app/(dashboard)/finance/ad-dashboard/page.tsx` if still reachable.
+**Affected area.** `lib/services/financeApi.ts` (`getAdExpensesDetail`), `app/(dashboard)/marketing/ad-expenses/page.tsx`. Legacy `app/(dashboard)/finance/ad-dashboard` no longer exists (routes live under Marketing).
 
-**Next action.** Pass `page`/`limit`, unwrap `results` + totals, add the shared `Pagination` control. Do not invent client-side slicing of the old unbounded response.
+**Next action.** Pass `page`/`limit`, unwrap `results` + totals, add the shared `Pagination` control. Do not invent client-side slicing of the old unbounded response. Surface backend date validation errors as-is (400) — no max-span messaging until BE Phase 5.
 
-**Not in scope.** Date-span validation UX (backend rejects); retiring the ad-expenses cards when T32/FE14 land.
+**Not in scope.** Inventing a client-side max date-range; retiring the ad-expenses cards when T32/FE14 land.
+
+**Done (2026-09-29):** `getAdExpensesDetail` takes `page`/`limit` and returns `PaginatedResponseFinance<AccountTransaction>`. Marketing Ad Expenses: summary cards stay date-scoped; detail table uses shared `Pagination` (default page size from FE20). Date changes reset to page 1. Backend 400 validation messages shown as-is.
