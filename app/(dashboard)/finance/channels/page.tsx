@@ -9,10 +9,7 @@ export default function FinanceChannelsPage() {
   }, []);
 
   return (
-    <PageChrome
-      title="Channels"
-      description="Where is activity coming from? Per-channel financial view (accounting)."
-    >
+    <PageChrome title="Channels">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {['Shopee', 'TikTok', 'General'].map((channel) => (
           <div key={channel} className="space-y-2 rounded-lg border border-gray-200 bg-white p-4">

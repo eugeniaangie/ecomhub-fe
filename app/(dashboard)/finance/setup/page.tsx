@@ -13,10 +13,6 @@ export default function FinanceSetupPage() {
   }, []);
 
   return (
-    <DomainHub
-      title="Finance setup"
-      description="Master lists that Finance screens depend on. Not day-to-day money views."
-      items={finance.setup!}
-    />
+    <DomainHub title="Finance setup" items={finance.setup!} />
   );
 }
