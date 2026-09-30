@@ -38,4 +38,13 @@ export const shopeeAuthApi = {
       { code, shop_id: shopId }
     );
   },
+
+  /**
+   * List connected Shopee shops (no raw tokens). Roles: admin+.
+   */
+  listConnectedShops: async () => {
+    return api.get<ShopeeConnectedShop[]>(
+      `${API_VERSION}/integrations/marketplaces/shopee/connections`
+    );
+  },
 };

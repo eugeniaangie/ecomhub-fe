@@ -177,6 +177,7 @@ Route still lives under `/master/*`; only the sidebar group changed (decision **
 
 ### Shopee Connect (`/integrations/shopee`)
 
+- `GET /integrations/marketplaces/shopee/connections` — list our OAuth connections (no raw tokens); page shows status + Re-connect.
 - `GET /integrations/marketplaces/shopee/authorize-url` — `{ authorize_url }`; FE opens same-tab (admin+).
 - `POST /integrations/marketplaces/shopee/token` — body `{ code, shop_id }` → connected shop (no raw tokens). Called from `/shopee-auth-callback`.
 
