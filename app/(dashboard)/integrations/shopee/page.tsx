@@ -7,6 +7,7 @@ import { shopeeAuthApi, type ShopeeConnectedShop } from '@/lib/services/integrat
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { ShopeeShopStatus } from '@/components/integrations/ShopeeShopStatus';
 
 export default function ShopeeConnectPage() {
   const [error, setError] = useState('');
@@ -98,17 +99,7 @@ export default function ShopeeConnectPage() {
             ) : hasActive ? (
               <div className="space-y-6">
                 {activeShops.map((shop) => (
-                  <dl
-                    key={shop.id}
-                    className="grid gap-2 text-sm text-gray-700 sm:grid-cols-[8rem_1fr]"
-                  >
-                    <dt className="text-gray-500">shop_id</dt>
-                    <dd className="font-mono">{shop.shop_id}</dd>
-                    <dt className="text-gray-500">account id</dt>
-                    <dd className="font-mono">{shop.id}</dd>
-                    <dt className="text-gray-500">token expires</dt>
-                    <dd className="font-mono break-all">{shop.token_expires_at}</dd>
-                  </dl>
+                  <ShopeeShopStatus key={shop.id} shop={shop} />
                 ))}
               </div>
             ) : (
