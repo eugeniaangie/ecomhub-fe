@@ -18,10 +18,7 @@ export default function HomeDashboardPage() {
   }, []);
 
   return (
-    <PageChrome
-      title="Dashboard"
-      description="Ops and profit pulse. Figures stay empty until report APIs are defined — no client-side substitutes."
-    >
+    <PageChrome title="Dashboard">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {KPI_LABELS.map((kpi) => (
           <GapPlaceholder key={kpi.label} label={kpi.label} gapId={kpi.gapId} />

@@ -129,10 +129,7 @@ function TransactionsFeed() {
   }, [load]);
 
   return (
-    <PageChrome
-      title="Transactions"
-      description="Posted journal lines across accounts. Channel here is the JE bookkeeping tag."
-    >
+    <PageChrome title="Transactions">
       <Card className="mb-4">
         <div className="flex flex-wrap items-end gap-4">
           <div className="min-w-45 flex-1">
@@ -351,7 +348,7 @@ export default function FinanceTransactionsPage() {
   return (
     <Suspense
       fallback={
-        <PageChrome title="Transactions" description="Loading…">
+        <PageChrome title="Transactions">
           <p className="text-sm text-gray-500">Loading…</p>
         </PageChrome>
       }

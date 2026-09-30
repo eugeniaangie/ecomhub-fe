@@ -12,10 +12,6 @@ export default function IntegrationsHubPage() {
   }, []);
 
   return (
-    <DomainHub
-      title="Integrations"
-      description="Connect marketplace accounts. Sales and ads sync come later."
-      items={integrations.items!}
-    />
+    <DomainHub title="Integrations" items={integrations.items!} />
   );
 }

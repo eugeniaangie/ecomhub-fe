@@ -110,11 +110,7 @@ export default function AdDashboardPage() {
 
   return (
     <div>
-      <PageHeader
-        className="mb-8"
-        title="Ad Expenses"
-        description="Overview of your advertising expenses across all platforms"
-      />
+      <PageHeader className="mb-8" title="Ad Expenses" />
 
       <Card className="mb-6">
         <div className="flex flex-wrap items-end gap-4">

@@ -14,7 +14,6 @@ export default function FinanceHubPage() {
   return (
     <DomainHub
       title="Finance"
-      description="Accounting views, records and money movement across channels."
       items={finance.items!}
       setupHref="/finance/setup"
       setupLabel="Finance setup"
