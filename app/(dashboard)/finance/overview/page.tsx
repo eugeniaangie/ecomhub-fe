@@ -132,10 +132,7 @@ export default function FinanceOverviewPage() {
   const periodTotals = movements ? sumMovements(movements) : null;
 
   return (
-    <PageChrome
-      title="Overview"
-      description="Cash position (cumulative) and period movement on cash accounts."
-    >
+    <PageChrome title="Overview">
       <Card className="mb-2">
         <div className="flex flex-wrap items-end gap-4">
           <div className="min-w-50 flex-1">

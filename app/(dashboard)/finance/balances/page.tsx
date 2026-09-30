@@ -72,10 +72,7 @@ export default function FinanceBalancesPage() {
   }, [loadMovements]);
 
   return (
-    <PageChrome
-      title="Accounts"
-      description="Where is the money? Cumulative balances and period movement for Kas, Bank, and E-Wallet. Chart of Accounts (structure) lives under Finance setup."
-    >
+    <PageChrome title="Accounts">
       <Card title="Balances (as of date)">
         <div className="mb-4 max-w-xs">
           <label className="mb-2 block text-sm font-medium text-gray-700">As of</label>

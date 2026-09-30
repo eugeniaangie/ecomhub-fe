@@ -12,10 +12,6 @@ export default function MarketingHubPage() {
   }, []);
 
   return (
-    <DomainHub
-      title="Marketing"
-      description="Ad budgets and spend by platform."
-      items={marketing.items!}
-    />
+    <DomainHub title="Marketing" items={marketing.items!} />
   );
 }

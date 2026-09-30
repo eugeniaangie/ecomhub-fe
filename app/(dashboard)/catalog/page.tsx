@@ -12,10 +12,6 @@ export default function CatalogHubPage() {
   }, []);
 
   return (
-    <DomainHub
-      title="Catalog"
-      description="Product and category master data. More catalog screens land here as they ship."
-      items={catalog.items!}
-    />
+    <DomainHub title="Catalog" items={catalog.items!} />
   );
 }

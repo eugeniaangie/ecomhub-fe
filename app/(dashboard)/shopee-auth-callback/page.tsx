@@ -66,10 +66,7 @@ function ShopeeAuthCallbackContent() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Shopee authorization"
-        description="Finishing shop connection: exchanging the authorization code for API tokens (stored on the server)."
-      />
+      <PageHeader title="Shopee authorization" />
 
       <Card title="Callback result">
         {phase.kind === 'exchanging' ? (
@@ -85,10 +82,6 @@ function ShopeeAuthCallbackContent() {
               <dt className="text-gray-500">token expires</dt>
               <dd className="font-mono break-all">{phase.shop.token_expires_at}</dd>
             </dl>
-            <p className="text-gray-500">
-              Access tokens refresh automatically when we call Shopee later. Re-run Connect only if
-              the shop is disconnected.
-            </p>
           </div>
         ) : phase.kind === 'error' ? (
           <div className="space-y-2 text-sm text-red-700">
