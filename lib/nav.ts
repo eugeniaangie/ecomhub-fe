@@ -118,6 +118,18 @@ export const navDomains: NavDomain[] = [
       },
     ],
   },
+  {
+    id: 'integrations',
+    label: 'Integrations',
+    href: '/integrations',
+    items: [
+      {
+        label: 'Shopee',
+        href: '/integrations/shopee',
+        description: 'Connect a Shopee shop via Partner OAuth.',
+      },
+    ],
+  },
 ];
 
 export function domainForPath(pathname: string): NavDomain | undefined {
@@ -133,6 +145,9 @@ export function domainForPath(pathname: string): NavDomain | undefined {
   }
   if (pathname.startsWith('/catalog') || pathname.startsWith('/master')) {
     return navDomains.find((d) => d.id === 'catalog');
+  }
+  if (pathname.startsWith('/integrations') || pathname.startsWith('/shopee-auth-callback')) {
+    return navDomains.find((d) => d.id === 'integrations');
   }
   return undefined;
 }

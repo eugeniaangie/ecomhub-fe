@@ -87,6 +87,7 @@ app/ (routes) → lib/services/*Api → lib/api.ts → backend HTTP API
 | Topic | Document |
 |---|---|
 | **Task backlog and live status** | [`docs/roadmap/task-list.md`](docs/roadmap/task-list.md) |
+| **Deploy / move host / Shopee ops** | [`../ecomhub-core/docs/IMPORTANT_NOTES.md`](../ecomhub-core/docs/IMPORTANT_NOTES.md) |
 | Menu → endpoint map | [`docs/menu-endpoints.md`](docs/menu-endpoints.md) |
 | Menu structure and implementation status | [`README.md`](README.md) |
 | Finance module behaviour and role rules | [`docs/finance/module.md`](docs/finance/module.md) |

@@ -22,6 +22,8 @@ CI (GitHub Actions) runs `lint` → `test` → `build` on push/PR to `main`/`mas
 
 Production (Vercel) must set `NEXT_PUBLIC_API_BASE_URL` to the Railway API host (e.g. `https://ecomhub-core-production.up.railway.app`).
 
+**Deploy / move host / Shopee redirect:** see Core [`docs/IMPORTANT_NOTES.md`](../ecomhub-core/docs/IMPORTANT_NOTES.md) (CORS, cookies, Vercel env, Partner Console domain).
+
 ---
 
 ## Navigation structure
@@ -29,7 +31,7 @@ Production (Vercel) must set `NEXT_PUBLIC_API_BASE_URL` to the Railway API host 
 Dark **top bar** + domain **hubs** (decision **D7** in [`docs/design/`](docs/design/)).  supplies the navigation *pattern*; menus and features are EcomHub's.
 
 ```
-[ EcomHub | Dashboard | Catalog ▾ | Marketing ▾ | Finance ▾ | Logout ]
+[ EcomHub | Dashboard | Catalog ▾ | Marketing ▾ | Finance ▾ | Integrations ▾ | Logout ]
 
 Finance hub          Overview · Accounts · Transactions · Channels
                      Journal Entries · Operational Expenses · Capital & Investors
@@ -38,6 +40,8 @@ Finance hub          Overview · Accounts · Transactions · Channels
 Marketing hub        Ad Budgets · Ad Expenses
 
 Catalog hub          Categories
+
+Integrations hub     Shopee (Connect shop via Partner OAuth)
 ```
 
 Rules that keep this from sprawling:
@@ -71,6 +75,9 @@ Rules that keep this from sprawling:
 | Marketing | Ad Expenses | `/marketing/ad-expenses` |
 | Catalog | Domain hub | `/catalog` |
 | Catalog | Categories | `/master/categories` |
+| Integrations | Domain hub | `/integrations` |
+| Integrations | Shopee Connect | `/integrations/shopee` |
+| Integrations | Shopee OAuth callback | `/shopee-auth-callback` |
 
 Unlinked but still reachable by URL: `/finance/dashboard` (legacy Shopee summary) and `/master` (older standalone categories CRUD). Ads live only under `/marketing/*`.
 
@@ -84,7 +91,7 @@ Unlinked but still reachable by URL: `/finance/dashboard` (legacy Shopee summary
 |---|---|---|
 | Catalog | Products, Product Attributes, Pricing Rules, Inventory | inside **Catalog** (Inventory may graduate to its own domain) |
 | Operations | Orders, Fulfillment, Fraud review | new top-level **Operations** |
-| Integrations | Shopee Open API, TikTok, other channels, sync status, settlements | new top-level **Integrations** |
+| Integrations | TikTok / other channels, sync status, settlements (Shopee Connect is live under **Integrations**) | **Integrations** |
 | Settings | Users & Roles, Profile, Preferences | new top-level **Settings** |
 | Finance reports | Profit & Loss, Cash Flow, Balance Sheet | **Finance** hub cards |
 

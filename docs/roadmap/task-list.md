@@ -45,6 +45,7 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [ ] | FE21 | FEATURE | Wire Home Dashboard ops KPIs (sales / profit / by-channel) | gaps G1–G3 |
 | [x] | FE22 | P1 | Wire paginated `ad-expenses/detail` | T15 Done |
 | [x] | FE23 | P1 | Finance Overview framing — balance as hero, cash flow clearly not a balance | — |
+| [x] | FE24 | FEATURE | Shopee OAuth callback + Connect UI | Core F6a |
 
 **P0 left:** none (FE1 Done).
 
@@ -548,3 +549,28 @@ Wire real data in FE8/FE14/FE15; FE16 finishes migration and retirement of `/fin
 **Rejected.** Channel filter on the Overview cash-flow card — `/accounts/balance` has no `channel` parameter by design (T27 sign-off rule 2: balance is all channels), a bank balance is not channel-specific, and `je.channel` is a bookkeeping tag rather than marketplace performance (Core Decision 13 / T32 Deferred). Developer chose to skip it (2026-09-29) rather than add a channel figure that reads as channel performance.
 
 **Validated.** `npm run lint` and `npm run build` clean. Figures come from the same two endpoints as before, so no displayed value changed — only size, label and placement. **Unverified:** visual layout in a browser at each breakpoint (no test suite; needs manual check per the checklist).
+
+---
+
+### FE24 — Shopee OAuth callback + Connect UI
+
+**Category:** FEATURE · **Status:** Done · **Backend:** F6a (a1 Done; a3 open)
+
+**Problem.** Shopee Partner OAuth must redirect to our FE after shop approval. Redirect URL is locked (2026-09-30):
+
+- Full path: `https://ecomhub-fe.vercel.app/shopee-auth-callback`
+- Partner Console Live Redirect URL Domain: `ecomhub-fe.vercel.app` (domain only — fill in Shopee console manually)
+
+**Scope (when unblocked):**
+1. App Router page `app/.../shopee-auth-callback` — read `code` + `shop_id` from query; later POST to Core token-exchange (F6a3).
+2. Connect Shopee control (admin / superadmin only for now) that opens the signed authorize URL from Core F6a1.
+3. Role note: Core roles today are `superadmin` / `admin` / `manager` only — interim Connect gate = admin+. Ads-operator access without full admin is a later product decision (no `ads-manager` role yet).
+
+**Next action.** Core **F6a1 Done** — `GET /api/v1/integrations/marketplaces/shopee/authorize-url`. Implement Connect button (admin/superadmin) that opens `data.authorize_url`, plus callback page `/shopee-auth-callback` (F6a2). Token exchange waits on Core F6a3.
+
+**Done (2026-09-30):**
+- `shopeeAuthApi.getAuthorizeUrl` → Core authorize-url.
+- **Integrations** domain in top nav: hub `/integrations`, **Shopee** `/integrations/shopee` with Connect (gated by `canConnectShopeeShop` = admin/superadmin) — same-tab `window.location.assign(authorize_url)`.
+- Callback `/shopee-auth-callback` (inside `(dashboard)` so session is required) reads `code` + `shop_id`; shows them; **does not** POST (waits F6a3).
+
+**Not done here.** Token exchange / persist shop tokens (Core F6a3); connection status list; non-admin operator role.

@@ -167,7 +167,17 @@ Route still lives under `/master/*`; only the sidebar group changed (decision **
 | `/finance/setup` | Finance setup hub (cards only) |
 | `/marketing` | Marketing domain hub |
 | `/catalog` | Catalog domain hub |
+| `/integrations` | Integrations domain hub |
+| `/shopee-auth-callback` | Shopee OAuth return — reads `code` + `shop_id` from query; no API until Core F6a3 |
 | `/master` | Older standalone categories CRUD — unlinked, retire separately |
+
+---
+
+## Integrations
+
+### Shopee Connect (`/integrations/shopee`)
+
+- `GET /integrations/marketplaces/shopee/authorize-url` — returns `{ authorize_url }`; FE opens it in the same tab (admin/superadmin UI gate; Core enforces the same roles). **FE24 Done (2026-09-30).** Token exchange not wired (waits Core F6a3).
 
 ---
 
