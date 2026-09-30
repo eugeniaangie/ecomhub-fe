@@ -1,4 +1,4 @@
-// Marketplace integrations API (Shopee OAuth — Core F6a)
+// Marketplace integrations API (Shopee OAuth + F6b0 preview)
 
 import { api } from '../api';
 
@@ -15,6 +15,52 @@ export interface ShopeeConnectedShop {
   expire_in: number;
   token_expires_at: string;
   is_active: boolean;
+}
+
+export interface ShopeeSkuSummaryItem {
+  sku: string;
+  quantity: number;
+  order_count: number;
+}
+
+export interface ShopeeOrderPreviewItem {
+  order_sn: string;
+  order_status?: string;
+  total_amount?: number;
+  escrow_amount?: number;
+  commission_fee?: number;
+  service_fee?: number;
+  seller_transaction_fee?: number;
+  create_time?: number;
+  item_skus?: string[];
+}
+
+export interface ShopeeOrdersPreview {
+  shop_id: number;
+  time_from: number;
+  time_to: number;
+  more: boolean;
+  next_cursor?: string;
+  exclude_cancelled: boolean;
+  order_status?: string;
+  fetch_all: boolean;
+  token_refreshed: boolean;
+  order_count: number;
+  total_buyer_amount: number;
+  total_escrow_amount: number;
+  sku_summary: ShopeeSkuSummaryItem[];
+  orders: ShopeeOrderPreviewItem[];
+}
+
+export interface PreviewShopeeOrdersParams {
+  shop_id?: number;
+  time_from?: number;
+  time_to?: number;
+  page_size?: number;
+  cursor?: string;
+  exclude_cancelled?: boolean;
+  order_status?: string;
+  fetch_all?: boolean;
 }
 
 export const shopeeAuthApi = {
@@ -45,6 +91,34 @@ export const shopeeAuthApi = {
   listConnectedShops: async () => {
     return api.get<ShopeeConnectedShop[]>(
       `${API_VERSION}/integrations/marketplaces/shopee/connections`
+    );
+  },
+
+  /**
+   * Live order preview (list → detail → escrow). Roles: admin+ (Core F6b0).
+   */
+  previewOrders: async (params: PreviewShopeeOrdersParams = {}) => {
+    const query = new URLSearchParams();
+    if (params.shop_id && params.shop_id > 0) {
+      query.set('shop_id', String(params.shop_id));
+    }
+    if (params.time_from && params.time_from > 0) {
+      query.set('time_from', String(params.time_from));
+    }
+    if (params.time_to && params.time_to > 0) {
+      query.set('time_to', String(params.time_to));
+    }
+    if (params.page_size && params.page_size > 0) {
+      query.set('page_size', String(params.page_size));
+    }
+    if (params.cursor) query.set('cursor', params.cursor);
+    if (params.exclude_cancelled) query.set('exclude_cancelled', 'true');
+    if (params.order_status) query.set('order_status', params.order_status);
+    if (params.fetch_all) query.set('fetch_all', 'true');
+
+    const qs = query.toString();
+    return api.get<ShopeeOrdersPreview>(
+      `${API_VERSION}/integrations/marketplaces/shopee/orders/preview${qs ? `?${qs}` : ''}`
     );
   },
 };

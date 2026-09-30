@@ -31,13 +31,15 @@ Production (Vercel) must set `NEXT_PUBLIC_API_BASE_URL` to the Railway API host 
 Dark **top bar** + domain **hubs** (decision **D7** in [`docs/design/jubelio-reference-ux.md`](docs/design/jubelio-reference-ux.md)). Jubelio supplies the navigation *pattern*; menus and features are EcomHub's.
 
 ```
-[ EcomHub | Dashboard | Catalog ▾ | Marketing ▾ | Finance ▾ | Integrations ▾ | Logout ]
+[ EcomHub | Dashboard | Catalog ▾ | Marketing ▾ | Sales ▾ | Finance ▾ | Integrations ▾ | Logout ]
 
 Finance hub          Overview · Accounts · Transactions · Channels
                      Journal Entries · Operational Expenses · Capital & Investors
                      ⚙ Setup → Chart of Accounts · Expense Categories · Fiscal Periods
 
 Marketing hub        Ad Budgets · Ad Expenses
+
+Sales hub            Shopee Orders (live preview / escrow)
 
 Catalog hub          Categories
 
@@ -48,7 +50,7 @@ Rules that keep this from sprawling:
 
 1. **Top level = domains, few of them.** A new feature joins an existing domain unless it is a new noun of the business.
 2. **Domain label → hub; caret → dropdown** of the same items. No third accordion level.
-3. **Marketplaces never become top-level.** Connections go under **Integrations**; money is read through **Finance › Channels** (backend `T34`).
+3. **Marketplaces never become top-level.** Connections go under **Integrations**; sales previews under **Sales**; money is read through **Finance › Channels** (backend `T34`).
 4. **Unbuilt areas are not rendered** in the top bar until they have a screen.
 
 ---
@@ -73,6 +75,8 @@ Rules that keep this from sprawling:
 | Marketing | Domain hub | `/marketing` |
 | Marketing | Ad Budgets | `/marketing/ad-budgets` |
 | Marketing | Ad Expenses | `/marketing/ad-expenses` |
+| Sales | Domain hub | `/sales` |
+| Sales | Shopee Orders (preview) | `/sales/shopee` |
 | Catalog | Domain hub | `/catalog` |
 | Catalog | Categories | `/master/categories` |
 | Integrations | Domain hub | `/integrations` |
@@ -90,7 +94,7 @@ Unlinked but still reachable by URL: `/finance/dashboard` (legacy Shopee summary
 | Area | Likely contents | Home in the IA |
 |---|---|---|
 | Catalog | Products, Product Attributes, Pricing Rules, Inventory | inside **Catalog** (Inventory may graduate to its own domain) |
-| Operations | Orders, Fulfillment, Fraud review | new top-level **Operations** |
+| Operations | Orders, Fulfillment, Fraud review | new top-level **Operations** (Shopee order preview lives under **Sales** for now) |
 | Integrations | TikTok / other channels, sync status, settlements (Shopee Connect is live under **Integrations**) | **Integrations** |
 | Settings | Users & Roles, Profile, Preferences | new top-level **Settings** |
 | Finance reports | Profit & Loss, Cash Flow, Balance Sheet | **Finance** hub cards |

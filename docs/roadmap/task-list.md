@@ -46,6 +46,7 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE22 | P1 | Wire paginated `ad-expenses/detail` | T15 Done |
 | [x] | FE23 | P1 | Finance Overview framing — balance as hero, cash flow clearly not a balance | — |
 | [x] | FE24 | FEATURE | Shopee OAuth callback + Connect UI | Core F6a |
+| [x] | FE25 | FEATURE | Shopee orders preview / mini-recap UI | Core F6b0 |
 
 **P0 left:** none (FE1 Done).
 
@@ -575,3 +576,36 @@ Wire real data in FE8/FE14/FE15; FE16 finishes migration and retirement of `/fin
 - **Done (2026-09-30):** `shopeeAuthApi.listConnectedShops` + Integrations page shows active shops / Re-connect (not a blank Connect every visit).
 
 **Not done here.** Automatic RefreshAccessToken before sales sync (F6b); non-admin operator role.
+
+---
+
+### FE25 — Shopee orders preview / mini-recap UI
+
+**Category:** FEATURE · **Status:** Done · **Backend:** Core **F6b0** (Done 2026-09-30; escrow + `fetch_all` / `order_status` / totals / `sku_summary`)
+
+**Problem.** Shop is connectable (FE24) but operators still hit Core/Postman for live order + escrow numbers. Need a thin Integrations UI for month-ish preview before full F6b1 formulas / recap screen.
+
+**API (do not invent shapes — read Core handler):**
+```http
+GET /api/v1/integrations/marketplaces/shopee/orders/preview
+  ?shop_id=&time_from=&time_to=&fetch_all=true&order_status=COMPLETED
+```
+- `total_escrow_amount`, `total_buyer_amount`, `order_count`
+- `sku_summary[]`: `sku`, `quantity`, `order_count`
+- `orders[]`: per-order `escrow_amount`, status, SKUs, …
+- Span: ≤15d without `fetch_all`; ≤31d with `fetch_all=true` (Core splits ≤15d windows)
+- Roles: admin / superadmin (same as Connect)
+
+**Scope:**
+1. Client method on `shopeeAuthApi` (or sibling) via `lib/api.ts` — no raw `fetch` in the page.
+2. On `/integrations/shopee` (or a child route): month/range picker → call preview with `fetch_all=true` + default `order_status=COMPLETED` (toggleable).
+3. Show totals (escrow primary; buyer GMV secondary/labelled) + SKU qty table + optional order list.
+4. Gate with `canConnectShopeeShop` (or matching predicate). Empty state if no connection.
+
+**Out of scope:** full spreadsheet formulas (Core F6b1 / F6c), income_detail payout ledger, ads, journal posting.
+
+**Next action.** Implement after Core smoke of month preview looks good; keep `menu-endpoints.md` in sync.
+
+**Cross-ref:** Core [`SHOPEE_MONTHLY_RECAP.md`](../../../ecomhub-core/docs/guides/SHOPEE_MONTHLY_RECAP.md) · F6c still the later full recap screen.
+
+**Done (2026-09-30):** New top-nav **Sales** domain — hub `/sales`, **Shopee Orders** `/sales/shopee`. `shopeeAuthApi.previewOrders` + connections shop picker; date range ≤31d; `fetch_all=true`; default status `COMPLETED`; totals / SKU table / order list. Connect stays under Integrations.

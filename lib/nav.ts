@@ -60,6 +60,18 @@ export const navDomains: NavDomain[] = [
     ],
   },
   {
+    id: 'sales',
+    label: 'Sales',
+    href: '/sales',
+    items: [
+      {
+        label: 'Shopee Orders',
+        href: '/sales/shopee',
+        description: 'Live Shopee order preview and escrow totals.',
+      },
+    ],
+  },
+  {
     id: 'finance',
     label: 'Finance',
     href: '/finance',
@@ -142,6 +154,9 @@ export function domainForPath(pathname: string): NavDomain | undefined {
   }
   if (pathname.startsWith('/marketing')) {
     return navDomains.find((d) => d.id === 'marketing');
+  }
+  if (pathname.startsWith('/sales')) {
+    return navDomains.find((d) => d.id === 'sales');
   }
   if (pathname.startsWith('/catalog') || pathname.startsWith('/master')) {
     return navDomains.find((d) => d.id === 'catalog');
