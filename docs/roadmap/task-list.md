@@ -614,6 +614,8 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 
 **Note (2026-09-30):** Core parallel escrow (concurrency 8) — **no FE change**; same preview response, faster wall time only. Progressive UX = **FE26** (Open), only if still feels slow after parallel.
 
+**Note (2026-09-30):** Cancel bucket UI only when status=`CANCELLED`. On **All statuses**: checkbox `exclude_pembatalan` (default on) — drops early cancel / no pickup; not the returns (pengembalian) page.
+
 ---
 
 ### FE26 — Progressive Shopee preview (SKU/buyer first, escrow second)
