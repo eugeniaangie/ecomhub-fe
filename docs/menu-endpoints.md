@@ -167,9 +167,19 @@ Route still lives under `/master/*`; only the sidebar group changed (decision **
 | `/finance/setup` | Finance setup hub (cards only) |
 | `/marketing` | Marketing domain hub |
 | `/catalog` | Catalog domain hub |
+| `/sales` | Sales domain hub |
 | `/integrations` | Integrations domain hub |
 | `/shopee-auth-callback` | Shopee OAuth return — POSTs `code` + `shop_id` to Core `…/shopee/token` (F6a3) |
 | `/master` | Older standalone categories CRUD — unlinked, retire separately |
+
+---
+
+## Sales
+
+### Shopee Orders (`/sales/shopee`) — FE25
+
+- `GET /integrations/marketplaces/shopee/connections` — shop picker (active shops).
+- `GET /integrations/marketplaces/shopee/orders/preview` — live list+detail+escrow (admin+). Query: `shop_id`, `time_from`, `time_to`, `order_status` (default `COMPLETED`), `fetch_all=true` (≤31d). Response: `order_count`, `total_escrow_amount` (seller primary), `total_buyer_amount` (GMV), `sku_summary[]`, `orders[]`.
 
 ---
 
