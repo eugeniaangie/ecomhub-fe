@@ -28,7 +28,7 @@ Chrome is a **dark top bar** with domains `Dashboard · Catalog · Marketing · 
 | `/dashboard` | Home ops dashboard — empty KPI / trend shells |
 | `/finance` | Finance domain hub (feature cards) |
 | `/finance/setup` | Finance setup hub — CoA, expense categories, fiscal periods |
-| `/finance/overview` | Finance Overview — Total cash + period movement (FE8 / T31); channel strip empty until T32 |
+| `/finance/overview` | Finance Overview — Total cash hero (with per-account balance breakdown, links to Accounts) + period cash flow labelled as movement, not balance (FE8 / T31, framing FE23); channel strip empty (T32 deferred) |
 | `/finance/balances` | Account balances + period movement (FE8 / T31); click account → Transactions filter (FE15) |
 | `/finance/transactions` | Unified posted lines — date / channel-tag / account filters + pagination (FE15 / T33) |
 | `/finance/channels` | Per-channel financial view — empty until T32 / FE14; Fees slot null (G4) |
@@ -75,6 +75,11 @@ Unimplemented product areas (inventory, orders, P&L reports, etc.) are listed in
 
 ### Capital investors
 - Status and return-paid patches as exposed by the API.
+
+### Balance vs cash flow (Overview / Accounts)
+- **Total cash** (hero on Overview, Balances table on Accounts) is cumulative through the as-of date — what is still in Kas + Bank + E-Wallet. It has no channel filter: `/accounts/balance` is all-channel by design, and a bank balance is not channel-specific.
+- **Money in / Money out** are totals that *passed through* those accounts inside the movement range, so they are routinely far larger than the balance. They are never labelled as a balance, and the balance is never wired to the range picker.
+- Overview repeats each account's balance under the hero so the large flow totals always have the real figures beside them (FE23).
 
 ---
 

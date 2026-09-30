@@ -91,7 +91,11 @@ Smoke / regression checks for finance screens. Automated unit coverage starts wi
 ## 7. Dashboards
 
 - [ ] `/finance/dashboard`: balances and transactions for a date range
-- [ ] `/finance/overview`: Total cash loads from `/accounts/balance` for chosen as-of; period debit/credit/net from `/accounts/movement`; channel/Fees stay empty
+- [ ] `/finance/overview`: Total cash loads from `/accounts/balance` for chosen as-of; period debit/credit/net from `/accounts/movement`; Channel net / Fees (G4/G5) not shown (JSX commented out until API)
+- [ ] `/finance/overview`: Total cash is the largest figure on the page; Money in / Money out render smaller and are not labelled as a balance (FE23)
+- [ ] `/finance/overview`: per-account balances under the hero match the Accounts Balances table for the same as-of, and the hero links to `/finance/balances`
+- [ ] `/finance/overview`: In / Out / Net cards link to `/finance/transactions?start_date=…&end_date=…` matching the movement range
+- [ ] `/finance/transactions`: `start_date` / `end_date` URL params initialise the date pickers (with `account_code`)
 - [ ] `/finance/balances`: per-account balance table + period movement table; as-of independent of movement range
 - [ ] Accounts balance row link opens `/finance/transactions?account_code=…` filtered to that account
 - [ ] `/finance/transactions`: paginated feed; date range + channel tag + account filters; This month / From start

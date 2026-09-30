@@ -44,6 +44,7 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE20 | P2 | Default list page size = 5 | — |
 | [ ] | FE21 | FEATURE | Wire Home Dashboard ops KPIs (sales / profit / by-channel) | gaps G1–G3 |
 | [x] | FE22 | P1 | Wire paginated `ad-expenses/detail` | T15 Done |
+| [x] | FE23 | P1 | Finance Overview framing — balance as hero, cash flow clearly not a balance | — |
 
 **P0 left:** none (FE1 Done).
 
@@ -516,3 +517,34 @@ Wire real data in FE8/FE14/FE15; FE16 finishes migration and retirement of `/fin
 **Not in scope.** Inventing a client-side max date-range; retiring the ad-expenses cards when T32/FE14 land.
 
 **Done (2026-09-29):** `getAdExpensesDetail` takes `page`/`limit` and returns `PaginatedResponseFinance<AccountTransaction>`. Marketing Ad Expenses: summary cards stay date-scoped; detail table uses shared `Pagination` (default page size from FE20). Date changes reset to page 1. Backend 400 validation messages shown as-is.
+
+---
+
+### FE23 — Finance Overview framing: balance as hero, cash flow clearly not a balance
+
+**Category:** P1 · **Status:** Done (2026-09-29) · **Backend:** none (presentation only, T31 endpoints unchanged)
+
+**Problem.** Developer read the Overview / Accounts figures as "the shop has done Rp 80-something million" when the real cash position was Rp 1.702.732. The numbers were correct; the framing invited the wrong reading:
+
+- `Total cash` was rendered at `text-2xl` while `In (debit)` / `Out (credit)` were `text-xl` — only one step apart, so the much longer movement digits (Neobank debit Rp 43.320.649 + Shopee Wallet debit Rp 44.874.967 ≈ Rp 88 jt) dominated the page over a Rp 1,7 jt balance.
+- `Total cash` sat in a three-column row with two grey `GapPlaceholder` slots (G4/G5), so the hero row looked like the empty row and the movement row looked like the real data.
+- Labels `In (debit)` / `Out (credit)` / `Net movement` are accounting vocabulary; the "this is not a balance" caveat was `text-xs text-gray-400` **below** the figures.
+- Overview showed no per-account balances, so the only on-screen comparison for the large movement totals lived on another page.
+
+**Why it matters.** Money that *passed through* a cash account is unbounded by the balance — a rekening can cycle Rp 88 jt and hold Rp 1,7 jt. Presenting both at near-equal visual weight, with the larger one unlabelled in plain language, reads as revenue or business size to a non-accountant.
+
+**Verified (2026-09-29, read-only SQL against live DB).** Cash subtree, `as_of = 2026-09-29`, movement range `2025-11-01 → 2026-09-29`: Neobank balance **Rp 1.851.254** (debit 43.320.649 / credit 41.469.395), Shopee Seller Wallet **−Rp 148.522** (debit 44.874.967 / credit 45.023.489), all other cash accounts 0. Total cash **Rp 1.702.732**. The movement query joins `journal_entry_lines → journal_entries` per `account_id` only — **no double counting**; the pasted 43 jt / 44 jt figures were the Period movement table, not the Balances table.
+
+**Done (2026-09-29):** `app/(dashboard)/finance/overview/page.tsx` only — presentation, no new endpoint, no figure recomputed in the UI, sign still not re-negated.
+
+1. `Total cash` is a full-width hero at `text-4xl`, wrapped in a `Link` to `/finance/balances`, with plain-language subtitle ("What is actually left in Kas + Bank + E-Wallet, cumulative through the as-of date").
+2. Per-account balance breakdown (`account_code` · `account_name` · `current_balance`) rendered inside the hero from the same `getAccountBalances` rows, so Rp 1.851.254 / −Rp 148.522 are visible without leaving Overview. All in-scope rows are shown, including zeros — nothing filtered.
+3. Movement cards demoted to `text-lg` and relabelled **Money in** / **Money out** / **Net change**, with `debit` / `credit` / `in minus out` as sub-captions. Card title now states it explicitly: "Cash flow in this period — money that moved, not your balance".
+4. `GapPlaceholder` slots (G4/G5) moved to their own two-column row so they no longer share the hero row.
+5. Page description rewritten to lead with the balance/flow distinction; also corrected the stale "Channel strip waits on T32" to "T32 deferred" (T32 was deferred 2026-09-29).
+
+**Follow-up (2026-09-29):** G4/G5 Overview slots first marked `disabled` on `GapPlaceholder`, then **commented out of the render tree** after the grey cards still cluttered the page — JSX left in place with a note; `GapPlaceholder` import parked beside it. Re-enable by uncommenting both. `EmptyPanel` Channel performance below is unchanged. `disabled` prop on `GapPlaceholder` remains for other screens. Same day: Total cash hero downsized (`text-2xl`, tighter padding) and per-account rows as compact `text-xs` notes so Cash flow fits above the fold without scrolling. Labels restored to In (debit) / Out (credit) / Net movement. **(2026-09-30):** Period movement In/Out/Net cards link to `/finance/transactions?start_date&end_date` for the current range; Transactions reads those URL params (with `account_code`).
+
+**Rejected.** Channel filter on the Overview cash-flow card — `/accounts/balance` has no `channel` parameter by design (T27 sign-off rule 2: balance is all channels), a bank balance is not channel-specific, and `je.channel` is a bookkeeping tag rather than marketplace performance (Core Decision 13 / T32 Deferred). Developer chose to skip it (2026-09-29) rather than add a channel figure that reads as channel performance.
+
+**Validated.** `npm run lint` and `npm run build` clean. Figures come from the same two endpoints as before, so no displayed value changed — only size, label and placement. **Unverified:** visual layout in a browser at each breakpoint (no test suite; needs manual check per the checklist).

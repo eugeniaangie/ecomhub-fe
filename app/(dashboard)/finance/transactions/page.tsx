@@ -24,13 +24,26 @@ const CHANNEL_FILTER_OPTIONS: Array<{ value: '' | Channel; label: string }> = [
   ...CHANNEL_OPTIONS,
 ];
 
+const DATE_PARAM_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function dateFromUrlParam(value: string | null, fallback: string): string {
+  if (value && DATE_PARAM_RE.test(value)) return value;
+  return fallback;
+}
+
 function TransactionsFeed() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const accountFromUrl = searchParams.get('account_code') || '';
+  const startFromUrl = searchParams.get('start_date');
+  const endFromUrl = searchParams.get('end_date');
 
-  const [startDate, setStartDate] = useState(LEDGER_START_DATE);
-  const [endDate, setEndDate] = useState(getTodayFormatted());
+  const [startDate, setStartDate] = useState(() =>
+    dateFromUrlParam(startFromUrl, LEDGER_START_DATE)
+  );
+  const [endDate, setEndDate] = useState(() =>
+    dateFromUrlParam(endFromUrl, getTodayFormatted())
+  );
   const [channel, setChannel] = useState('');
   const [accountCode, setAccountCode] = useState(accountFromUrl);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -53,6 +66,16 @@ function TransactionsFeed() {
   }, [accountFromUrl]);
 
   useEffect(() => {
+    const nextStart = dateFromUrlParam(startFromUrl, LEDGER_START_DATE);
+    const nextEnd = dateFromUrlParam(endFromUrl, getTodayFormatted());
+    if (nextStart <= nextEnd) {
+      setStartDate(nextStart);
+      setEndDate(nextEnd);
+      setCurrentPage(DEFAULT_PAGE);
+    }
+  }, [startFromUrl, endFromUrl]);
+
+  useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
@@ -70,6 +93,8 @@ function TransactionsFeed() {
   const syncAccountInUrl = (code: string) => {
     const params = new URLSearchParams();
     if (code) params.set('account_code', code);
+    if (startDate !== LEDGER_START_DATE) params.set('start_date', startDate);
+    if (endDate !== getTodayFormatted()) params.set('end_date', endDate);
     const qs = params.toString();
     router.replace(qs ? `/finance/transactions?${qs}` : '/finance/transactions');
   };
