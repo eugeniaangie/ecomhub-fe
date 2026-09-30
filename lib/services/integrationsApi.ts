@@ -52,6 +52,7 @@ export interface ShopeeOrdersPreview {
   fetch_all: boolean;
   token_refreshed: boolean;
   order_count: number;
+  total_quantity: number;
   total_buyer_amount: number;
   total_escrow_amount: number;
   cancel_reason_options?: string[];
