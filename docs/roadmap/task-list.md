@@ -566,11 +566,12 @@ Wire real data in FE8/FE14/FE15; FE16 finishes migration and retirement of `/fin
 2. Connect Shopee control (admin / superadmin only for now) that opens the signed authorize URL from Core F6a1.
 3. Role note: Core roles today are `superadmin` / `admin` / `manager` only — interim Connect gate = admin+. Ads-operator access without full admin is a later product decision (no `ads-manager` role yet).
 
-**Next action.** F6a complete — Connect + callback exchange. Optional: show connected status on `/integrations/shopee` from a future list endpoint. Sales sync = Core F6b.
+**Next action.** Sales sync = Core F6b.
 
 **Done (2026-09-30):**
 - `shopeeAuthApi.getAuthorizeUrl` → Core authorize-url.
 - **Integrations** domain in top nav: hub `/integrations`, **Shopee** `/integrations/shopee` with Connect (gated by `canConnectShopeeShop` = admin/superadmin) — same-tab `window.location.assign(authorize_url)`.
 - Callback `/shopee-auth-callback` reads `code` + `shop_id` and **POSTs** `shopeeAuthApi.exchangeToken` (Core F6a3). Shows connected shop id / token expiry — not raw tokens.
+- **Done (2026-09-30):** `shopeeAuthApi.listConnectedShops` + Integrations page shows active shops / Re-connect (not a blank Connect every visit).
 
-**Not done here.** Automatic RefreshAccessToken before sales sync (F6b); connection status list UI; non-admin operator role.
+**Not done here.** Automatic RefreshAccessToken before sales sync (F6b); non-admin operator role.
