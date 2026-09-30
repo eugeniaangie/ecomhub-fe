@@ -313,7 +313,7 @@ export default function SalesShopeeOrdersPage() {
 
           {preview ? (
             <>
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <Card title="Orders">
                   <p className="text-2xl font-semibold tabular-nums text-gray-900">
                     {preview.order_count}
@@ -322,6 +322,12 @@ export default function SalesShopeeOrdersPage() {
                     shop {preview.shop_id}
                     {preview.token_refreshed ? ' · token refreshed' : ''}
                   </p>
+                </Card>
+                <Card title="Total qty">
+                  <p className="text-2xl font-semibold tabular-nums text-gray-900">
+                    {preview.total_quantity ?? 0}
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500">Item units (SKU sum)</p>
                 </Card>
                 <Card title="Total escrow">
                   <p className="text-2xl font-semibold tabular-nums text-gray-900">
