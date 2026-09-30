@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 function ShopeeAuthCallbackContent() {
   const searchParams = useSearchParams();
@@ -23,21 +24,10 @@ function ShopeeAuthCallbackContent() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-sm text-gray-500">
-          <Link href="/integrations" className="hover:text-gray-800 hover:underline">
-            Integrations
-          </Link>
-          <span className="mx-1.5">/</span>
-          Shopee callback
-        </p>
-        <h1 className="mt-1 text-3xl font-bold text-gray-900">Shopee authorization</h1>
-        <p className="mt-2 max-w-2xl text-sm text-gray-600">
-          Shopee redirected here after shop approval. The authorization code is held on this
-          page until Core token exchange (F6a3) is available — nothing is posted to the API
-          yet.
-        </p>
-      </div>
+      <PageHeader
+        title="Shopee authorization"
+        description="Shopee redirected here after shop approval. The authorization code is held on this page until Core token exchange (F6a3) is available — nothing is posted to the API yet."
+      />
 
       <Card title="Callback result">
         {status === 'captured' ? (

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { Pagination } from '@/components/ui/Pagination';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { formatCurrency, formatDate, formatDateForAPI } from '@/lib/utils/formatters';
 import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/lib/utils/pagination';
 import { financeReportsApi } from '@/lib/services/financeApi';
@@ -109,12 +110,11 @@ export default function AdDashboardPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Ad Expenses Dashboard</h1>
-        <p className="text-gray-600">
-          Overview of your advertising expenses across all platforms
-        </p>
-      </div>
+      <PageHeader
+        className="mb-8"
+        title="Ad Expenses"
+        description="Overview of your advertising expenses across all platforms"
+      />
 
       <Card className="mb-6">
         <div className="flex flex-wrap items-end gap-4">

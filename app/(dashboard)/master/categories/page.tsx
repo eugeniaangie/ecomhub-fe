@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
+import { PageHeader } from '@/components/layout/PageHeader';
 import {
   canCreateCategory,
   canUpdateCategory,
@@ -417,17 +418,20 @@ export default function MasterDataPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Master Category</h1>
-        <Button 
-          onClick={handleCreate} 
-          variant="primary"
-          disabled={!canCreate}
-          className={!canCreate ? 'opacity-50 cursor-not-allowed' : ''}
-        >
-          + Add Category
-        </Button>
-      </div>
+      <PageHeader
+        className="mb-6"
+        title="Categories"
+        actions={
+          <Button
+            onClick={handleCreate}
+            variant="primary"
+            disabled={!canCreate}
+            className={!canCreate ? 'opacity-50 cursor-not-allowed' : ''}
+          >
+            + Add Category
+          </Button>
+        }
+      />
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
