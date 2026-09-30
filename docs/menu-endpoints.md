@@ -168,7 +168,7 @@ Route still lives under `/master/*`; only the sidebar group changed (decision **
 | `/marketing` | Marketing domain hub |
 | `/catalog` | Catalog domain hub |
 | `/integrations` | Integrations domain hub |
-| `/shopee-auth-callback` | Shopee OAuth return — reads `code` + `shop_id` from query; no API until Core F6a3 |
+| `/shopee-auth-callback` | Shopee OAuth return — POSTs `code` + `shop_id` to Core `…/shopee/token` (F6a3) |
 | `/master` | Older standalone categories CRUD — unlinked, retire separately |
 
 ---
@@ -177,7 +177,8 @@ Route still lives under `/master/*`; only the sidebar group changed (decision **
 
 ### Shopee Connect (`/integrations/shopee`)
 
-- `GET /integrations/marketplaces/shopee/authorize-url` — returns `{ authorize_url }`; FE opens it in the same tab (admin/superadmin UI gate; Core enforces the same roles). **FE24 Done (2026-09-30).** Token exchange not wired (waits Core F6a3).
+- `GET /integrations/marketplaces/shopee/authorize-url` — `{ authorize_url }`; FE opens same-tab (admin+).
+- `POST /integrations/marketplaces/shopee/token` — body `{ code, shop_id }` → connected shop (no raw tokens). Called from `/shopee-auth-callback`.
 
 ---
 
