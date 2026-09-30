@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { StatusBadge } from '@/components/finance/StatusBadge';
 import { formatDate, formatDateTime, formatCurrency, getTodayFormatted, isValidDate, formatNumber, parseFormattedNumber } from '@/lib/utils/formatters';
 import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/lib/utils/pagination';
@@ -326,17 +327,20 @@ export default function OperationalExpensesPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Operational Expenses</h1>
-        <Button 
-          onClick={handleCreate} 
-          variant="primary"
-          disabled={!canCreateOperationalExpense()}
-          className={!canCreateOperationalExpense() ? 'opacity-50 cursor-not-allowed' : ''}
-        >
-          + Add Expense
-        </Button>
-      </div>
+      <PageHeader
+        className="mb-6"
+        title="Operational Expenses"
+        actions={
+          <Button
+            onClick={handleCreate}
+            variant="primary"
+            disabled={!canCreateOperationalExpense()}
+            className={!canCreateOperationalExpense() ? 'opacity-50 cursor-not-allowed' : ''}
+          >
+            + Add Expense
+          </Button>
+        }
+      />
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
@@ -349,7 +353,7 @@ export default function OperationalExpensesPage() {
         <input
           type="text"
           placeholder="Search by expense number or description..."
-          className="flex-1 min-w-[200px] px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 min-w-50 px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSearch()}

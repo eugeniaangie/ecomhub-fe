@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { StatusBadge } from '@/components/finance/StatusBadge';
 import { ACCOUNT_TYPE_COLORS, ACCOUNT_TYPE_LABELS, ACCOUNT_TYPE_OPTIONS } from '@/lib/utils/constants';
 import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/lib/utils/pagination';
@@ -217,17 +218,20 @@ export default function AccountsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Chart of Accounts</h1>
-        <Button 
-          onClick={handleCreate} 
-          variant="primary"
-          disabled={!canCreate}
-          className={!canCreate ? 'opacity-50 cursor-not-allowed' : ''}
-        >
-          + Add Account
-        </Button>
-      </div>
+      <PageHeader
+        className="mb-6"
+        title="Chart of Accounts"
+        actions={
+          <Button
+            onClick={handleCreate}
+            variant="primary"
+            disabled={!canCreate}
+            className={!canCreate ? 'opacity-50 cursor-not-allowed' : ''}
+          >
+            + Add Account
+          </Button>
+        }
+      />
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
@@ -240,7 +244,7 @@ export default function AccountsPage() {
         <input
           type="text"
           placeholder="Search by code or name..."
-          className="flex-1 min-w-[200px] px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 min-w-50 px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
