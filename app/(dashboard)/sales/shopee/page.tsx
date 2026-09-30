@@ -315,7 +315,7 @@ export default function SalesShopeeOrdersPage() {
                     <table className="min-w-full divide-y divide-gray-200 text-sm">
                       <thead>
                         <tr className="text-left text-gray-500">
-                          <th className="px-3 py-2 font-medium">order_sn</th>
+                          <th className="px-3 py-2 font-medium">Order SN</th>
                           <th className="px-3 py-2 font-medium">Status</th>
                           <th className="px-3 py-2 font-medium text-right">Escrow</th>
                           <th className="px-3 py-2 font-medium text-right">Buyer</th>
