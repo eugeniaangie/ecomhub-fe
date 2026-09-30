@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   canApproveJournalEntry,
   canApproveOperationalExpense,
+  canConnectShopeeShop,
   canPostJournalEntry,
   canUpdateJournalEntry,
   getUserRoles,
@@ -72,6 +73,15 @@ describe('authHelpers', () => {
       expect(isSuperadmin()).toBe(false);
       setUserRoles(['superadmin']);
       expect(isSuperadmin()).toBe(true);
+    });
+
+    it('canConnectShopeeShop is admin or superadmin only', () => {
+      setUserRoles(['admin']);
+      expect(canConnectShopeeShop()).toBe(true);
+      setUserRoles(['superadmin']);
+      expect(canConnectShopeeShop()).toBe(true);
+      setUserRoles(['manager']);
+      expect(canConnectShopeeShop()).toBe(false);
     });
   });
 

@@ -462,6 +462,14 @@ export const canView = (): boolean => {
 };
 
 /**
+ * Connect a Shopee shop via Partner OAuth (F6a / FE24).
+ * Allowed: superadmin, admin — matches Core authorize-url gate.
+ */
+export const canConnectShopeeShop = (): boolean => {
+  return hasAnyRole(['superadmin', 'admin']);
+};
+
+/**
  * Clear all client-side auth user keys (roles + id).
  * Call from logout and from global 401 / failed refresh paths.
  */
