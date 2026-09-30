@@ -47,6 +47,8 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE23 | P1 | Finance Overview framing — balance as hero, cash flow clearly not a balance | — |
 | [x] | FE24 | FEATURE | Shopee OAuth callback + Connect UI | Core F6a |
 | [x] | FE25 | FEATURE | Shopee orders preview / mini-recap UI | Core F6b0 |
+| [ ] | FE26 | FEATURE | Progressive Shopee preview (SKU/buyer first, escrow second) | Core F6b0.1 |
+| [ ] | FE27 | P3 | Responsive / narrow-viewport layout (phone-sized window) | UX |
 
 **P0 left:** none (FE1 Done).
 
@@ -609,3 +611,40 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 **Cross-ref:** Core [`SHOPEE_MONTHLY_RECAP.md`](../../../ecomhub-core/docs/guides/SHOPEE_MONTHLY_RECAP.md) · F6c still the later full recap screen.
 
 **Done (2026-09-30):** New top-nav **Sales** domain — hub `/sales`, **Shopee Orders** `/sales/shopee`. `shopeeAuthApi.previewOrders` + connections shop picker; date range ≤31d; `fetch_all=true`; default status `COMPLETED`; totals / SKU table / order list. Connect stays under Integrations.
+
+**Note (2026-09-30):** Core parallel escrow (concurrency 8) — **no FE change**; same preview response, faster wall time only. Progressive UX = **FE26** (Open), only if still feels slow after parallel.
+
+---
+
+### FE26 — Progressive Shopee preview (SKU/buyer first, escrow second)
+
+**Category:** FEATURE · **Status:** Open · **Backend:** Core **F6b0.1** (not built yet — see Core `SHOPEE_MONTHLY_RECAP.md` § Performance)
+
+**Problem.** Even with parallel escrow, a full month preview is one blocking request until all `get_escrow_detail` finish. Operators care about SKU qty + buyer GMV immediately; total escrow can land a beat later.
+
+**Approach (when unblocked):**
+1. **Fast call** — list+detail only (or `include_escrow=false`): show `sku_summary`, `total_buyer_amount`, order rows without escrow; escrow card = loading.
+2. **Slow call** — escrow enrich (same range/filters): fill `total_escrow_amount` + per-order `escrow_amount`.
+3. Do **not** invent a “totals-only” path that still hits every escrow — that does not reduce latency.
+
+**Depends on.** Core exposing the split (query flag on preview and/or a thin enrich endpoint). Until then, leave FE25 as single-shot.
+
+**Out of scope.** Order mirror DB / month snapshot (Core “Later” — only if live still hurts). Full F6b1 formulas.
+
+**Next action.** Park until operator says month load still too slow after parallel escrow smoke.
+
+---
+
+### FE27 — Responsive / narrow-viewport layout
+
+**Category:** P3 · **Status:** Open · **Noted:** 2026-09-30
+
+**Problem.** UI is not flexible on a small window (approx. phone width). Layouts stack / overlap — filters, cards, tables, and top-bar chrome fight for space. Observed when shrinking the desktop browser; not a dedicated mobile-app product requirement yet.
+
+**Why it matters (low).** Operators mostly use desktop; phone-sized is occasional. Still worth fixing so narrow laptop / side-by-side windows do not look broken.
+
+**Affected area (likely).** Top-bar nav / hubs, Sales → Shopee Orders filters + tables, Finance filter rows, Integrations connect page — audit breakpoints rather than one-off hacks.
+
+**Out of scope.** Native mobile app; redesigning IA for phone-first.
+
+**Next action.** When picked up: screenshot/reproduce at ~375px width, then stack filters vertically, allow horizontal scroll on tables, and tighten AppNav so domains do not crush.
