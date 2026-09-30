@@ -1,7 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { PageChrome, GapPlaceholder, EmptyPanel } from '@/components/finance/PageChrome';
+import Link from 'next/link';
+import { PageChrome, EmptyPanel } from '@/components/finance/PageChrome';
+// GapPlaceholder kept available for G4/G5 when re-enabled:
+// import { PageChrome, GapPlaceholder, EmptyPanel } from '@/components/finance/PageChrome';
 import { Card } from '@/components/ui/Card';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { financeReportsApi } from '@/lib/services/financeApi';
@@ -131,7 +134,7 @@ export default function FinanceOverviewPage() {
   return (
     <PageChrome
       title="Overview"
-      description="Cash position (cumulative) and period movement on cash accounts. Channel strip waits on T32."
+      description="Cash position (cumulative) and period movement on cash accounts."
     >
       <Card className="mb-2">
         <div className="flex flex-wrap items-end gap-4">
@@ -151,30 +154,57 @@ export default function FinanceOverviewPage() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="rounded-lg border border-gray-200 bg-white px-4 py-3">
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm text-gray-500">Total cash</p>
-            <BalanceIcon />
-          </div>
-          {loadingBalances ? (
-            <p className="mt-1 text-2xl font-semibold text-gray-300">…</p>
-          ) : balanceError ? (
-            <p className="mt-1 text-sm text-red-600">{balanceError}</p>
-          ) : totalCash !== null ? (
-            <p className={`mt-1 text-2xl font-semibold tabular-nums ${amountColorClass(totalCash)}`}>
-              {formatCurrency(totalCash)}
+      <Link
+        href="/finance/balances"
+        className="block rounded-lg border border-gray-200 bg-white px-4 py-3 transition-colors hover:border-blue-300 hover:bg-blue-50"
+      >
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium text-gray-500">Total cash</p>
+            <p className="text-xs text-gray-400">
+              Kas + Bank + E-Wallet, cumulative through the as-of date
             </p>
-          ) : (
-            <p className="mt-1 text-2xl font-semibold text-gray-300">—</p>
-          )}
-          <p className="mt-1 text-xs text-gray-400">
-            Kas + Bank + E-Wallet, cumulative through the as-of date
-          </p>
+            {loadingBalances ? (
+              <p className="mt-1 text-2xl font-semibold text-gray-300">…</p>
+            ) : balanceError ? (
+              <p className="mt-1 text-sm text-red-600">{balanceError}</p>
+            ) : totalCash !== null ? (
+              <p className={`mt-1 text-2xl font-semibold tabular-nums ${amountColorClass(totalCash)}`}>
+                {formatCurrency(totalCash)}
+              </p>
+            ) : (
+              <p className="mt-1 text-2xl font-semibold text-gray-300">—</p>
+            )}
+          </div>
+          <p className="pb-0.5 text-xs text-blue-600">Accounts →</p>
         </div>
-        <GapPlaceholder label="Channel net (aggregate)" gapId="G5" />
-        <GapPlaceholder label="Fees (all channels)" gapId="G4" />
+
+        {balances && balances.length > 0 ? (
+          <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-0 border-t border-gray-100 pt-1.5 text-[10px] leading-tight text-gray-400 sm:grid-cols-3 lg:grid-cols-4">
+            {balances.map((row) => (
+              <div
+                key={row.account_code}
+                className="flex items-baseline justify-between gap-1.5"
+              >
+                <dt className="truncate">
+                  <span className="font-mono text-[9px] text-gray-400">{row.account_code}</span>{' '}
+                  {row.account_name}
+                </dt>
+                <dd className={`shrink-0 tabular-nums text-[10px] ${amountColorClass(row.current_balance)}`}>
+                  {formatCurrency(row.current_balance)}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        ) : null}
+      </Link>
+
+      {/* G4/G5 deferred — keep JSX ready; do not show empty grey slots on Overview.
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <GapPlaceholder label="Channel net (aggregate)" gapId="G5" disabled />
+        <GapPlaceholder label="Fees (all channels)" gapId="G4" disabled />
       </div>
+      */}
 
       <Card title="Period movement (cash accounts)">
         <div className="mb-4 flex flex-wrap items-end gap-4">
@@ -225,39 +255,42 @@ export default function FinanceOverviewPage() {
         ) : loadingMovements ? (
           <p className="text-sm text-gray-500">Loading movements…</p>
         ) : periodTotals ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="rounded-lg border border-gray-200 bg-white px-4 py-3">
+          <Link
+            href={`/finance/transactions?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`}
+            className="grid grid-cols-1 gap-4 sm:grid-cols-3"
+          >
+            <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 transition-colors hover:border-blue-300 hover:bg-blue-50">
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-sm text-gray-500">In (debit)</p>
                 <PlusIcon />
               </div>
-              <p className="mt-1 text-xl font-semibold tabular-nums text-gray-900">
+              <p className="mt-1 text-lg font-semibold tabular-nums text-gray-700">
                 {formatCurrency(periodTotals.debit)}
               </p>
             </div>
-            <div className="rounded-lg border border-gray-200 bg-white px-4 py-3">
+            <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 transition-colors hover:border-blue-300 hover:bg-blue-50">
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-sm text-gray-500">Out (credit)</p>
                 <MinusIcon />
               </div>
-              <p className="mt-1 text-xl font-semibold tabular-nums text-gray-900">
+              <p className="mt-1 text-lg font-semibold tabular-nums text-gray-700">
                 {formatCurrency(periodTotals.credit)}
               </p>
             </div>
-            <div className="rounded-lg border border-gray-200 bg-white px-4 py-3">
+            <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 transition-colors hover:border-blue-300 hover:bg-blue-50">
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-sm text-gray-500">Net movement</p>
                 <BalanceIcon />
               </div>
-              <p className="mt-1 text-xl font-semibold tabular-nums text-gray-900">
+              <p className={`mt-1 text-lg font-semibold tabular-nums ${amountColorClass(periodTotals.net)}`}>
                 {formatCurrency(periodTotals.net)}
               </p>
             </div>
-          </div>
+          </Link>
         ) : null}
         <p className="mt-3 text-xs text-gray-400">
           Debit / credit are ledger totals on cash accounts in range; net uses API sign rules.
-          Detail by account is on Finance → Accounts.
+          Click the cards to open Transactions for this range. Detail by account is on Finance → Accounts.
         </p>
       </Card>
 

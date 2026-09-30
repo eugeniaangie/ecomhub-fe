@@ -28,10 +28,10 @@ Ops / profit pulse. **No report endpoints wired yet** — KPI and chart shells r
 
 ### Finance Overview (`/finance/overview`)
 
-- `GET /reports/dashboard/finance/accounts/balance` *(query: optional `as_of`)* — Total cash (sum of rows) + drives as-of label
-- `GET /reports/dashboard/finance/accounts/movement` *(query: `start_date`, `end_date`; optional `channel` unused on this screen)* — period debit / credit / net
+- `GET /reports/dashboard/finance/accounts/balance` *(query: optional `as_of`)* — Total cash (sum of rows) + drives as-of label; hero links to `/finance/balances`
+- `GET /reports/dashboard/finance/accounts/movement` *(query: `start_date`, `end_date`; optional `channel` unused on this screen)* — period debit / credit / net; In / Out / Net cards link to `/finance/transactions?start_date=…&end_date=…`
 
-Channel strip and Fees remain empty (gaps **G4, G5, G7**).
+Channel strip and Fees remain empty / commented out (gaps **G4, G5, G7**).
 
 ### Accounts — balances (`/finance/balances`)
 
@@ -42,7 +42,7 @@ Drill-down: account code/name links to `/finance/transactions?account_code=…` 
 
 ### Transactions (`/finance/transactions`)
 
-- `GET /reports/dashboard/finance/transactions` — paginated (`page`/`limit`; optional `channel` JE tag, `account_code`; required `start_date`/`end_date`). **FE15 Done (2026-09-29).** Also `GET /accounts/no_page` for the account filter dropdown. Legacy Shopee transactions remain on unlinked `/finance/dashboard` until FE16.
+- `GET /reports/dashboard/finance/transactions` — paginated (`page`/`limit`; optional `channel` JE tag, `account_code`; required `start_date`/`end_date`). **FE15 Done (2026-09-29).** Also `GET /accounts/no_page` for the account filter dropdown. URL query `account_code` / `start_date` / `end_date` initialise the filters (Overview period cards pass the date range). Legacy Shopee transactions remain on unlinked `/finance/dashboard` until FE16.
 
 ### Channels (`/finance/channels`)
 

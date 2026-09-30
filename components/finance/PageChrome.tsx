@@ -8,6 +8,11 @@ interface GapPlaceholderProps {
   label: string;
   /** Gap register id from docs/design/ui-backend-gaps.md, e.g. G4 */
   gapId?: string;
+  /**
+   * Keep the slot on screen but greyed out (deferred API / not interactive).
+   * Prefer this over commenting the JSX out — the gap id stays visible in the UI.
+   */
+  disabled?: boolean;
   className?: string;
 }
 
@@ -15,16 +20,24 @@ interface GapPlaceholderProps {
 export const GapPlaceholder: React.FC<GapPlaceholderProps> = ({
   label,
   gapId,
+  disabled = false,
   className = '',
 }) => {
   return (
     <div
-      className={`rounded-lg border border-gray-200 bg-white px-4 py-3 ${className}`}
+      aria-disabled={disabled || undefined}
+      className={`rounded-lg border px-4 py-3 ${
+        disabled
+          ? 'border-gray-100 bg-gray-50 opacity-60'
+          : 'border-gray-200 bg-white'
+      } ${className}`}
     >
-      <p className="text-sm text-gray-500">{label}</p>
+      <p className={`text-sm ${disabled ? 'text-gray-400' : 'text-gray-500'}`}>{label}</p>
       <p className="mt-1 text-2xl font-semibold tabular-nums text-gray-300">—</p>
       {gapId ? (
-        <p className="mt-1 text-xs text-gray-400">Awaiting API ({gapId})</p>
+        <p className="mt-1 text-xs text-gray-400">
+          {disabled ? `Disabled — awaiting API (${gapId})` : `Awaiting API (${gapId})`}
+        </p>
       ) : null}
     </div>
   );
