@@ -7,6 +7,9 @@ import { ApiError } from '@/lib/api';
 import { shopeeAuthApi, type ShopeeConnectedShop } from '@/lib/services/integrationsApi';
 import { Card } from '@/components/ui/Card';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { ShopeeShopStatus } from '@/components/integrations/ShopeeShopStatus';
+
+const LAST_SHOP_KEY = 'shopee_oauth_last_shop';
 
 type Phase =
   | { kind: 'missing' }
@@ -15,13 +18,30 @@ type Phase =
   | { kind: 'connected'; shop: ShopeeConnectedShop }
   | { kind: 'error'; message: string; shopId: string };
 
+function readCachedShop(): ShopeeConnectedShop | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem(LAST_SHOP_KEY);
+    if (!raw) return null;
+    const shop = JSON.parse(raw) as ShopeeConnectedShop;
+    if (typeof shop?.id !== 'number' || typeof shop?.shop_id !== 'number') return null;
+    return shop;
+  } catch {
+    return null;
+  }
+}
+
 function ShopeeAuthCallbackContent() {
   const searchParams = useSearchParams();
   const code = searchParams.get('code')?.trim() || '';
   const shopIdRaw = searchParams.get('shop_id')?.trim() || '';
   const started = useRef(false);
   const [phase, setPhase] = useState<Phase>(() => {
-    if (!code && !shopIdRaw) return { kind: 'missing' };
+    if (!code && !shopIdRaw) {
+      const cached = readCachedShop();
+      if (cached) return { kind: 'connected', shop: cached };
+      return { kind: 'missing' };
+    }
     if (!code || !shopIdRaw) {
       return { kind: 'incomplete', code: Boolean(code), shopId: Boolean(shopIdRaw) };
     }
@@ -48,7 +68,15 @@ function ShopeeAuthCallbackContent() {
     (async () => {
       try {
         const shop = await shopeeAuthApi.exchangeToken(code, shopIdNum);
-        if (!cancelled) setPhase({ kind: 'connected', shop });
+        if (cancelled) return;
+        try {
+          sessionStorage.setItem(LAST_SHOP_KEY, JSON.stringify(shop));
+        } catch {
+          // ignore quota / private mode
+        }
+        // Drop one-time code from the URL so refresh does not re-POST a spent code.
+        window.history.replaceState(null, '', '/shopee-auth-callback');
+        setPhase({ kind: 'connected', shop });
       } catch (err) {
         const message =
           err instanceof ApiError
@@ -72,27 +100,18 @@ function ShopeeAuthCallbackContent() {
         {phase.kind === 'exchanging' ? (
           <p className="text-sm text-gray-600">Connecting shop {phase.shopId}…</p>
         ) : phase.kind === 'connected' ? (
-          <div className="space-y-3 text-sm text-gray-700">
-            <p className="font-medium text-green-700">Shop connected. Tokens stored on the server.</p>
-            <dl className="grid gap-2 sm:grid-cols-[8rem_1fr]">
-              <dt className="text-gray-500">shop_id</dt>
-              <dd className="font-mono">{phase.shop.shop_id}</dd>
-              <dt className="text-gray-500">account id</dt>
-              <dd className="font-mono">{phase.shop.id}</dd>
-              <dt className="text-gray-500">token expires</dt>
-              <dd className="font-mono break-all">{phase.shop.token_expires_at}</dd>
-            </dl>
-          </div>
+          <ShopeeShopStatus shop={phase.shop} />
         ) : phase.kind === 'error' ? (
           <div className="space-y-2 text-sm text-red-700">
             <p className="font-medium">Could not complete token exchange</p>
             <p>{phase.message}</p>
             <p className="text-gray-600">
-              The authorization code is single-use and expires quickly. Use{' '}
+              The authorization code is single-use. Refreshing this page after a successful
+              connect reuses a spent code and will fail. Use{' '}
               <Link href="/integrations/shopee" className="text-blue-600 hover:underline">
                 Connect Shopee
               </Link>{' '}
-              again if needed.
+              again only if you need a new authorization.
             </p>
           </div>
         ) : phase.kind === 'incomplete' ? (
@@ -108,7 +127,7 @@ function ShopeeAuthCallbackContent() {
             <Link href="/integrations/shopee" className="text-blue-600 hover:underline">
               Integrations → Shopee
             </Link>{' '}
-            and run Connect Shopee again.
+            to connect or view status.
           </p>
         )}
       </Card>
