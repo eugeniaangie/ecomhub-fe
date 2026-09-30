@@ -179,7 +179,7 @@ Route still lives under `/master/*`; only the sidebar group changed (decision **
 ### Shopee Orders (`/sales/shopee`) — FE25
 
 - `GET /integrations/marketplaces/shopee/connections` — shop picker (active shops).
-- `GET /integrations/marketplaces/shopee/orders/preview` — live list+detail+escrow (admin+). Query: `shop_id`, `time_from`, `time_to`, `order_status` (default `COMPLETED`), `fetch_all=true` (≤31d). Response: `order_count`, `total_escrow_amount` (seller primary), `total_buyer_amount` (GMV), `sku_summary[]`, `orders[]`.
+- `GET /integrations/marketplaces/shopee/orders/preview` — live list+detail+escrow (admin+). Query: `shop_id`, `time_from`, `time_to`, `order_status`, `fetch_all`, `cancel_bucket` (`pembatalan`|`pengembalian` approx), `cancel_reason`. Response: totals, `sku_summary[]`, `orders[]` (+ cancel fields), `cancel_reason_options`.
 
 ---
 
