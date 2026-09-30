@@ -48,6 +48,7 @@ export interface ShopeeOrdersPreview {
   order_status?: string;
   cancel_bucket?: string;
   cancel_reason?: string;
+  exclude_pembatalan?: boolean;
   fetch_all: boolean;
   token_refreshed: boolean;
   order_count: number;
@@ -69,6 +70,7 @@ export interface PreviewShopeeOrdersParams {
   fetch_all?: boolean;
   cancel_bucket?: string;
   cancel_reason?: string;
+  exclude_pembatalan?: boolean;
 }
 
 export const shopeeAuthApi = {
@@ -125,6 +127,7 @@ export const shopeeAuthApi = {
     if (params.fetch_all) query.set('fetch_all', 'true');
     if (params.cancel_bucket) query.set('cancel_bucket', params.cancel_bucket);
     if (params.cancel_reason) query.set('cancel_reason', params.cancel_reason);
+    if (params.exclude_pembatalan) query.set('exclude_pembatalan', 'true');
 
     const qs = query.toString();
     return api.get<ShopeeOrdersPreview>(
