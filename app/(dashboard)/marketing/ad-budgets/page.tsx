@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { formatCurrency, formatDate, formatNumber, parseFormattedNumber } from '@/lib/utils/formatters';
 import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/lib/utils/pagination';
 import { AD_PLATFORM_OPTIONS, AD_PLATFORM_LABELS } from '@/lib/utils/constants';
@@ -300,17 +301,20 @@ export default function AdBudgetsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Ad Budgets</h1>
-        <Button 
-          onClick={handleCreate} 
-          variant="primary"
-          disabled={!canCreate}
-          className={!canCreate ? 'opacity-50 cursor-not-allowed' : ''}
-        >
-          + Add Ad Budget
-        </Button>
-      </div>
+      <PageHeader
+        className="mb-6"
+        title="Ad Budgets"
+        actions={
+          <Button
+            onClick={handleCreate}
+            variant="primary"
+            disabled={!canCreate}
+            className={!canCreate ? 'opacity-50 cursor-not-allowed' : ''}
+          >
+            + Add Ad Budget
+          </Button>
+        }
+      />
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
@@ -323,7 +327,7 @@ export default function AdBudgetsPage() {
         <input
           type="text"
           placeholder="Search by platform or notes..."
-          className="flex-1 min-w-[200px] px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 min-w-50 px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSearch()}

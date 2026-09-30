@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { ApiError } from '@/lib/api';
 import { canConnectShopeeShop } from '@/lib/authHelpers';
 import { shopeeAuthApi } from '@/lib/services/integrationsApi';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function ShopeeConnectPage() {
   const [error, setError] = useState('');
@@ -44,21 +44,10 @@ export default function ShopeeConnectPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-sm text-gray-500">
-          <Link href="/integrations" className="hover:text-gray-800 hover:underline">
-            Integrations
-          </Link>
-          <span className="mx-1.5">/</span>
-          Shopee
-        </p>
-        <h1 className="mt-1 text-3xl font-bold text-gray-900">Shopee</h1>
-        <p className="mt-2 max-w-2xl text-sm text-gray-600">
-          Connect a shop through Shopee Partner OAuth. After you approve on Shopee, you land
-          back on the callback page with a one-time code. Token storage is not wired yet
-          (Core F6a3).
-        </p>
-      </div>
+      <PageHeader
+        title="Shopee"
+        description="Connect a shop through Shopee Partner OAuth. After you approve on Shopee, you land back on the callback page with a one-time code. Token storage is not wired yet (Core F6a3)."
+      />
 
       <Card title="Shop connection">
         {!canConnect ? (
