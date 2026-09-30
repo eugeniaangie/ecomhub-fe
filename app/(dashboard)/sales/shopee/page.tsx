@@ -51,6 +51,8 @@ export default function SalesShopeeOrdersPage() {
   const [startDate, setStartDate] = useState(getFirstDayOfCurrentMonth());
   const [endDate, setEndDate] = useState(getTodayFormatted());
   const [orderStatus, setOrderStatus] = useState('COMPLETED');
+  const [cancelBucket, setCancelBucket] = useState('');
+  const [cancelReason, setCancelReason] = useState('');
   const [preview, setPreview] = useState<ShopeeOrdersPreview | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -134,6 +136,8 @@ export default function SalesShopeeOrdersPage() {
         time_to: endOfDayUnix(endDate),
         fetch_all: true,
         order_status: orderStatus || undefined,
+        cancel_bucket: cancelBucket || undefined,
+        cancel_reason: cancelReason || undefined,
       });
       setPreview(data);
     } catch (err) {
@@ -224,6 +228,42 @@ export default function SalesShopeeOrdersPage() {
                       <option value="SHIPPED">SHIPPED</option>
                       <option value="TO_CONFIRM_RECEIVE">TO_CONFIRM_RECEIVE</option>
                       <option value="CANCELLED">CANCELLED</option>
+                      <option value="TO_RETURN">TO_RETURN</option>
+                    </select>
+                  </div>
+                  <div className="min-w-44">
+                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                      Cancel bucket
+                    </label>
+                    <select
+                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={cancelBucket}
+                      onChange={(e) => setCancelBucket(e.target.value)}
+                    >
+                      <option value="">All / n/a</option>
+                      <option value="pembatalan">Pembatalan (no pickup)</option>
+                      <option value="pengembalian">Pengembalian (approx)</option>
+                    </select>
+                  </div>
+                  <div className="min-w-48">
+                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                      Cancel reason
+                    </label>
+                    <select
+                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={cancelReason}
+                      onChange={(e) => setCancelReason(e.target.value)}
+                    >
+                      <option value="">All reasons</option>
+                      {(preview?.cancel_reason_options ?? []).map((r) => (
+                        <option key={r} value={r}>
+                          {r}
+                        </option>
+                      ))}
+                      {cancelReason &&
+                      !(preview?.cancel_reason_options ?? []).includes(cancelReason) ? (
+                        <option value={cancelReason}>{cancelReason}</option>
+                      ) : null}
                     </select>
                   </div>
                 </div>
@@ -243,6 +283,8 @@ export default function SalesShopeeOrdersPage() {
                 <p className="text-xs text-gray-500">
                   Max {MAX_RANGE_DAYS} days. Uses <code className="font-mono">fetch_all=true</code>{' '}
                   (Core splits ≤15d windows). Escrow = seller expected receive; buyer amount = GMV.
+                  Cancel bucket is approximate (pickup_done_time) — not full returns API. Load once
+                  with status CANCELLED to populate cancel-reason options.
                 </p>
               </div>
             )}
@@ -315,8 +357,10 @@ export default function SalesShopeeOrdersPage() {
                     <table className="min-w-full divide-y divide-gray-200 text-sm">
                       <thead>
                         <tr className="text-left text-gray-500">
-                          <th className="px-3 py-2 font-medium">order_sn</th>
+                          <th className="px-3 py-2 font-medium">Order SN</th>
                           <th className="px-3 py-2 font-medium">Status</th>
+                          <th className="px-3 py-2 font-medium">Bucket</th>
+                          <th className="px-3 py-2 font-medium">Cancel reason</th>
                           <th className="px-3 py-2 font-medium text-right">Escrow</th>
                           <th className="px-3 py-2 font-medium text-right">Buyer</th>
                           <th className="px-3 py-2 font-medium">Created</th>
@@ -328,6 +372,10 @@ export default function SalesShopeeOrdersPage() {
                           <tr key={o.order_sn} className="text-gray-900">
                             <td className="px-3 py-2 font-mono">{o.order_sn}</td>
                             <td className="px-3 py-2">{o.order_status || '—'}</td>
+                            <td className="px-3 py-2 text-gray-600">{o.cancel_bucket || '—'}</td>
+                            <td className="px-3 py-2 text-xs text-gray-600">
+                              {o.cancel_reason || '—'}
+                            </td>
                             <td className="px-3 py-2 text-right tabular-nums">
                               {formatCurrency(o.escrow_amount ?? 0)}
                             </td>

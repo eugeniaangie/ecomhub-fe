@@ -33,6 +33,9 @@ export interface ShopeeOrderPreviewItem {
   seller_transaction_fee?: number;
   create_time?: number;
   item_skus?: string[];
+  cancel_reason?: string;
+  /** Approx: pembatalan | pengembalian */
+  cancel_bucket?: string;
 }
 
 export interface ShopeeOrdersPreview {
@@ -43,11 +46,14 @@ export interface ShopeeOrdersPreview {
   next_cursor?: string;
   exclude_cancelled: boolean;
   order_status?: string;
+  cancel_bucket?: string;
+  cancel_reason?: string;
   fetch_all: boolean;
   token_refreshed: boolean;
   order_count: number;
   total_buyer_amount: number;
   total_escrow_amount: number;
+  cancel_reason_options?: string[];
   sku_summary: ShopeeSkuSummaryItem[];
   orders: ShopeeOrderPreviewItem[];
 }
@@ -61,6 +67,8 @@ export interface PreviewShopeeOrdersParams {
   exclude_cancelled?: boolean;
   order_status?: string;
   fetch_all?: boolean;
+  cancel_bucket?: string;
+  cancel_reason?: string;
 }
 
 export const shopeeAuthApi = {
@@ -115,6 +123,8 @@ export const shopeeAuthApi = {
     if (params.exclude_cancelled) query.set('exclude_cancelled', 'true');
     if (params.order_status) query.set('order_status', params.order_status);
     if (params.fetch_all) query.set('fetch_all', 'true');
+    if (params.cancel_bucket) query.set('cancel_bucket', params.cancel_bucket);
+    if (params.cancel_reason) query.set('cancel_reason', params.cancel_reason);
 
     const qs = query.toString();
     return api.get<ShopeeOrdersPreview>(
