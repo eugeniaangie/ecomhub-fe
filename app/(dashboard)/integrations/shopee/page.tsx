@@ -46,7 +46,7 @@ export default function ShopeeConnectPage() {
     <div className="space-y-6">
       <PageHeader
         title="Shopee"
-        description="Connect a shop through Shopee Partner OAuth. After you approve on Shopee, you land back on the callback page with a one-time code. Token storage is not wired yet (Core F6a3)."
+        description="Connect a shop through Shopee Partner OAuth. After you approve on Shopee, the callback exchanges the code for tokens and stores them on the server."
       />
 
       <Card title="Shop connection">
@@ -58,9 +58,8 @@ export default function ShopeeConnectPage() {
         ) : (
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              Opens Shopee&apos;s authorization page. Use the Partner credentials configured
-              on the API (`CLIENT_SHOPEE_API_*`). Redirect target is the locked FE callback
-              path.
+              Opens Shopee&apos;s authorization page, then returns to EcomHub to finish the
+              connection. Re-connect only if the shop was disconnected or tokens were revoked.
             </p>
             {error ? (
               <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
