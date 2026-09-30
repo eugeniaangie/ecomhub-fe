@@ -1,0 +1,63 @@
+---
+description: Stable project-wide context for EcomHub FE — stack, structure, conventions, backend relationship
+alwaysApply: true
+---
+
+# EcomHub FE — Project Context
+
+Internal **Next.js admin dashboard** for EcomHub, a multi-channel e-commerce business (Shopee, TikTok, general). It is the only UI for the double-entry accounting API in the sibling repo `ecomhub-core`. **The figures on these screens are accounting figures.**
+
+Full detail: [`AGENTS.md`](../../AGENTS.md) and [`docs/roadmap/task-list.md`](../../docs/roadmap/task-list.md).
+
+## Stack
+
+Next.js App Router · TypeScript · React · Tailwind CSS · plain `fetch` via `lib/api.ts` · React local state · Bearer JWT · Vercel.
+
+No Redux, React Query, or component library. **Adding one is an architectural decision** — propose it, never slip it into another change.
+
+## Structure
+
+```
+app/ (routes) → lib/services/*Api → lib/api.ts → ecomhub-core HTTP API
+```
+
+| Directory | Responsibility |
+|---|---|
+| `app/(auth)/` · `app/(dashboard)/` | Route groups — unauthenticated vs authenticated |
+| `components/ui/` | Domain-free primitives |
+| `components/layout/` | App shell — AppNav, DomainHub, PageWrapper |
+| `components/<domain>/` | Domain components (`finance/`, `categories/`) |
+| `lib/api.ts` | Base URL, auth header, envelope unwrapping, error mapping |
+| `lib/services/` | Endpoint clients by domain |
+| `lib/types/` | Shapes mirroring API responses |
+| `lib/auth.ts` · `lib/authHelpers.ts` | Token storage · role reads and `can*` predicates |
+| `lib/utils/` | Formatters, pagination defaults, constants |
+
+Pages call service clients; service clients call `lib/api.ts`. A page must not call `fetch` directly.
+
+## Backend relationship
+
+- **The API is the contract.** Read the handler or Swagger in `ecomhub-core` — never infer a response shape from an endpoint name or an existing TypeScript interface.
+- **The backend owns authorisation.** Client-side role checks decide what to *render*, not what is *permitted*. Never work around a 403 in the UI.
+- Backend tasks use `T*` IDs; FE tasks use `FE*`. Cross-reference, do not duplicate status.
+- Some backend routes stay alive only because this FE calls them. Migrate off first, request deletion second.
+
+## Domain concepts
+
+- **Chart of accounts** — hierarchical, identified by a stable `account_code`.
+- **Journal entry** — header plus lines, debits equal credits, moves through draft → approved → posted.
+- **Fiscal period** — accounting window; closing locks it.
+- **Channel** — a reporting dimension (`general`, `shopee`, `tiktok`, `lazada`, `blibli`), not a separate page tree.
+- **Balance vs movement** — a balance is cumulative from inception; a movement is bounded by a date range. They are different quantities and must not share a label.
+- **Operational expense** — approval workflow (pending → approved → paid).
+
+## Engineering principles
+
+- **Evidence over assumption.** Read the page, the service client, and the backend handler — don't infer behaviour from names.
+- **Smallest appropriate change.** No unrelated refactoring, no drive-by reformatting.
+- **Consistency over preference.** Match surrounding code; note inconsistencies rather than unilaterally "fixing" them.
+- **Correctness first where money is displayed** — a plausible wrong number is worse than an error.
+- **Do not compute accounting values in the UI.** Render what the API returns.
+- **Do not assume behaviour is covered by tests.** There is no test suite; a clean build proves compilation, not correctness.
+
+Current defects, gaps and planned work live in [`docs/roadmap/task-list.md`](../../docs/roadmap/task-list.md) — check there rather than assuming this file records them.

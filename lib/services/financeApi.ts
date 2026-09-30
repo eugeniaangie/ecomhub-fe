@@ -29,6 +29,8 @@ import type {
   UpdateJournalEntry,
   PaginatedResponseFinance,
   AccountTransactionBalance,
+  AccountBalance,
+  AccountMovement,
   AccountTransaction,
   AdExpenses,
 } from '../types/finance';
@@ -536,7 +538,42 @@ export const journalEntriesApi = {
 // ===== Finance Reports =====
 export const financeReportsApi = {
   /**
+   * Cumulative cash-subtree balances (Kas / Bank / E-Wallet). Optional as_of (YYYY-MM-DD).
+   */
+  getAccountBalances: async (params?: { as_of?: string }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.as_of) {
+      queryParams.set('as_of', params.as_of);
+    }
+    const qs = queryParams.toString();
+    return api.get<AccountBalance[]>(
+      `${API_VERSION}/reports/dashboard/finance/accounts/balance${qs ? `?${qs}` : ''}`
+    );
+  },
+
+  /**
+   * Period cash-subtree movement. start_date / end_date required; channel optional.
+   */
+  getAccountMovements: async (params: {
+    start_date: string;
+    end_date: string;
+    channel?: string;
+  }) => {
+    const queryParams = new URLSearchParams({
+      start_date: params.start_date,
+      end_date: params.end_date,
+    });
+    if (params.channel) {
+      queryParams.set('channel', params.channel);
+    }
+    return api.get<AccountMovement[]>(
+      `${API_VERSION}/reports/dashboard/finance/accounts/movement?${queryParams.toString()}`
+    );
+  },
+
+  /**
    * Get current balance for Bank Shopee
+   * @deprecated Prefer getAccountBalances / getAccountMovements (T31). Kept until FE16.
    */
   getCurrentBalanceBankShopee: async (params: {
     start_date: string;
@@ -554,6 +591,7 @@ export const financeReportsApi = {
 
   /**
    * Get current balance for Shopee Wallet
+   * @deprecated Prefer getAccountBalances / getAccountMovements (T31). Kept until FE16.
    */
   getCurrentBalanceShopeeWallet: async (params: {
     start_date: string;
@@ -570,7 +608,34 @@ export const financeReportsApi = {
   },
 
   /**
+   * Unified posted journal-line transactions (T33 / FE15).
+   * Optional channel = JE tag; optional account_code = primary line account.
+   */
+  getTransactions: async (params: {
+    start_date: string;
+    end_date: string;
+    page: number;
+    limit: number;
+    channel?: string;
+    account_code?: string;
+  }) => {
+    const queryParams = new URLSearchParams({
+      start_date: params.start_date,
+      end_date: params.end_date,
+      page: params.page.toString(),
+      limit: params.limit.toString(),
+    });
+    if (params.channel) queryParams.set('channel', params.channel);
+    if (params.account_code) queryParams.set('account_code', params.account_code);
+
+    return api.get<PaginatedResponseFinance<AccountTransaction>>(
+      `${API_VERSION}/reports/dashboard/finance/transactions?${queryParams.toString()}`
+    );
+  },
+
+  /**
    * Get transactions for Shopee (paginated)
+   * @deprecated Prefer getTransactions (T33). Kept until FE16.
    */
   getTransactionsShopee: async (params: {
     start_date: string;
@@ -584,7 +649,7 @@ export const financeReportsApi = {
       page: params.page.toString(),
       limit: params.limit.toString(),
     });
-    
+
     return api.get<PaginatedResponseFinance<AccountTransaction>>(
       `${API_VERSION}/reports/dashboard/finance/shopee/transactions?${queryParams.toString()}`
     );
@@ -659,18 +724,22 @@ export const financeReportsApi = {
   },
 
   /**
-   * Get ad expenses detail
+   * Get ad expenses detail (paginated — T15 / FE22)
    */
   getAdExpensesDetail: async (params: {
     start_date: string;
     end_date: string;
+    page: number;
+    limit: number;
   }) => {
     const queryParams = new URLSearchParams({
       start_date: params.start_date,
       end_date: params.end_date,
+      page: params.page.toString(),
+      limit: params.limit.toString(),
     });
-    
-    return api.get<AccountTransaction[]>(
+
+    return api.get<PaginatedResponseFinance<AccountTransaction>>(
       `${API_VERSION}/reports/dashboard/finance/ad-expenses/detail?${queryParams.toString()}`
     );
   },

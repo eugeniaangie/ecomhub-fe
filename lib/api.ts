@@ -1,13 +1,18 @@
 // API client wrapper for backend communication
 
 import { auth } from './auth';
-import type { ApiResponse } from './types';
+import type { ApiResponse, LoginResponse } from './types';
 import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from './utils/pagination';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://ecomhub-core-production.up.railway.app';
+// Default to local ecomhub-core. Production (Vercel) must set NEXT_PUBLIC_API_BASE_URL.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 const API_VERSION = '/api/v1';
 
-class ApiError extends Error {
+if (process.env.NODE_ENV === 'development') {
+  console.info(`[api] base URL: ${API_BASE_URL}`);
+}
+
+export class ApiError extends Error {
   constructor(
     message: string,
     public status: number,
@@ -18,177 +23,207 @@ class ApiError extends Error {
   }
 }
 
-async function handleResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    
-    // Handle different error statuses with user-friendly messages
-    let errorMessage = errorData.message || `HTTP error! status: ${response.status}`;
-    
-    if (response.status >= 500) {
-      // Server errors (500+)
-      errorMessage = `Server error: ${errorData.message || 'Something went wrong on our end'}. Please try again later or contact admin if the problem persists.`;
-    } else if (response.status === 404) {
-      errorMessage = `Resource not found: ${errorData.message || 'The requested item does not exist'}`;
-    } else if (response.status === 401) {
-      errorMessage = 'Unauthorized. Please login again.';
-    } else if (response.status === 403) {
-      // Check if token has been revoked (common after logout)
-      if (errorData.message?.toLowerCase().includes('token has been revoked') || 
-          errorData.business_code === '93') {
-        errorMessage = 'Token has been revoked. Please login again.';
-      } else {
-        errorMessage = 'Access denied. You do not have permission to perform this action.';
-      }
-    } else if (response.status === 400) {
-      errorMessage = `Invalid request: ${errorData.message || 'Please check your input'}`;
+type ErrorBody = {
+  message?: string;
+  business_code?: string;
+};
+
+function isAuthSessionEndpoint(endpoint: string): boolean {
+  return (
+    endpoint.includes('/auth/login') ||
+    endpoint.includes('/auth/refresh') ||
+    endpoint.includes('/auth/register')
+  );
+}
+
+function clearClientSession(): void {
+  auth.clearToken();
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem('user_roles');
+  localStorage.removeItem('user_role');
+  localStorage.removeItem('user_id');
+}
+
+/** FE1 — unrecoverable auth failure: clear state and force login (not on login page). */
+function forceReLogin(): void {
+  clearClientSession();
+  if (typeof window === 'undefined') return;
+  if (window.location.pathname.startsWith('/login')) return;
+  const redirect = encodeURIComponent(
+    `${window.location.pathname}${window.location.search}`
+  );
+  window.location.replace(`/login?redirect=${redirect}`);
+}
+
+let refreshInFlight: Promise<boolean> | null = null;
+
+/** Single-flight refresh using HttpOnly cookie (credentials: include). */
+async function tryRefreshAccessToken(): Promise<boolean> {
+  if (refreshInFlight) return refreshInFlight;
+
+  refreshInFlight = (async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_VERSION}/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) return false;
+      const envelope: ApiResponse<LoginResponse> = await response.json();
+      const access = envelope?.data?.access_token;
+      if (!access) return false;
+      auth.setToken(access);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      refreshInFlight = null;
     }
-    
-    throw new ApiError(
-      errorMessage,
-      response.status,
-      errorData
-    );
+  })();
+
+  return refreshInFlight;
+}
+
+/**
+ * FE6 — true if an access token is already in sessionStorage, or a silent
+ * refresh (HttpOnly cookie) succeeds. Used by the dashboard route guard so a
+ * new tab can recover the session without forcing login.
+ */
+export async function ensureAccessToken(): Promise<boolean> {
+  if (auth.isAuthenticated()) return true;
+  return tryRefreshAccessToken();
+}
+
+function mapErrorMessage(status: number, errorData: ErrorBody): string {
+  let errorMessage = errorData.message || `HTTP error! status: ${status}`;
+
+  if (status >= 500) {
+    errorMessage = `Server error: ${errorData.message || 'Something went wrong on our end'}. Please try again later or contact admin if the problem persists.`;
+  } else if (status === 404) {
+    errorMessage = `Resource not found: ${errorData.message || 'The requested item does not exist'}`;
+  } else if (status === 429) {
+    errorMessage =
+      errorData.message ||
+      'Too many attempts. Please wait a minute and try again.';
+  } else if (
+    errorData.business_code === '93' ||
+    errorData.message?.toLowerCase().includes('token has been revoked')
+  ) {
+    errorMessage = 'Token has been revoked. Please login again.';
+  } else if (status === 401) {
+    errorMessage = 'Unauthorized. Please login again.';
+  } else if (status === 403) {
+    errorMessage =
+      'Access denied. You do not have permission to perform this action.';
+  } else if (status === 400) {
+    errorMessage = `Invalid request: ${errorData.message || 'Please check your input'}`;
   }
 
+  return errorMessage;
+}
+
+async function parseError(response: Response): Promise<ApiError> {
+  const errorData = (await response.json().catch(() => ({}))) as ErrorBody;
+  return new ApiError(
+    mapErrorMessage(response.status, errorData),
+    response.status,
+    errorData
+  );
+}
+
+async function handleSuccess<T>(response: Response): Promise<T> {
   const data: ApiResponse<T> = await response.json();
   return data.data;
 }
 
+type RequestOptions = RequestInit & {
+  /** Skip Bearer header (unused today; reserved). */
+  skipAuth?: boolean;
+};
+
+async function request<T>(
+  method: string,
+  endpoint: string,
+  body?: unknown,
+  options?: RequestOptions
+): Promise<T> {
+  const buildHeaders = (): Record<string, string> => {
+    const headers: Record<string, string> = {
+      accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...(options?.headers as Record<string, string>),
+    };
+    if (!options?.skipAuth) {
+      const raw = auth.getToken();
+      if (raw) {
+        const cleanToken = raw.trim().replace(/^Bearer\s+/i, '');
+        if (cleanToken) headers['Authorization'] = `Bearer ${cleanToken}`;
+      }
+    }
+    return headers;
+  };
+
+  const doFetch = () =>
+    fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      method,
+      headers: buildHeaders(),
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      credentials: 'include',
+    });
+
+  let response = await doFetch();
+
+  if (response.status === 401 && !isAuthSessionEndpoint(endpoint)) {
+    const refreshed = await tryRefreshAccessToken();
+    if (refreshed) {
+      response = await doFetch();
+    } else {
+      forceReLogin();
+      throw await parseError(response);
+    }
+  }
+
+  if (!response.ok) {
+    const err = await parseError(response);
+    // Revoked / hard unauthorized on session endpoints: clear local state
+    if (
+      !isAuthSessionEndpoint(endpoint) &&
+      (err.status === 401 ||
+        (err.data as ErrorBody)?.business_code === '93')
+    ) {
+      forceReLogin();
+    }
+    throw err;
+  }
+
+  return handleSuccess<T>(response);
+}
+
 export const api = {
-  get: async <T>(endpoint: string, options?: RequestInit): Promise<T> => {
-    const token = auth.getToken();
-    const headers: Record<string, string> = {
-      'accept': 'application/json',
-      'Content-Type': 'application/json',
-      ...(options?.headers as Record<string, string>),
-    };
+  get: <T>(endpoint: string, options?: RequestOptions) =>
+    request<T>('GET', endpoint, undefined, options),
 
-    if (token) {
-      // Clean token: remove any "Bearer " prefix and trim whitespace
-      const cleanToken = token.trim().replace(/^Bearer\s+/i, '');
-      if (cleanToken) {
-        headers['Authorization'] = `Bearer ${cleanToken}`;
-      }
-    }
+  post: <T>(endpoint: string, body?: unknown, options?: RequestOptions) =>
+    request<T>('POST', endpoint, body, options),
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'GET',
-      headers,
-      ...options,
-    });
+  put: <T>(endpoint: string, body?: unknown, options?: RequestOptions) =>
+    request<T>('PUT', endpoint, body, options),
 
-    return handleResponse<T>(response);
-  },
+  patch: <T>(endpoint: string, body?: unknown, options?: RequestOptions) =>
+    request<T>('PATCH', endpoint, body, options),
 
-  post: async <T>(endpoint: string, body?: unknown, options?: RequestInit): Promise<T> => {
-    const token = auth.getToken();
-    const headers: Record<string, string> = {
-      'accept': 'application/json',
-      'Content-Type': 'application/json',
-      ...(options?.headers as Record<string, string>),
-    };
-
-    if (token) {
-      // Clean token: remove any "Bearer " prefix and trim whitespace
-      const cleanToken = token.trim().replace(/^Bearer\s+/i, '');
-      if (cleanToken) {
-        headers['Authorization'] = `Bearer ${cleanToken}`;
-      }
-    }
-
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'POST',
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-      ...options,
-    });
-
-    return handleResponse<T>(response);
-  },
-
-  put: async <T>(endpoint: string, body?: unknown, options?: RequestInit): Promise<T> => {
-    const token = auth.getToken();
-    const headers: Record<string, string> = {
-      'accept': 'application/json',
-      'Content-Type': 'application/json',
-      ...(options?.headers as Record<string, string>),
-    };
-
-    if (token) {
-      // Clean token: remove any "Bearer " prefix and trim whitespace
-      const cleanToken = token.trim().replace(/^Bearer\s+/i, '');
-      if (cleanToken) {
-        headers['Authorization'] = `Bearer ${cleanToken}`;
-      }
-    }
-
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'PUT',
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-      ...options,
-    });
-
-    return handleResponse<T>(response);
-  },
-
-  patch: async <T>(endpoint: string, body?: unknown, options?: RequestInit): Promise<T> => {
-    const token = auth.getToken();
-    const headers: Record<string, string> = {
-      'accept': 'application/json',
-      'Content-Type': 'application/json',
-      ...(options?.headers as Record<string, string>),
-    };
-
-    if (token) {
-      // Clean token: remove any "Bearer " prefix and trim whitespace
-      const cleanToken = token.trim().replace(/^Bearer\s+/i, '');
-      if (cleanToken) {
-        headers['Authorization'] = `Bearer ${cleanToken}`;
-      }
-    }
-
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'PATCH',
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-      ...options,
-    });
-
-    return handleResponse<T>(response);
-  },
-
-  delete: async <T>(endpoint: string, options?: RequestInit): Promise<T> => {
-    const token = auth.getToken();
-    const headers: Record<string, string> = {
-      'accept': 'application/json',
-      'Content-Type': 'application/json',
-      ...(options?.headers as Record<string, string>),
-    };
-
-    if (token) {
-      // Clean token: remove any "Bearer " prefix and trim whitespace
-      const cleanToken = token.trim().replace(/^Bearer\s+/i, '');
-      if (cleanToken) {
-        headers['Authorization'] = `Bearer ${cleanToken}`;
-      }
-    }
-
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'DELETE',
-      headers,
-      ...options,
-    });
-
-    return handleResponse<T>(response);
-  },
+  delete: <T>(endpoint: string, options?: RequestOptions) =>
+    request<T>('DELETE', endpoint, undefined, options),
 };
 
 // Auth endpoints
 export const authApi = {
   login: async (username: string, password: string) => {
-    return api.post<{ token: string; token_type?: string }>(`${API_VERSION}/auth/login`, {
+    return api.post<LoginResponse>(`${API_VERSION}/auth/login`, {
       username,
       password,
     });
@@ -196,161 +231,50 @@ export const authApi = {
   logout: async () => {
     return api.post<null>(`${API_VERSION}/auth/logout`);
   },
-
+  refresh: async () => {
+    return api.post<LoginResponse>(`${API_VERSION}/auth/refresh`);
+  },
   getMe: async () => {
     return api.get<import('./types').GetMeResponse>(`${API_VERSION}/auth/me`);
   },
 };
 
-// Dashboard endpoints
-export const dashboardApi = {
-  getSummary: async (month?: string) => {
-    const params = month ? `?month=${month}` : '';
-    return api.get<{
-      total_income: number;
-      total_expense: number;
-      net_profit: number;
-      period: string;
-    }>(`/dashboard/summary${params}`);
-  },
-};
-
-// Financial Records endpoints
-export const transactionsApi = {
-  getAll: async (type?: 'income' | 'expense') => {
-    const params = type ? `?type=${type}` : '';
-    return api.get<Array<import('./types').Transaction>>(`/transactions${params}`);
-  },
-  getById: async (id: string) => {
-    return api.get<import('./types').Transaction>(`/transactions/${id}`);
-  },
-  create: async (data: import('./types').TransactionCreate) => {
-    return api.post<import('./types').Transaction>('/transactions', data);
-  },
-  update: async (id: string, data: Partial<import('./types').TransactionCreate>) => {
-    return api.put<import('./types').Transaction>(`/transactions/${id}`, data);
-  },
-  delete: async (id: string) => {
-    return api.delete<{ message: string }>(`/transactions/${id}`);
-  },
-};
-
-// Master Data endpoints (Legacy - using masterCategoryApi instead)
-export const categoriesApi = {
-  getAll: async () => {
-    // Note: Backend doesn't support type filter, so parameter removed
-    // Add default pagination parameters
-    const params = new URLSearchParams({
-      page: DEFAULT_PAGE.toString(),
-      limit: DEFAULT_PAGE_SIZE.toString(),
-    });
-    const response = await api.get<import('./types').PaginatedResponse<import('./types').MasterCategory>>(
-      `${API_VERSION}/categories?${params.toString()}`
-    );
-    // Convert MasterCategory to Category format for backward compatibility
-    return response.results.map(cat => ({
-      id: cat.id.toString(),
-      name: cat.category_name,
-      type: 'income' as const, // Default since backend doesn't have type
-      description: cat.description,
-      created_at: cat.created_at,
-      updated_at: cat.updated_at,
-    }));
-  },
-  create: async (data: Omit<import('./types').Category, 'id' | 'created_at' | 'updated_at'>) => {
-    // Convert legacy Category format to MasterCategory format
-    const createData: import('./types').CreateMasterCategoryParam = {
-      category_name: data.name,
-      description: data.description,
-    };
-    const result = await api.post<import('./types').MasterCategory>(`${API_VERSION}/categories`, createData);
-    // Convert back to Category format
-    return {
-      id: result.id.toString(),
-      name: result.category_name,
-      type: 'income' as const,
-      description: result.description,
-      created_at: result.created_at,
-      updated_at: result.updated_at,
-    };
-  },
-  update: async (id: string, data: Partial<Omit<import('./types').Category, 'id' | 'created_at' | 'updated_at'>>) => {
-    // Convert legacy Category format to MasterCategory format
-    const updateData: import('./types').UpdateMasterCategoryParam = {
-      category_name: data.name || '',
-      description: data.description,
-    };
-    const result = await api.put<import('./types').MasterCategory>(`${API_VERSION}/categories/${id}`, updateData);
-    // Convert back to Category format
-    return {
-      id: result.id.toString(),
-      name: result.category_name,
-      type: 'income' as const,
-      description: result.description,
-      created_at: result.created_at,
-      updated_at: result.updated_at,
-    };
-  },
-  delete: async (id: string) => {
-    return api.delete<{ message: string }>(`${API_VERSION}/categories/${id}`);
-  },
-};
-
-export const paymentMethodsApi = {
-  getAll: async () => {
-    return api.get<Array<import('./types').PaymentMethod>>('/payment-methods');
-  },
-  create: async (data: Omit<import('./types').PaymentMethod, 'id' | 'created_at' | 'updated_at'>) => {
-    return api.post<import('./types').PaymentMethod>('/payment-methods', data);
-  },
-  update: async (id: string, data: Partial<Omit<import('./types').PaymentMethod, 'id' | 'created_at' | 'updated_at'>>) => {
-    return api.put<import('./types').PaymentMethod>(`/payment-methods/${id}`, data);
-  },
-  delete: async (id: string) => {
-    return api.delete<{ message: string }>(`/payment-methods/${id}`);
-  },
-};
-
-export const accountsApi = {
-  getAll: async () => {
-    return api.get<Array<import('./types').Account>>('/accounts');
-  },
-  create: async (data: Omit<import('./types').Account, 'id' | 'created_at' | 'updated_at'>) => {
-    return api.post<import('./types').Account>('/accounts', data);
-  },
-  update: async (id: string, data: Partial<Omit<import('./types').Account, 'id' | 'created_at' | 'updated_at'>>) => {
-    return api.put<import('./types').Account>(`/accounts/${id}`, data);
-  },
-  delete: async (id: string) => {
-    return api.delete<{ message: string }>(`/accounts/${id}`);
-  },
-};
-
-// Master Category Management (Hierarchical Categories)
 export const masterCategoryApi = {
   getTree: async () => {
-    return api.get<Array<import('./types').MasterCategoryTree>>(`${API_VERSION}/categories/tree`);
+    return api.get<Array<import('./types').MasterCategoryTree>>(
+      `${API_VERSION}/categories/tree`
+    );
   },
-  getAll: async (page: number = DEFAULT_PAGE, limit: number = DEFAULT_PAGE_SIZE, search?: string) => {
+  getAll: async (
+    page: number = DEFAULT_PAGE,
+    limit: number = DEFAULT_PAGE_SIZE,
+    search?: string
+  ) => {
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
     });
     if (search) params.append('search', search);
-    return api.get<import('./types').PaginatedResponse<import('./types').MasterCategory>>(
-      `${API_VERSION}/categories?${params.toString()}`
-    );
+    return api.get<
+      import('./types').PaginatedResponse<import('./types').MasterCategory>
+    >(`${API_VERSION}/categories?${params.toString()}`);
   },
   create: async (data: import('./types').CreateMasterCategoryParam) => {
-    return api.post<import('./types').MasterCategory>(`${API_VERSION}/categories`, data);
+    return api.post<import('./types').MasterCategory>(
+      `${API_VERSION}/categories`,
+      data
+    );
   },
-  update: async (id: number, data: import('./types').UpdateMasterCategoryParam) => {
-    return api.put<import('./types').MasterCategory>(`${API_VERSION}/categories/${id}`, data);
+  update: async (
+    id: number,
+    data: import('./types').UpdateMasterCategoryParam
+  ) => {
+    return api.put<import('./types').MasterCategory>(
+      `${API_VERSION}/categories/${id}`,
+      data
+    );
   },
   delete: async (id: number) => {
     return api.delete<{ message: string }>(`${API_VERSION}/categories/${id}`);
   },
 };
-
-export { ApiError };
-

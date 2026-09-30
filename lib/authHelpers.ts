@@ -10,33 +10,22 @@ import { UserRole } from './types/finance';
  */
 export const getUserRoles = (): string[] => {
   if (typeof window === 'undefined') return [];
-  
+
   const rolesStr = localStorage.getItem('user_roles');
   if (rolesStr) {
     try {
-      const roles = JSON.parse(rolesStr);
-      // Debug: log roles to help troubleshoot
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[getUserRoles] Roles from localStorage:', roles);
-      }
-      return roles;
+      return JSON.parse(rolesStr);
     } catch {
       return [];
     }
   }
-  
+
   // Fallback: check if user_role exists (backward compatibility)
   const role = localStorage.getItem('user_role');
   if (role) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[getUserRoles] Fallback to user_role:', role);
-    }
     return [role];
   }
-  
-  if (process.env.NODE_ENV === 'development') {
-    console.warn('[getUserRoles] No roles found in localStorage');
-  }
+
   return [];
 };
 
@@ -121,11 +110,7 @@ export const hasRole = (role: string): boolean => {
  */
 export const hasAnyRole = (requiredRoles: string[]): boolean => {
   const userRoles = getUserRoles();
-  const hasRole = requiredRoles.some(role => userRoles.includes(role));
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[hasAnyRole]', { userRoles, requiredRoles, hasRole });
-  }
-  return hasRole;
+  return requiredRoles.some((role) => userRoles.includes(role));
 };
 
 /**
@@ -477,30 +462,38 @@ export const canView = (): boolean => {
 };
 
 /**
- * Logout user - calls logout API and clears auth token
+ * Clear all client-side auth user keys (roles + id).
+ * Call from logout and from global 401 / failed refresh paths.
+ */
+export const clearUserData = (): void => {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem('user_roles');
+  localStorage.removeItem('user_role');
+  localStorage.removeItem('user_id');
+};
+
+/**
+ * Logout user - calls logout API and clears auth token + roles
  */
 export const logout = async (): Promise<void> => {
   try {
     await authApi.logout();
   } catch (error) {
-    // Handle expected errors after logout (token revoked is normal)
-    if (error instanceof ApiError && 
-        error.status === 403 && 
-        (error.message?.toLowerCase().includes('token has been revoked') ||
-         (error.data as { business_code?: string })?.business_code === '93')) {
-      // Token already revoked - this is expected, just clear local data
-      // Don't log as error since this is normal behavior
+    // Access may already be dead; refresh cookie revoke can still succeed via FE7 retry.
+    // Revoked / unauthorized after logout is expected — still clear local state.
+    if (
+      error instanceof ApiError &&
+      (error.status === 401 ||
+        error.status === 403 ||
+        (error.data as { business_code?: string })?.business_code === '93')
+    ) {
+      // expected
     } else {
-      // Other errors - log but still proceed with clearing local data
       console.warn('Logout API error:', error);
     }
   } finally {
-    // Always clear token and user data from local storage
     auth.clearToken();
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('user_role');
-      localStorage.removeItem('user_id');
-    }
+    clearUserData();
   }
 };
 

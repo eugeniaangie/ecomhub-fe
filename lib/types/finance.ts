@@ -286,6 +286,28 @@ export interface AccountTransactionBalance {
   current_balance: number;
 }
 
+/** Cumulative cash-subtree balance row (T31). Sign already normalised by account_type. */
+export interface AccountBalance {
+  account_code: string;
+  account_name: string;
+  account_type: string;
+  is_active: boolean;
+  total_debit: number;
+  total_credit: number;
+  current_balance: number;
+}
+
+/** Period cash-subtree movement row (T31). Sign already normalised by account_type. */
+export interface AccountMovement {
+  account_code: string;
+  account_name: string;
+  account_type: string;
+  is_active: boolean;
+  total_debit: number;
+  total_credit: number;
+  net_movement: number;
+}
+
 export interface PartnerAccount {
   account_code: string;
   account_name: string;
@@ -302,6 +324,8 @@ export interface AccountTransaction {
   entry_date: string; // ISO 8601 format
   entry_description: string;
   reference_number?: string | null;
+  /** JE bookkeeping tag (general / shopee / …) — T33 */
+  channel?: string;
   account_debit: number;
   account_credit: number;
   net_amount: number;

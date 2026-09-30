@@ -1,0 +1,81 @@
+---
+description: Standard workflow AI agents follow when working on EcomHub FE
+alwaysApply: true
+---
+
+# AI Development Workflow
+
+Four distinct phases. **Do not collapse them** — most bad changes come from implementing before investigating.
+
+---
+
+## 1. Investigation (read-only)
+
+Goal: understand what exists. Change nothing.
+
+- Restate the task and its scope. Ask if genuinely ambiguous.
+- Read [`AGENTS.md`](../../AGENTS.md) and the rules relevant to the area.
+- Read the **actual implementation** — trace `page → lib/services/*Api → lib/api.ts`, not one file in isolation.
+- **For anything touching the API, read the backend handler** in `ecomhub-core` (or its Swagger annotation). A TypeScript interface is not evidence of the current response shape.
+- **Check whether this is already a recorded task** in [`docs/roadmap/task-list.md`](../../docs/roadmap/task-list.md). If so, work from it by ID and confirm it still applies.
+- Identify side effects: other screens using the same client method, shared components, role predicates, the menu-to-endpoint map.
+
+Exit criterion: you can explain the current behaviour, including why it is written that way.
+
+## 2. Planning
+
+Goal: agree on the approach before writing code.
+
+- For anything beyond a trivial, obviously-correct change: **state the proposed approach and wait for confirmation.**
+- Include: what changes, what it affects, what could break, and how it will be validated.
+- Call out explicitly if the change alters **a figure shown on screen**, a route, or auth behaviour.
+- If several approaches exist with real trade-offs, present them rather than silently picking one.
+- **Adding a dependency is a planning decision.** State the concrete problem it solves and wait for sign-off — this repo deliberately runs on plain `fetch` and local state.
+
+Skip this phase only for changes that are self-evidently correct and contained.
+
+## 3. Implementation
+
+Goal: the smallest change that solves the stated task.
+
+- **Smallest appropriate diff.** Small, reviewable, independently revertible.
+- **No unrelated refactoring.** No renaming, reordering, reformatting, or "while I'm here" fixes. Note unrelated issues instead of fixing them.
+- **Do not bundle** a correctness fix with a refactor. If duplication blocks a clean fix, remove the duplication in its own change first.
+- Match surrounding conventions — service clients in `lib/services/`, types in `lib/types/`, permission predicates in `lib/authHelpers.ts`, formatting via `lib/utils/`.
+- Never call `fetch` from a component; never bypass `lib/api.ts`.
+- **Never modify source during an analysis or documentation task.**
+
+## 4. Validation
+
+Goal: evidence that the change does what you claim.
+
+- `npm run lint` and `npm run build` at minimum.
+- **Know what this proves.** They confirm the code compiles and passes static checks — not that the screen is right. **There is no test suite**, so anything behavioural needs manual verification in a browser against a running backend.
+- For a change to a displayed figure: compare the value **before and after** against the same data. Do not assume two endpoints agree because they sound equivalent.
+- State plainly what you validated and what remains unverified. Do not describe an unverified change as working.
+
+---
+
+## Documentation updates — part of finishing, not a follow-up
+
+[`docs/roadmap/task-list.md`](../../docs/roadmap/task-list.md) is the **single source of truth for task status** — its "Documentation impact" section maps each kind of change to the files it affects.
+
+Update in the **same change**:
+
+- **Completing a task** → set its **Status** and tick its checklist row
+- Endpoint a screen calls changed → `docs/menu-endpoints.md`
+- Screen behaviour, routes, or role rules changed → the relevant module doc
+- New significant issue found → add it to the backlog with the same Problem / Why it matters / Affected area / Next action format
+
+Do not renumber or reuse `FE*` IDs. Resolve tasks by appending status and date — do not delete them.
+
+**New tasks, bugs and concerns belong in the backlog, not in the rules or `AGENTS.md`.** Those hold stable principles; recording a temporary condition as a permanent rule makes it wrong the moment it's fixed.
+
+---
+
+## Preserve developer control
+
+- Surface risk early; never quietly absorb it.
+- Prefer proposing over assuming, especially for auth changes and anything that renders money.
+- If a task appears to require violating a rule here, stop and raise it rather than working around it.
+- Report what you actually did, including anything that didn't work.

@@ -14,7 +14,7 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  token: string;
+  access_token: string;
   token_type?: string;
   expires_in?: number;
 }
@@ -31,7 +31,7 @@ export interface UserInfo {
   username: string;
   email: string;
   full_name: string;
-  phone: string;
+  phone?: string | null;
   is_active: boolean;
   last_login: string;
 }
@@ -39,73 +39,6 @@ export interface UserInfo {
 export interface GetMeResponse {
   user: UserInfo;
   roles: string[];
-}
-
-// Financial Records
-export interface Transaction {
-  id: string;
-  type: 'income' | 'expense';
-  amount: number;
-  description: string;
-  category_id: string;
-  category?: Category;
-  payment_method_id: string;
-  payment_method?: PaymentMethod;
-  account_id: string;
-  account?: Account;
-  date: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface TransactionCreate {
-  type: 'income' | 'expense';
-  amount: number;
-  description: string;
-  category_id: string;
-  payment_method_id: string;
-  account_id: string;
-  date: string;
-}
-
-export interface TransactionUpdate extends Partial<TransactionCreate> {
-  id: string;
-}
-
-// Master Data
-export interface Category {
-  id: string;
-  name: string;
-  type: 'income' | 'expense';
-  description?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface PaymentMethod {
-  id: string;
-  name: string;
-  description?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface Account {
-  id: string;
-  name: string;
-  type: 'cash' | 'bank' | 'e-wallet';
-  balance?: number;
-  description?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-// Dashboard
-export interface DashboardSummary {
-  total_income: number;
-  total_expense: number;
-  net_profit: number;
-  period: string; // e.g., "2024-01"
 }
 
 // Master Category (Hierarchical)
@@ -146,4 +79,3 @@ export interface PaginatedResponse<T> {
   total_pages: number;
   results: T[];
 }
-

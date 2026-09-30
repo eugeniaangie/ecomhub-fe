@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, FormEvent, Suspense } from 'react';
+import { useState, FormEvent, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { authApi } from '@/lib/api';
+import { authApi, ensureAccessToken } from '@/lib/api';
 import { auth } from '@/lib/auth';
 import { setUserRoles, setCurrentUserId } from '@/lib/authHelpers';
 import { Input } from '@/components/ui/Input';
@@ -15,6 +15,31 @@ function LoginForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  const postLoginPath = () => {
+    const raw = searchParams.get('redirect') || '/';
+    // Only allow same-origin relative paths (avoid open redirects).
+    if (!raw.startsWith('/') || raw.startsWith('//')) return '/';
+    return raw;
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const ok = await ensureAccessToken();
+      if (cancelled) return;
+      if (ok) {
+        router.replace(postLoginPath());
+        return;
+      }
+      setCheckingSession(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -23,20 +48,17 @@ function LoginForm() {
 
     try {
       const response = await authApi.login(username, password);
-      auth.setToken(response.token);
-      
-      // Fetch user info and roles after login
+      auth.setToken(response.access_token);
+
       try {
         const meData = await authApi.getMe();
         setUserRoles(meData.roles);
         setCurrentUserId(meData.user.id);
       } catch (meError) {
         console.error('Error fetching user info:', meError);
-        // Continue even if getMe fails, user can still use the app
       }
-      
-      const redirect = searchParams.get('redirect') || '/';
-      router.push(redirect);
+
+      router.push(postLoginPath());
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Login failed. Please check your credentials.';
       setError(errorMessage);
@@ -44,6 +66,14 @@ function LoginForm() {
       setIsLoading(false);
     }
   };
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="text-gray-600">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
