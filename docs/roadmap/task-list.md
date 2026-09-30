@@ -554,7 +554,7 @@ Wire real data in FE8/FE14/FE15; FE16 finishes migration and retirement of `/fin
 
 ### FE24 — Shopee OAuth callback + Connect UI
 
-**Category:** FEATURE · **Status:** Done · **Backend:** F6a (a1 Done; a3 open)
+**Category:** FEATURE · **Status:** Done · **Backend:** F6a (Done 2026-09-30)
 
 **Problem.** Shopee Partner OAuth must redirect to our FE after shop approval. Redirect URL is locked (2026-09-30):
 
@@ -566,11 +566,11 @@ Wire real data in FE8/FE14/FE15; FE16 finishes migration and retirement of `/fin
 2. Connect Shopee control (admin / superadmin only for now) that opens the signed authorize URL from Core F6a1.
 3. Role note: Core roles today are `superadmin` / `admin` / `manager` only — interim Connect gate = admin+. Ads-operator access without full admin is a later product decision (no `ads-manager` role yet).
 
-**Next action.** Core **F6a1 Done** — `GET /api/v1/integrations/marketplaces/shopee/authorize-url`. Implement Connect button (admin/superadmin) that opens `data.authorize_url`, plus callback page `/shopee-auth-callback` (F6a2). Token exchange waits on Core F6a3.
+**Next action.** F6a complete — Connect + callback exchange. Optional: show connected status on `/integrations/shopee` from a future list endpoint. Sales sync = Core F6b.
 
 **Done (2026-09-30):**
 - `shopeeAuthApi.getAuthorizeUrl` → Core authorize-url.
 - **Integrations** domain in top nav: hub `/integrations`, **Shopee** `/integrations/shopee` with Connect (gated by `canConnectShopeeShop` = admin/superadmin) — same-tab `window.location.assign(authorize_url)`.
-- Callback `/shopee-auth-callback` (inside `(dashboard)` so session is required) reads `code` + `shop_id`; shows them; **does not** POST (waits F6a3).
+- Callback `/shopee-auth-callback` reads `code` + `shop_id` and **POSTs** `shopeeAuthApi.exchangeToken` (Core F6a3). Shows connected shop id / token expiry — not raw tokens.
 
-**Not done here.** Token exchange / persist shop tokens (Core F6a3); connection status list; non-admin operator role.
+**Not done here.** Automatic RefreshAccessToken before sales sync (F6b); connection status list UI; non-admin operator role.
