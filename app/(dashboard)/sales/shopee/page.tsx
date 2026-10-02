@@ -442,29 +442,37 @@ export default function SalesShopeeOrdersPage() {
                     </button>
                   </>
                 ) : null}
-                <Card title="Ads spend">
-                  {adsSpendError ? (
-                    <>
-                      <p className="text-sm text-red-700">{adsSpendError}</p>
-                      <p className="mt-1 text-xs text-gray-500">
-                        Live Partner CPC expense (not wallet / not JE)
-                      </p>
-                    </>
-                  ) : adsSpend ? (
-                    <>
-                      <p className="text-2xl font-semibold tabular-nums text-gray-900">
-                        {formatCurrency(adsSpend.total_ads_spend)}
-                      </p>
-                      <p className="mt-1 text-xs text-gray-500">
-                        Live Partner CPC expense
-                        {adsSpend.used_hourly_api ? ' · hourly (1 day)' : ''}
-                        {adsSpend.token_refreshed ? ' · token refreshed' : ''}
-                      </p>
-                    </>
-                  ) : (
-                    <p className="text-sm text-gray-500">—</p>
-                  )}
-                </Card>
+                <Link
+                  href={`/sales/ads?shop_id=${shopId || ''}&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`}
+                  className="group block w-full rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                >
+                  <Card
+                    title="Ads spend"
+                    className="cursor-pointer transition group-hover:border-blue-300 group-hover:shadow-md"
+                  >
+                    {adsSpendError ? (
+                      <>
+                        <p className="text-sm text-red-700">{adsSpendError}</p>
+                        <p className="mt-1 text-xs text-gray-500 group-hover:text-gray-600">
+                          Live Partner CPC · open Ads page
+                        </p>
+                      </>
+                    ) : adsSpend ? (
+                      <>
+                        <p className="text-2xl font-semibold tabular-nums text-gray-900">
+                          {formatCurrency(adsSpend.total_ads_spend)}
+                        </p>
+                        <p className="mt-1 text-xs text-gray-500 group-hover:text-gray-600">
+                          Live Partner CPC · open Ads page
+                          {adsSpend.used_hourly_api ? ' · hourly (1 day)' : ''}
+                          {adsSpend.token_refreshed ? ' · token refreshed' : ''}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-sm text-gray-500">—</p>
+                    )}
+                  </Card>
+                </Link>
               </div>
 
               {preview ? (

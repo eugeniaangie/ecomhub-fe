@@ -179,7 +179,7 @@ Route still lives under `/master/*`; only the sidebar group changed (decision **
 ### Shopee Orders (`/sales/shopee`) — FE25 + FE29
 
 - `GET /integrations/marketplaces/shopee/connections` — shop picker (active shops).
-- `GET /integrations/marketplaces/shopee/orders/preview` — live list+detail+escrow (admin+). Query: `shop_id`, `time_from`, `time_to`, `order_status`, `fetch_all`, `cancel_bucket` (`pembatalan`|`pengembalian` approx; CANCELLED drill-down), `cancel_reason`, `exclude_pembatalan` (drop early cancel / no pickup — used on All statuses). Response: `order_count`, `total_quantity`, `total_escrow_amount`, `total_deductions`, `deduction_breakdown[]`, `sku_summary[]`, `orders[]` (+ cancel fields), `cancel_reason_options`. Overview cards: Orders · Qty · Escrow · **Total deductions** (click → breakdown) · Ads spend.
+- `GET /integrations/marketplaces/shopee/orders/preview` — live list+detail+escrow (admin+). Query: `shop_id`, `time_from`, `time_to`, `order_status`, `fetch_all`, `cancel_bucket` (`pembatalan`|`pengembalian` approx; CANCELLED drill-down), `cancel_reason`, `exclude_pembatalan` (drop early cancel / no pickup — used on All statuses). Response: `order_count`, `total_quantity`, `total_escrow_amount`, `total_deductions`, `deduction_breakdown[]`, `sku_summary[]`, `orders[]` (+ cancel fields), `cancel_reason_options`. Overview cards: Orders · Qty · Escrow · **Total deductions** (click → breakdown) · Ads spend (links to `/sales/ads`).
 - `GET /integrations/marketplaces/shopee/orders/detail` — one `order_sn` drill-down (admin+). Query: `shop_id`, `order_sn`. Response: `buyer_amount`, `original_price`, `escrow_amount`, `deductions[]`, `items[]`. Row click on orders table opens modal.
 - `GET /integrations/marketplaces/shopee/ads/spend/preview` — live Partner CPC ads **expense** sum (admin+, FE29). Same `shop_id` / `time_from` / `time_to`. Response: `total_ads_spend`, `day_count`, `used_hourly_api`. Not wallet balance; not Marketing JE ad-expenses.
 
@@ -188,9 +188,10 @@ Route still lives under `/master/*`; only the sidebar group changed (decision **
 - `GET /integrations/marketplaces/shopee/connections` — shop picker.
 - `GET /integrations/marketplaces/shopee/returns/preview` — live `get_return_list` (admin+). Query: `shop_id`, `time_from`, `time_to`, `fetch_all=true`, optional `return_status`. Response: `return_count`, `total_quantity`, `total_refund_amount`, `sku_summary[]`, `returns[]`. Do **not** treat orders preview `cancel_bucket=pengembalian` as this screen.
 
-### Shopee Ads spend (planned — FE29 / Core F6e)
+### Shopee Ads (`/sales/ads`) — FE31 / Core F6f
 
-- Card on Sales → Shopee Orders overview (same day/month filter): **ads spend nominal only**. Partner Ads spend API TBD (analyse before code). **Not** top-up/payment; **not** F1 automation; **not** Marketing Ad Expenses JE.
+- `GET /integrations/marketplaces/shopee/connections` — shop picker.
+- `GET /integrations/marketplaces/shopee/ads/performance/preview` — shop-level CPC performance (admin+). Query: `shop_id`, `time_from`, `time_to`. Response: `total_ads_spend`, impressions/clicks, direct/broad GMV & orders & period ROAS, `series[]` (`series_grain` daily|hourly), optional `ads_wallet_balance` / `balance_as_of`. Overview Ads spend card links here with `shop_id` / `start_date` / `end_date`. Not campaign/product; not F1; wallet ≠ spend.
 
 ---
 

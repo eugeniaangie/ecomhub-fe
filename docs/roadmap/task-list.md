@@ -52,6 +52,7 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE28 | FEATURE | Shopee Returns page | Core F6d |
 | [x] | FE29 | FEATURE | Shopee Ads spend card on Sales overview | Core F6e |
 | [x] | FE30 | FEATURE | Shopee order row detail modal (buyer / original / fees / escrow) | Core orders/detail |
+| [x] | FE31 | FEATURE | Shopee Ads performance page | Core F6f |
 
 **P0 left:** none (FE1 Done).
 
@@ -698,7 +699,7 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 
 **Depends on.** Core F6e.
 
-**Done (2026-10-02):** `shopeeAuthApi.previewAdsSpend` → `GET …/ads/spend/preview`; fifth card on `/sales/shopee` via `Promise.allSettled` (orders still show if ads fails). Footnote: live Partner CPC expense, not wallet/JE.
+**Done (2026-10-02):** `shopeeAuthApi.previewAdsSpend` → `GET …/ads/spend/preview`; fifth card on `/sales/shopee` via `Promise.allSettled` (orders still show if ads fails). Footnote: live Partner CPC expense, not wallet/JE. Card links to `/sales/ads` with shop + date query params (FE31).
 
 ---
 
@@ -709,3 +710,13 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 **Problem.** Overview showed buyer GMV as a summary card and table column — misleading for potongan/net. Operators need buyer / listing / fee lines / escrow only on demand.
 
 **Done (2026-10-02):** Removed Total buyer amount card + Buyer column. Order rows open a modal via `shopeeAuthApi.getOrderDetail` (`GET …/orders/detail`). Shows buyer amount, original/listing, escrow net, non-zero escrow lines, item prices.
+
+---
+
+### FE31 — Shopee Ads performance page
+
+**Category:** FEATURE · **Status:** Done (2026-10-02) · **Backend:** Core **F6f** · **Noted:** 2026-10-02 · **After:** FE29
+
+**Problem.** Operators want a dedicated Ads view (spend, ROAS, GMV, clicks, wallet saldo, daily series) without loading campaign APIs or weighing down the Sales overview.
+
+**Done (2026-10-02):** Sales → **Shopee Ads** `/sales/ads`. `shopeeAuthApi.previewAdsPerformance` → `GET …/ads/performance/preview`. Cards: spend · broad ROAS · broad GMV · clicks · wallet; secondary direct ROAS/GMV; daily/hourly table with CSS spend bars. Overview Ads card links here with `shop_id` / `start_date` / `end_date`. No chart library; no campaign/product breakdown.
