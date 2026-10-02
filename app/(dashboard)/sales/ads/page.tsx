@@ -235,14 +235,31 @@ function ShopeeAdsFeed() {
                     <label className="mb-2 block text-sm font-medium text-gray-700">
                       Start date
                     </label>
-                    <DatePicker value={startDate} onChange={setStartDate} max={endDate} />
+                    <DatePicker
+                      value={startDate}
+                      onChange={setStartDate}
+                      rangePartner={endDate}
+                      rangeSide="start"
+                      onRangeChange={(start, end) => {
+                        setStartDate(start);
+                        setEndDate(end);
+                      }}
+                      maxRangeDays={MAX_RANGE_DAYS}
+                      max={getTodayFormatted()}
+                    />
                   </div>
                   <div className="min-w-40">
                     <label className="mb-2 block text-sm font-medium text-gray-700">End date</label>
                     <DatePicker
                       value={endDate}
                       onChange={setEndDate}
-                      min={startDate}
+                      rangePartner={startDate}
+                      rangeSide="end"
+                      onRangeChange={(start, end) => {
+                        setStartDate(start);
+                        setEndDate(end);
+                      }}
+                      maxRangeDays={MAX_RANGE_DAYS}
                       max={getTodayFormatted()}
                     />
                   </div>
