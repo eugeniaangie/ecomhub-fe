@@ -6,6 +6,7 @@ import { ApiError } from '@/lib/api';
 import { canConnectShopeeShop } from '@/lib/authHelpers';
 import {
   shopeeAuthApi,
+  type ShopeeAdsSpendPreview,
   type ShopeeConnectedShop,
   type ShopeeOrdersPreview,
 } from '@/lib/services/integrationsApi';
@@ -64,6 +65,8 @@ export default function SalesShopeeOrdersPage() {
   const [cancelBucket, setCancelBucket] = useState('');
   const [excludePembatalan, setExcludePembatalan] = useState(true);
   const [preview, setPreview] = useState<ShopeeOrdersPreview | null>(null);
+  const [adsSpend, setAdsSpend] = useState<ShopeeAdsSpendPreview | null>(null);
+  const [adsSpendError, setAdsSpendError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -130,7 +133,9 @@ export default function SalesShopeeOrdersPage() {
 
   const handleLoad = async () => {
     setError('');
+    setAdsSpendError('');
     setPreview(null);
+    setAdsSpend(null);
 
     if (!shopId) {
       setError('Connect a Shopee shop first (Integrations → Shopee).');
@@ -147,26 +152,53 @@ export default function SalesShopeeOrdersPage() {
       return;
     }
 
+    const timeFrom = startOfDayUnix(startDate);
+    const timeTo = endOfDayUnix(endDate);
+
     setIsLoading(true);
     try {
-      const data = await shopeeAuthApi.previewOrders({
-        shop_id: shopId,
-        time_from: startOfDayUnix(startDate),
-        time_to: endOfDayUnix(endDate),
-        fetch_all: true,
-        order_status: orderStatus || undefined,
-        cancel_bucket: cancelBucketVisible ? cancelBucket || undefined : undefined,
-        exclude_pembatalan: excludePembatalanVisible ? excludePembatalan : undefined,
-      });
-      setPreview(data);
-    } catch (err) {
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : err instanceof Error
+      const [ordersResult, adsResult] = await Promise.allSettled([
+        shopeeAuthApi.previewOrders({
+          shop_id: shopId,
+          time_from: timeFrom,
+          time_to: timeTo,
+          fetch_all: true,
+          order_status: orderStatus || undefined,
+          cancel_bucket: cancelBucketVisible ? cancelBucket || undefined : undefined,
+          exclude_pembatalan: excludePembatalanVisible ? excludePembatalan : undefined,
+        }),
+        shopeeAuthApi.previewAdsSpend({
+          shop_id: shopId,
+          time_from: timeFrom,
+          time_to: timeTo,
+        }),
+      ]);
+
+      if (ordersResult.status === 'fulfilled') {
+        setPreview(ordersResult.value);
+      } else {
+        const err = ordersResult.reason;
+        setError(
+          err instanceof ApiError
             ? err.message
-            : 'Failed to load Shopee order preview'
-      );
+            : err instanceof Error
+              ? err.message
+              : 'Failed to load Shopee order preview'
+        );
+      }
+
+      if (adsResult.status === 'fulfilled') {
+        setAdsSpend(adsResult.value);
+      } else {
+        const err = adsResult.reason;
+        setAdsSpendError(
+          err instanceof ApiError
+            ? err.message
+            : err instanceof Error
+              ? err.message
+              : 'Failed to load Shopee ads spend'
+        );
+      }
     } finally {
       setIsLoading(false);
     }
@@ -324,38 +356,67 @@ export default function SalesShopeeOrdersPage() {
             </p>
           ) : null}
 
-          {preview ? (
+          {preview || adsSpend || adsSpendError ? (
             <>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Card title="Orders">
-                  <p className="text-2xl font-semibold tabular-nums text-gray-900">
-                    {preview.order_count}
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500">
-                    shop {preview.shop_id}
-                    {preview.token_refreshed ? ' · token refreshed' : ''}
-                  </p>
-                </Card>
-                <Card title="Total qty">
-                  <p className="text-2xl font-semibold tabular-nums text-gray-900">
-                    {preview.total_quantity ?? 0}
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500">Item units (SKU sum)</p>
-                </Card>
-                <Card title="Total escrow">
-                  <p className="text-2xl font-semibold tabular-nums text-gray-900">
-                    {formatCurrency(preview.total_escrow_amount)}
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500">Seller expected (primary)</p>
-                </Card>
-                <Card title="Total buyer amount">
-                  <p className="text-2xl font-semibold tabular-nums text-gray-900">
-                    {formatCurrency(preview.total_buyer_amount)}
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500">Buyer GMV (not seller net)</p>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                {preview ? (
+                  <>
+                    <Card title="Orders">
+                      <p className="text-2xl font-semibold tabular-nums text-gray-900">
+                        {preview.order_count}
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        shop {preview.shop_id}
+                        {preview.token_refreshed ? ' · token refreshed' : ''}
+                      </p>
+                    </Card>
+                    <Card title="Total qty">
+                      <p className="text-2xl font-semibold tabular-nums text-gray-900">
+                        {preview.total_quantity ?? 0}
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">Item units (SKU sum)</p>
+                    </Card>
+                    <Card title="Total escrow">
+                      <p className="text-2xl font-semibold tabular-nums text-gray-900">
+                        {formatCurrency(preview.total_escrow_amount)}
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">Seller expected (primary)</p>
+                    </Card>
+                    <Card title="Total buyer amount">
+                      <p className="text-2xl font-semibold tabular-nums text-gray-900">
+                        {formatCurrency(preview.total_buyer_amount)}
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">Buyer GMV (not seller net)</p>
+                    </Card>
+                  </>
+                ) : null}
+                <Card title="Ads spend">
+                  {adsSpendError ? (
+                    <>
+                      <p className="text-sm text-red-700">{adsSpendError}</p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Live Partner CPC expense (not wallet / not JE)
+                      </p>
+                    </>
+                  ) : adsSpend ? (
+                    <>
+                      <p className="text-2xl font-semibold tabular-nums text-gray-900">
+                        {formatCurrency(adsSpend.total_ads_spend)}
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Live Partner CPC expense
+                        {adsSpend.used_hourly_api ? ' · hourly (1 day)' : ''}
+                        {adsSpend.token_refreshed ? ' · token refreshed' : ''}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-sm text-gray-500">—</p>
+                  )}
                 </Card>
               </div>
 
+              {preview ? (
+                <>
               <Card title="SKU summary">
                 {(preview.sku_summary ?? []).length === 0 ? (
                   <p className="text-sm text-gray-500">No SKU lines in this range.</p>
@@ -439,6 +500,8 @@ export default function SalesShopeeOrdersPage() {
                   </div>
                 )}
               </Card>
+                </>
+              ) : null}
             </>
           ) : null}
         </>

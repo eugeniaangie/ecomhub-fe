@@ -176,10 +176,11 @@ Route still lives under `/master/*`; only the sidebar group changed (decision **
 
 ## Sales
 
-### Shopee Orders (`/sales/shopee`) — FE25
+### Shopee Orders (`/sales/shopee`) — FE25 + FE29
 
 - `GET /integrations/marketplaces/shopee/connections` — shop picker (active shops).
 - `GET /integrations/marketplaces/shopee/orders/preview` — live list+detail+escrow (admin+). Query: `shop_id`, `time_from`, `time_to`, `order_status`, `fetch_all`, `cancel_bucket` (`pembatalan`|`pengembalian` approx; CANCELLED drill-down), `cancel_reason`, `exclude_pembatalan` (drop early cancel / no pickup — used on All statuses). Response: `order_count`, `total_quantity`, totals, `sku_summary[]`, `orders[]` (+ cancel fields), `cancel_reason_options`.
+- `GET /integrations/marketplaces/shopee/ads/spend/preview` — live Partner CPC ads **expense** sum (admin+, FE29). Same `shop_id` / `time_from` / `time_to`. Response: `total_ads_spend`, `day_count`, `used_hourly_api`. Not wallet balance; not Marketing JE ad-expenses.
 
 ### Shopee Returns (`/sales/returns`) — FE28 / Core F6d
 
