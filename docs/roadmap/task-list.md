@@ -49,6 +49,8 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE25 | FEATURE | Shopee orders preview / mini-recap UI | Core F6b0 |
 | [ ] | FE26 | FEATURE | Progressive Shopee preview (SKU/buyer first, escrow second) | Core F6b0.1 |
 | [ ] | FE27 | P3 | Responsive / narrow-viewport layout (phone-sized window) | UX |
+| [x] | FE28 | FEATURE | Shopee Returns page | Core F6d |
+| [ ] | FE29 | FEATURE | Shopee Ads spend card on Sales overview | Core F6e |
 
 **P0 left:** none (FE1 Done).
 
@@ -616,6 +618,8 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 
 **Note (2026-09-30):** Cancel bucket UI only when status=`CANCELLED`. On **All statuses**: checkbox `exclude_pembatalan` (default on) — drops early cancel / no pickup; not the returns (pengembalian) page.
 
+**Note (2026-10-02):** Product next after FE25 = **FE28** (pengembalian), not F6b1 recap. See Core F6d.
+
 ---
 
 ### FE26 — Progressive Shopee preview (SKU/buyer first, escrow second)
@@ -633,7 +637,7 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 
 **Out of scope.** Order mirror DB / month snapshot (Core “Later” — only if live still hurts). Full F6b1 formulas.
 
-**Next action.** Park until operator says month load still too slow after parallel escrow smoke.
+**Next action.** Park until operator says month load still too slow after parallel escrow smoke. **Not** the current Shopee priority — F6d / FE28 pengembalian is ahead.
 
 ---
 
@@ -650,3 +654,47 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 **Out of scope.** Native mobile app; redesigning IA for phone-first.
 
 **Next action.** When picked up: screenshot/reproduce at ~375px width, then stack filters vertically, allow horizontal scroll on tables, and tighten AppNav so domains do not crush.
+
+---
+
+### FE28 — Shopee Returns page
+
+**Category:** FEATURE · **Status:** Done · **Backend:** Core **F6d** · **Priority (2026-10-02):** next Shopee FE after FE25 (ahead of F6b1 recap and FE26)
+
+**Problem.** Orders preview can approx-label some cancels as `pengembalian` via `pickup_done_time` / `TO_RETURN`, but that is **not** Seller Centre returns. Operators need a dedicated **Sales → Returns** submenu with real return requests.
+
+**UX (locked with Core F6d, 2026-10-02; label English 2026-10-02):** same overview shape as Shopee Orders —
+1. Nav: Sales → **Returns** (`/sales/returns`; wire in `lib/nav.ts`). UI copy English — not “Pengembalian”.
+2. Filters: shop + month / date range (≤31d).
+3. Cards: return count · total pcs · **total refund nominal**.
+4. Detail: SKU(s), qty, reason / text_reason, refund amount, status, `order_sn`, `return_sn`; plus useful extras Core returns (reassessed reason, solution, logistics/due when present).
+5. Client via `lib/api.ts` — **no** client-side refund math; **no** raw `fetch`.
+
+**API (Core).** Primary Shopee call: `v2.returns.get_return_list`. Not dispute/confirm in v0. See Core [`API_SHOPEE_SALES.md`](../../../ecomhub-core/docs/guides/API_SHOPEE_SALES.md) § F6d.
+
+**Out of scope:** full monthly recap (F6b1), ads automation (F1), auto journal, seller dispute/confirm actions, treating cancel approx as returns SoT.
+
+**Depends on.** Core F6d — **`GET …/returns/preview` Done (2026-10-02)**. Prefer Core **T35** awareness for clearer Partner errors. Update `menu-endpoints.md` when wired.
+
+**Next action.** — (Done)
+
+**Done (2026-10-02):** Sales → **Returns** `/sales/returns` (sibling of Orders so nav active state stays clean; UI label English — not “Pengembalian”). `shopeeAuthApi.previewReturns` → Core `…/returns/preview` with `fetch_all=true`. Cards: return count · total pcs · total refund. SKU summary + returns table (reason, solution, logistics/due). No client-side refund math.
+
+---
+
+### FE29 — Shopee Ads spend card on Sales overview
+
+**Category:** FEATURE · **Status:** Open · **Backend:** Core **F6e** · **Noted:** 2026-10-02 · **After:** FE28 preferred
+
+**Problem.** Sales → Shopee Orders shows orders / qty / escrow / buyer GMV, but not **Shopee Ads spend** for the same day or month filter. Operators want order · escrow · ads spend side by side. Top-up/payment (isi saldo + pajak) has no Partner API — do not invent it. This is **spend**, not F1 automation and not Marketing Ad Expenses (JE).
+
+**Scope (when Core F6e endpoint exists):**
+1. Same shop + date range as orders preview (day or ≤31d month).
+2. One summary card: **Ads spend** = Core `total_ads_spend` (or equivalent) — **nominal only**; no client-side math from JE or top-up.
+3. Client method via `lib/api.ts` / `integrationsApi`.
+
+**Out of scope:** campaign tables, ROAS controls (F1), Meta ads, top-up UI, full F6b1 formulas.
+
+**Depends on.** Core F6e — analyse Partner Ads spend API first (not started).
+
+**Next action.** Park until F6e API is locked; then wire the card on `/sales/shopee`.

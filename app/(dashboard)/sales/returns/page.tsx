@@ -7,7 +7,7 @@ import { canConnectShopeeShop } from '@/lib/authHelpers';
 import {
   shopeeAuthApi,
   type ShopeeConnectedShop,
-  type ShopeeOrdersPreview,
+  type ShopeeReturnsPreview,
 } from '@/lib/services/integrationsApi';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -21,16 +21,6 @@ import {
 } from '@/lib/utils/formatters';
 
 const MAX_RANGE_DAYS = 31;
-
-/** Cancel bucket only when drilling into CANCELLED. */
-function showCancelBucketFilter(orderStatus: string): boolean {
-  return orderStatus === 'CANCELLED';
-}
-
-/** Exclude-pembatalan checkbox only on All statuses. */
-function showExcludePembatalan(orderStatus: string): boolean {
-  return orderStatus === '';
-}
 
 function startOfDayUnix(ymd: string): number {
   return Math.floor(new Date(`${ymd}T00:00:00`).getTime() / 1000);
@@ -52,7 +42,13 @@ function formatUnixLocal(unix: number): string {
   return new Date(unix * 1000).toLocaleString();
 }
 
-export default function SalesShopeeOrdersPage() {
+function formatReturnSolution(solution: number | undefined): string {
+  if (solution === 0) return 'Return + refund';
+  if (solution === 1) return 'Refund only';
+  return '—';
+}
+
+export default function SalesShopeeReturnsPage() {
   const canAccess = canConnectShopeeShop();
   const [shops, setShops] = useState<ShopeeConnectedShop[]>([]);
   const [shopsLoading, setShopsLoading] = useState(true);
@@ -60,15 +56,13 @@ export default function SalesShopeeOrdersPage() {
   const [shopId, setShopId] = useState<number>(0);
   const [startDate, setStartDate] = useState(getFirstDayOfCurrentMonth());
   const [endDate, setEndDate] = useState(getTodayFormatted());
-  const [orderStatus, setOrderStatus] = useState('COMPLETED');
-  const [cancelBucket, setCancelBucket] = useState('');
-  const [excludePembatalan, setExcludePembatalan] = useState(true);
-  const [preview, setPreview] = useState<ShopeeOrdersPreview | null>(null);
+  const [returnStatus, setReturnStatus] = useState('');
+  const [preview, setPreview] = useState<ShopeeReturnsPreview | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    document.title = 'Shopee Orders · Sales · EcomHub';
+    document.title = 'Returns · Sales · EcomHub';
   }, []);
 
   const loadShops = useCallback(async () => {
@@ -105,9 +99,6 @@ export default function SalesShopeeOrdersPage() {
   useEffect(() => {
     void loadShops();
   }, [loadShops]);
-
-  const cancelBucketVisible = showCancelBucketFilter(orderStatus);
-  const excludePembatalanVisible = showExcludePembatalan(orderStatus);
 
   const handleToday = () => {
     const today = getTodayFormatted();
@@ -149,14 +140,12 @@ export default function SalesShopeeOrdersPage() {
 
     setIsLoading(true);
     try {
-      const data = await shopeeAuthApi.previewOrders({
+      const data = await shopeeAuthApi.previewReturns({
         shop_id: shopId,
         time_from: startOfDayUnix(startDate),
         time_to: endOfDayUnix(endDate),
         fetch_all: true,
-        order_status: orderStatus || undefined,
-        cancel_bucket: cancelBucketVisible ? cancelBucket || undefined : undefined,
-        exclude_pembatalan: excludePembatalanVisible ? excludePembatalan : undefined,
+        return_status: returnStatus || undefined,
       });
       setPreview(data);
     } catch (err) {
@@ -165,7 +154,7 @@ export default function SalesShopeeOrdersPage() {
           ? err.message
           : err instanceof Error
             ? err.message
-            : 'Failed to load Shopee order preview'
+            : 'Failed to load Shopee returns preview'
       );
     } finally {
       setIsLoading(false);
@@ -174,12 +163,12 @@ export default function SalesShopeeOrdersPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Shopee Orders" />
+      <PageHeader title="Returns" />
 
       {!canAccess ? (
         <Card title="Access">
           <p className="text-sm text-gray-600">
-            Viewing Shopee sales preview requires an admin or superadmin account.
+            Viewing Shopee returns requires an admin or superadmin account.
           </p>
         </Card>
       ) : (
@@ -231,63 +220,27 @@ export default function SalesShopeeOrdersPage() {
                       max={getTodayFormatted()}
                     />
                   </div>
-                  <div className="min-w-40">
+                  <div className="min-w-44">
                     <label className="mb-2 block text-sm font-medium text-gray-700">
-                      Order status
+                      Return status
                     </label>
                     <select
                       className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      value={orderStatus}
-                      onChange={(e) => {
-                        const next = e.target.value;
-                        setOrderStatus(next);
-                        if (!showCancelBucketFilter(next)) {
-                          setCancelBucket('');
-                        }
-                        if (showExcludePembatalan(next)) {
-                          setExcludePembatalan(true);
-                        }
-                      }}
+                      value={returnStatus}
+                      onChange={(e) => setReturnStatus(e.target.value)}
                     >
-                      <option value="COMPLETED">COMPLETED</option>
                       <option value="">All statuses</option>
-                      <option value="READY_TO_SHIP">READY_TO_SHIP</option>
-                      <option value="PROCESSED">PROCESSED</option>
-                      <option value="SHIPPED">SHIPPED</option>
-                      <option value="TO_CONFIRM_RECEIVE">TO_CONFIRM_RECEIVE</option>
+                      <option value="REQUESTED">REQUESTED</option>
+                      <option value="ACCEPTED">ACCEPTED</option>
                       <option value="CANCELLED">CANCELLED</option>
-                      <option value="TO_RETURN">TO_RETURN</option>
+                      <option value="JUDGING">JUDGING</option>
+                      <option value="REFUND_PAID">REFUND_PAID</option>
+                      <option value="CLOSED">CLOSED</option>
+                      <option value="PROCESSING">PROCESSING</option>
+                      <option value="SELLER_DISPUTE">SELLER_DISPUTE</option>
                     </select>
                   </div>
-                  {cancelBucketVisible ? (
-                    <div className="min-w-44">
-                      <label className="mb-2 block text-sm font-medium text-gray-700">
-                        Cancel bucket
-                      </label>
-                      <select
-                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={cancelBucket}
-                        onChange={(e) => setCancelBucket(e.target.value)}
-                      >
-                        <option value="">All buckets</option>
-                        <option value="pembatalan">Pembatalan (no pickup)</option>
-                        <option value="pengembalian">Returns (approx)</option>
-                      </select>
-                    </div>
-                  ) : null}
                 </div>
-
-                {excludePembatalanVisible ? (
-                  <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      checked={excludePembatalan}
-                      onChange={(e) => setExcludePembatalan(e.target.checked)}
-                    />
-                    Exclude pembatalan (cancel before pickup)
-                  </label>
-                ) : null}
 
                 <div className="flex flex-wrap gap-2">
                   <Button variant="secondary" size="sm" type="button" onClick={handleToday}>
@@ -305,14 +258,9 @@ export default function SalesShopeeOrdersPage() {
                 </div>
 
                 <p className="text-xs text-gray-500">
-                  Max {MAX_RANGE_DAYS} days. Uses <code className="font-mono">fetch_all=true</code>{' '}
-                  (Core splits ≤15d windows). Escrow = seller expected receive; buyer amount = GMV.
-                  Cancel bucket only for CANCELLED. On All statuses: optional exclude pembatalan
-                  (early cancel, no pickup) — default on. Real returns:{' '}
-                  <Link href="/sales/returns" className="text-blue-600 hover:underline">
-                    Sales → Returns
-                  </Link>
-                  .
+                  Real Seller Centre returns via <code className="font-mono">get_return_list</code>{' '}
+                  (not the Orders cancel-bucket approx). Date filter = return create time. Max{' '}
+                  {MAX_RANGE_DAYS} days with <code className="font-mono">fetch_all=true</code>.
                 </p>
               </div>
             )}
@@ -326,33 +274,27 @@ export default function SalesShopeeOrdersPage() {
 
           {preview ? (
             <>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Card title="Orders">
+              <div className="grid gap-4 sm:grid-cols-3">
+                <Card title="Returns">
                   <p className="text-2xl font-semibold tabular-nums text-gray-900">
-                    {preview.order_count}
+                    {preview.return_count}
                   </p>
                   <p className="mt-1 text-xs text-gray-500">
                     shop {preview.shop_id}
                     {preview.token_refreshed ? ' · token refreshed' : ''}
                   </p>
                 </Card>
-                <Card title="Total qty">
+                <Card title="Total pcs">
                   <p className="text-2xl font-semibold tabular-nums text-gray-900">
                     {preview.total_quantity ?? 0}
                   </p>
-                  <p className="mt-1 text-xs text-gray-500">Item units (SKU sum)</p>
+                  <p className="mt-1 text-xs text-gray-500">Item units across returns</p>
                 </Card>
-                <Card title="Total escrow">
+                <Card title="Total refund">
                   <p className="text-2xl font-semibold tabular-nums text-gray-900">
-                    {formatCurrency(preview.total_escrow_amount)}
+                    {formatCurrency(preview.total_refund_amount)}
                   </p>
-                  <p className="mt-1 text-xs text-gray-500">Seller expected (primary)</p>
-                </Card>
-                <Card title="Total buyer amount">
-                  <p className="text-2xl font-semibold tabular-nums text-gray-900">
-                    {formatCurrency(preview.total_buyer_amount)}
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500">Buyer GMV (not seller net)</p>
+                  <p className="mt-1 text-xs text-gray-500">Refund nominal (from API)</p>
                 </Card>
               </div>
 
@@ -366,7 +308,7 @@ export default function SalesShopeeOrdersPage() {
                         <tr className="text-left text-gray-500">
                           <th className="px-3 py-2 font-medium">SKU</th>
                           <th className="px-3 py-2 font-medium text-right">Qty</th>
-                          <th className="px-3 py-2 font-medium text-right">Orders</th>
+                          <th className="px-3 py-2 font-medium text-right">Returns</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
@@ -383,54 +325,60 @@ export default function SalesShopeeOrdersPage() {
                 )}
               </Card>
 
-              <Card title="Orders">
-                {(preview.orders ?? []).length === 0 ? (
-                  <p className="text-sm text-gray-500">No orders in this range.</p>
+              <Card title="Returns">
+                {(preview.returns ?? []).length === 0 ? (
+                  <p className="text-sm text-gray-500">No returns in this range.</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200 text-sm">
                       <thead>
                         <tr className="text-left text-gray-500">
+                          <th className="px-3 py-2 font-medium">Return SN</th>
                           <th className="px-3 py-2 font-medium">Order SN</th>
                           <th className="px-3 py-2 font-medium">Status</th>
-                          {cancelBucketVisible ? (
-                            <>
-                              <th className="px-3 py-2 font-medium">Bucket</th>
-                              <th className="px-3 py-2 font-medium">Cancel reason</th>
-                            </>
-                          ) : null}
-                          <th className="px-3 py-2 font-medium text-right">Escrow</th>
-                          <th className="px-3 py-2 font-medium text-right">Buyer</th>
+                          <th className="px-3 py-2 font-medium text-right">Refund</th>
+                          <th className="px-3 py-2 font-medium text-right">Qty</th>
+                          <th className="px-3 py-2 font-medium">Reason</th>
+                          <th className="px-3 py-2 font-medium">Solution</th>
                           <th className="px-3 py-2 font-medium">Created</th>
                           <th className="px-3 py-2 font-medium">SKUs</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {preview.orders.map((o) => (
-                          <tr key={o.order_sn} className="text-gray-900">
-                            <td className="px-3 py-2 font-mono">{o.order_sn}</td>
-                            <td className="px-3 py-2">{o.order_status || '—'}</td>
-                            {cancelBucketVisible ? (
-                              <>
-                                <td className="px-3 py-2 text-gray-600">
-                                  {o.cancel_bucket || '—'}
-                                </td>
-                                <td className="px-3 py-2 text-xs text-gray-600">
-                                  {o.cancel_reason || '—'}
-                                </td>
-                              </>
-                            ) : null}
+                        {preview.returns.map((r) => (
+                          <tr key={r.return_sn} className="text-gray-900">
+                            <td className="px-3 py-2 font-mono">{r.return_sn}</td>
+                            <td className="px-3 py-2 font-mono">{r.order_sn || '—'}</td>
+                            <td className="px-3 py-2">{r.status || '—'}</td>
                             <td className="px-3 py-2 text-right tabular-nums">
-                              {formatCurrency(o.escrow_amount ?? 0)}
+                              {formatCurrency(r.refund_amount ?? 0)}
                             </td>
-                            <td className="px-3 py-2 text-right tabular-nums">
-                              {formatCurrency(o.total_amount ?? 0)}
+                            <td className="px-3 py-2 text-right tabular-nums">{r.quantity}</td>
+                            <td className="max-w-56 px-3 py-2 text-xs text-gray-600">
+                              <div>{r.reason || '—'}</div>
+                              {r.text_reason ? (
+                                <div className="mt-0.5 text-gray-500">{r.text_reason}</div>
+                              ) : null}
+                              {r.reassessed_request_reason ? (
+                                <div className="mt-0.5 text-gray-500">
+                                  Reassessed: {r.reassessed_request_reason}
+                                </div>
+                              ) : null}
                             </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-gray-600">
-                              {formatUnixLocal(o.create_time ?? 0)}
+                            <td className="px-3 py-2 text-xs text-gray-600">
+                              <div>{formatReturnSolution(r.return_solution)}</div>
+                              {r.needs_logistics ? (
+                                <div className="mt-0.5 text-amber-700">Needs logistics</div>
+                              ) : null}
+                              {r.due_date ? (
+                                <div className="mt-0.5">Due {formatUnixLocal(r.due_date)}</div>
+                              ) : null}
+                            </td>
+                            <td className="whitespace-nowrap px-3 py-2 text-gray-600">
+                              {formatUnixLocal(r.create_time ?? 0)}
                             </td>
                             <td className="px-3 py-2 font-mono text-xs text-gray-600">
-                              {(o.item_skus ?? []).join(', ') || '—'}
+                              {(r.item_skus ?? []).join(', ') || '—'}
                             </td>
                           </tr>
                         ))}

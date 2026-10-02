@@ -181,6 +181,15 @@ Route still lives under `/master/*`; only the sidebar group changed (decision **
 - `GET /integrations/marketplaces/shopee/connections` — shop picker (active shops).
 - `GET /integrations/marketplaces/shopee/orders/preview` — live list+detail+escrow (admin+). Query: `shop_id`, `time_from`, `time_to`, `order_status`, `fetch_all`, `cancel_bucket` (`pembatalan`|`pengembalian` approx; CANCELLED drill-down), `cancel_reason`, `exclude_pembatalan` (drop early cancel / no pickup — used on All statuses). Response: `order_count`, `total_quantity`, totals, `sku_summary[]`, `orders[]` (+ cancel fields), `cancel_reason_options`.
 
+### Shopee Returns (`/sales/returns`) — FE28 / Core F6d
+
+- `GET /integrations/marketplaces/shopee/connections` — shop picker.
+- `GET /integrations/marketplaces/shopee/returns/preview` — live `get_return_list` (admin+). Query: `shop_id`, `time_from`, `time_to`, `fetch_all=true`, optional `return_status`. Response: `return_count`, `total_quantity`, `total_refund_amount`, `sku_summary[]`, `returns[]`. Do **not** treat orders preview `cancel_bucket=pengembalian` as this screen.
+
+### Shopee Ads spend (planned — FE29 / Core F6e)
+
+- Card on Sales → Shopee Orders overview (same day/month filter): **ads spend nominal only**. Partner Ads spend API TBD (analyse before code). **Not** top-up/payment; **not** F1 automation; **not** Marketing Ad Expenses JE.
+
 ---
 
 ## Integrations
