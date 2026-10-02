@@ -40,6 +40,7 @@ Finance hub          Overview · Accounts · Transactions · Channels
 Marketing hub        Ad Budgets · Ad Expenses
 
 Sales hub            Shopee Orders (live preview / escrow)
+                     Returns (refund overview)
 
 Catalog hub          Categories
 
@@ -77,6 +78,7 @@ Rules that keep this from sprawling:
 | Marketing | Ad Expenses | `/marketing/ad-expenses` |
 | Sales | Domain hub | `/sales` |
 | Sales | Shopee Orders (preview) | `/sales/shopee` |
+| Sales | Returns | `/sales/returns` |
 | Catalog | Domain hub | `/catalog` |
 | Catalog | Categories | `/master/categories` |
 | Integrations | Domain hub | `/integrations` |
