@@ -50,7 +50,7 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [ ] | FE26 | FEATURE | Progressive Shopee preview (SKU/buyer first, escrow second) | Core F6b0.1 |
 | [ ] | FE27 | P3 | Responsive / narrow-viewport layout (phone-sized window) | UX |
 | [x] | FE28 | FEATURE | Shopee Returns page | Core F6d |
-| [ ] | FE29 | FEATURE | Shopee Ads spend card on Sales overview | Core F6e |
+| [x] | FE29 | FEATURE | Shopee Ads spend card on Sales overview | Core F6e |
 
 **P0 left:** none (FE1 Done).
 
@@ -684,7 +684,7 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 
 ### FE29 — Shopee Ads spend card on Sales overview
 
-**Category:** FEATURE · **Status:** Open · **Backend:** Core **F6e** · **Noted:** 2026-10-02 · **After:** FE28 preferred
+**Category:** FEATURE · **Status:** Done (2026-10-02) · **Backend:** Core **F6e** · **Noted:** 2026-10-02 · **After:** FE28
 
 **Problem.** Sales → Shopee Orders shows orders / qty / escrow / buyer GMV, but not **Shopee Ads spend** for the same day or month filter. Operators want order · escrow · ads spend side by side. Top-up/payment (isi saldo + pajak) has no Partner API — do not invent it. This is **spend**, not F1 automation and not Marketing Ad Expenses (JE).
 
@@ -695,6 +695,6 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 
 **Out of scope:** campaign tables, ROAS controls (F1), Meta ads, top-up UI, full F6b1 formulas.
 
-**Depends on.** Core F6e — analyse Partner Ads spend API first (not started).
+**Depends on.** Core F6e.
 
-**Next action.** Park until F6e API is locked; then wire the card on `/sales/shopee`.
+**Done (2026-10-02):** `shopeeAuthApi.previewAdsSpend` → `GET …/ads/spend/preview`; fifth card on `/sales/shopee` via `Promise.allSettled` (orders still show if ads fails). Footnote: live Partner CPC expense, not wallet/JE.

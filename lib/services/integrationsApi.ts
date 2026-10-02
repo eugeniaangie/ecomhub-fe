@@ -129,6 +129,25 @@ export interface PreviewShopeeReturnsParams {
   return_status?: string;
 }
 
+export interface ShopeeAdsSpendPreview {
+  shop_id: number;
+  time_from: number;
+  time_to: number;
+  start_date: string;
+  end_date: string;
+  token_refreshed: boolean;
+  total_ads_spend: number;
+  day_count: number;
+  partner_calls: number;
+  used_hourly_api: boolean;
+}
+
+export interface PreviewShopeeAdsSpendParams {
+  shop_id?: number;
+  time_from?: number;
+  time_to?: number;
+}
+
 export const shopeeAuthApi = {
   /**
    * Signed Shopee auth_partner URL. Open in the browser to connect a shop.
@@ -217,6 +236,28 @@ export const shopeeAuthApi = {
     const qs = query.toString();
     return api.get<ShopeeReturnsPreview>(
       `${API_VERSION}/integrations/marketplaces/shopee/returns/preview${qs ? `?${qs}` : ''}`
+    );
+  },
+
+  /**
+   * Live Shopee Ads spend (CPC expense sum). Roles: admin+ (Core F6e).
+   * Not wallet balance / not Marketing JE / not F1 automation.
+   */
+  previewAdsSpend: async (params: PreviewShopeeAdsSpendParams = {}) => {
+    const query = new URLSearchParams();
+    if (params.shop_id && params.shop_id > 0) {
+      query.set('shop_id', String(params.shop_id));
+    }
+    if (params.time_from && params.time_from > 0) {
+      query.set('time_from', String(params.time_from));
+    }
+    if (params.time_to && params.time_to > 0) {
+      query.set('time_to', String(params.time_to));
+    }
+
+    const qs = query.toString();
+    return api.get<ShopeeAdsSpendPreview>(
+      `${API_VERSION}/integrations/marketplaces/shopee/ads/spend/preview${qs ? `?${qs}` : ''}`
     );
   },
 };
