@@ -310,7 +310,7 @@ export default function SalesShopeeOrdersPage() {
                   Cancel bucket only for CANCELLED. On All statuses: optional exclude pembatalan
                   (early cancel, no pickup) — default on. Real returns:{' '}
                   <Link href="/sales/returns" className="text-blue-600 hover:underline">
-                    Sales → Returns
+                    Sales → Shopee Returns
                   </Link>
                   .
                 </p>

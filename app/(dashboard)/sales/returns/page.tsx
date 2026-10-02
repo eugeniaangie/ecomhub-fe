@@ -62,7 +62,7 @@ export default function SalesShopeeReturnsPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    document.title = 'Returns · Sales · EcomHub';
+    document.title = 'Shopee Returns · Sales · EcomHub';
   }, []);
 
   const loadShops = useCallback(async () => {
@@ -163,7 +163,7 @@ export default function SalesShopeeReturnsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Returns" />
+      <PageHeader title="Shopee Returns" />
 
       {!canAccess ? (
         <Card title="Access">
