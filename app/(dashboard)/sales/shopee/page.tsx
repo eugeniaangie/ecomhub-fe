@@ -76,6 +76,8 @@ export default function SalesShopeeOrdersPage() {
   const [detailError, setDetailError] = useState('');
   const [detail, setDetail] = useState<ShopeeOrderDetail | null>(null);
   const [deductionsOpen, setDeductionsOpen] = useState(false);
+  const [skuSummaryOpen, setSkuSummaryOpen] = useState(false);
+  const [ordersListOpen, setOrdersListOpen] = useState(false);
 
   useEffect(() => {
     document.title = 'Shopee Orders · Sales · EcomHub';
@@ -467,7 +469,11 @@ export default function SalesShopeeOrdersPage() {
 
               {preview ? (
                 <>
-              <Card title="SKU summary">
+              <Card
+                title="SKU summary"
+                collapsed={!skuSummaryOpen}
+                onToggleCollapse={() => setSkuSummaryOpen((v) => !v)}
+              >
                 {(preview.sku_summary ?? []).length === 0 ? (
                   <p className="text-sm text-gray-500">No SKU lines in this range.</p>
                 ) : (
@@ -494,7 +500,11 @@ export default function SalesShopeeOrdersPage() {
                 )}
               </Card>
 
-              <Card title="Orders">
+              <Card
+                title="Orders"
+                collapsed={!ordersListOpen}
+                onToggleCollapse={() => setOrdersListOpen((v) => !v)}
+              >
                 <p className="mb-3 text-xs text-gray-500">
                   Click a row for buyer / original / fee lines / escrow net.
                 </p>
