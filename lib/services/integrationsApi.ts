@@ -23,6 +23,13 @@ export interface ShopeeSkuSummaryItem {
   order_count: number;
 }
 
+export interface ShopeeMoneyLine {
+  key: string;
+  label: string;
+  amount: number;
+  sources?: string[];
+}
+
 export interface ShopeeOrderPreviewItem {
   order_sn: string;
   order_status?: string;
@@ -55,6 +62,10 @@ export interface ShopeeOrdersPreview {
   total_quantity: number;
   total_buyer_amount: number;
   total_escrow_amount: number;
+  total_deductions?: number;
+  deduction_breakdown?: ShopeeMoneyLine[];
+  escrow_partial?: boolean;
+  escrow_failed_order_sns?: string[];
   cancel_reason_options?: string[];
   sku_summary: ShopeeSkuSummaryItem[];
   orders: ShopeeOrderPreviewItem[];
@@ -146,13 +157,6 @@ export interface PreviewShopeeAdsSpendParams {
   shop_id?: number;
   time_from?: number;
   time_to?: number;
-}
-
-export interface ShopeeMoneyLine {
-  key: string;
-  label: string;
-  amount: number;
-  sources?: string[];
 }
 
 export interface ShopeeOrderDetailItemLine {

@@ -75,6 +75,7 @@ export default function SalesShopeeOrdersPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState('');
   const [detail, setDetail] = useState<ShopeeOrderDetail | null>(null);
+  const [deductionsOpen, setDeductionsOpen] = useState(false);
 
   useEffect(() => {
     document.title = 'Shopee Orders · Sales · EcomHub';
@@ -395,7 +396,7 @@ export default function SalesShopeeOrdersPage() {
 
           {preview || adsSpend || adsSpendError ? (
             <>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 {preview ? (
                   <>
                     <Card title="Orders">
@@ -419,6 +420,24 @@ export default function SalesShopeeOrdersPage() {
                       </p>
                       <p className="mt-1 text-xs text-gray-500">Seller expected (primary)</p>
                     </Card>
+                    <button
+                      type="button"
+                      className="group w-full cursor-pointer rounded-lg text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                      onClick={() => setDeductionsOpen(true)}
+                    >
+                      <Card
+                        title="Total deductions"
+                        className="cursor-pointer transition group-hover:border-blue-300 group-hover:shadow-md"
+                      >
+                        <p className="text-2xl font-semibold tabular-nums text-red-700">
+                          {formatCurrency(-(preview.total_deductions ?? 0))}
+                        </p>
+                        <p className="mt-1 text-xs text-gray-500 group-hover:text-gray-600">
+                          Fees & vouchers · click for breakdown
+                          {preview.escrow_partial ? ' · partial escrow' : ''}
+                        </p>
+                      </Card>
+                    </button>
                   </>
                 ) : null}
                 <Card title="Ads spend">
@@ -587,7 +606,7 @@ export default function SalesShopeeOrdersPage() {
                 <p className="text-xs text-gray-500">Selling price (not buyer GMV)</p>
               </div>
               <div className="rounded-md border border-gray-200 px-3 py-2">
-                <p className="text-xs text-gray-500">Escrow (bersih expect)</p>
+                <p className="text-xs text-gray-500">Escrow (expected net)</p>
                 <p className="text-lg font-semibold tabular-nums text-gray-900">
                   {detail.escrow_available
                     ? formatCurrency(detail.escrow_amount)
@@ -603,10 +622,10 @@ export default function SalesShopeeOrdersPage() {
 
             <div>
               <div className="mb-2 flex items-baseline justify-between gap-3">
-                <p className="font-medium text-gray-900">Rincian (Seller Centre style)</p>
+                <p className="font-medium text-gray-900">Deductions</p>
                 {detail.escrow_available ? (
                   <p className="text-sm text-gray-700">
-                    Total potongan:{' '}
+                    Total deductions:{' '}
                     <span className="font-semibold tabular-nums text-red-700">
                       {formatCurrency(-(detail.total_deductions ?? 0))}
                     </span>
@@ -689,6 +708,63 @@ export default function SalesShopeeOrdersPage() {
                 </p>
               </div>
             </div>
+          </div>
+        ) : null}
+      </Modal>
+
+      <Modal
+        isOpen={deductionsOpen}
+        onClose={() => setDeductionsOpen(false)}
+        title="Total deductions"
+        size="md"
+        footer={
+          <Button variant="secondary" onClick={() => setDeductionsOpen(false)}>
+            Close
+          </Button>
+        }
+      >
+        {preview ? (
+          <div className="space-y-4 text-sm">
+            <div className="flex items-baseline justify-between gap-3 rounded-md border border-gray-200 px-3 py-2">
+              <p className="text-gray-600">Total (fees & vouchers)</p>
+              <p className="text-lg font-semibold tabular-nums text-red-700">
+                {formatCurrency(-(preview.total_deductions ?? 0))}
+              </p>
+            </div>
+            {(preview.deduction_breakdown ?? []).length === 0 ? (
+              <p className="text-gray-500">
+                {preview.escrow_partial
+                  ? 'No deduction lines (escrow may be partial).'
+                  : 'No deduction lines for this range.'}
+              </p>
+            ) : (
+              <div className="overflow-x-auto rounded-md border border-gray-200">
+                <table className="min-w-full divide-y divide-gray-100 text-sm">
+                  <thead>
+                    <tr className="text-left text-gray-500">
+                      <th className="px-3 py-2 font-medium">Line</th>
+                      <th className="px-3 py-2 font-medium text-right">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {preview.deduction_breakdown!.map((line) => (
+                      <tr key={line.key} className="text-gray-900">
+                        <td className="px-3 py-2">{line.label}</td>
+                        <td className="px-3 py-2 text-right tabular-nums text-red-700">
+                          {formatCurrency(line.amount)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <p className="text-xs text-gray-500">
+              Aggregated from order escrow in this preview. Not ads spend. Not buyer GMV.
+              {preview.escrow_partial
+                ? ' Some orders failed escrow — totals may be understated.'
+                : ''}
+            </p>
           </div>
         ) : null}
       </Modal>
