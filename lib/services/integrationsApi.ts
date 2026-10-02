@@ -159,6 +159,48 @@ export interface PreviewShopeeAdsSpendParams {
   time_to?: number;
 }
 
+export interface ShopeeAdsPerformancePoint {
+  date: string;
+  hour?: number;
+  impression: number;
+  clicks: number;
+  expense: number;
+  direct_gmv: number;
+  broad_gmv: number;
+  direct_order: number;
+  broad_order: number;
+  direct_roas: number;
+  broad_roas: number;
+}
+
+export interface ShopeeAdsPerformancePreview {
+  shop_id: number;
+  time_from: number;
+  time_to: number;
+  start_date: string;
+  end_date: string;
+  token_refreshed: boolean;
+  day_count: number;
+  partner_calls: number;
+  used_hourly_api: boolean;
+  series_grain: 'daily' | 'hourly' | string;
+  total_ads_spend: number;
+  impression: number;
+  clicks: number;
+  direct_gmv: number;
+  broad_gmv: number;
+  direct_order: number;
+  broad_order: number;
+  direct_roas: number;
+  broad_roas: number;
+  series: ShopeeAdsPerformancePoint[];
+  ads_wallet_balance?: number | null;
+  balance_as_of?: number | null;
+  balance_error?: string;
+}
+
+export type PreviewShopeeAdsPerformanceParams = PreviewShopeeAdsSpendParams;
+
 export interface ShopeeOrderDetailItemLine {
   sku: string;
   name?: string;
@@ -299,6 +341,27 @@ export const shopeeAuthApi = {
     const qs = query.toString();
     return api.get<ShopeeAdsSpendPreview>(
       `${API_VERSION}/integrations/marketplaces/shopee/ads/spend/preview${qs ? `?${qs}` : ''}`
+    );
+  },
+
+  /**
+   * Shop-level Ads performance (spend, ROAS, GMV, series + wallet balance). Roles: admin+ (Core F6f).
+   */
+  previewAdsPerformance: async (params: PreviewShopeeAdsPerformanceParams = {}) => {
+    const query = new URLSearchParams();
+    if (params.shop_id && params.shop_id > 0) {
+      query.set('shop_id', String(params.shop_id));
+    }
+    if (params.time_from && params.time_from > 0) {
+      query.set('time_from', String(params.time_from));
+    }
+    if (params.time_to && params.time_to > 0) {
+      query.set('time_to', String(params.time_to));
+    }
+
+    const qs = query.toString();
+    return api.get<ShopeeAdsPerformancePreview>(
+      `${API_VERSION}/integrations/marketplaces/shopee/ads/performance/preview${qs ? `?${qs}` : ''}`
     );
   },
 
