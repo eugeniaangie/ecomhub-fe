@@ -148,6 +148,43 @@ export interface PreviewShopeeAdsSpendParams {
   time_to?: number;
 }
 
+export interface ShopeeMoneyLine {
+  key: string;
+  label: string;
+  amount: number;
+  sources?: string[];
+}
+
+export interface ShopeeOrderDetailItemLine {
+  sku: string;
+  name?: string;
+  quantity: number;
+  original_price?: number;
+  discounted_price?: number;
+}
+
+export interface ShopeeOrderDetail {
+  shop_id: number;
+  order_sn: string;
+  order_status?: string;
+  create_time?: number;
+  cancel_reason?: string;
+  token_refreshed: boolean;
+  escrow_available: boolean;
+  buyer_amount: number;
+  original_price: number;
+  selling_price: number;
+  escrow_amount: number;
+  deductions: ShopeeMoneyLine[];
+  total_deductions: number;
+  items: ShopeeOrderDetailItemLine[];
+}
+
+export interface GetShopeeOrderDetailParams {
+  shop_id?: number;
+  order_sn: string;
+}
+
 export const shopeeAuthApi = {
   /**
    * Signed Shopee auth_partner URL. Open in the browser to connect a shop.
@@ -258,6 +295,20 @@ export const shopeeAuthApi = {
     const qs = query.toString();
     return api.get<ShopeeAdsSpendPreview>(
       `${API_VERSION}/integrations/marketplaces/shopee/ads/spend/preview${qs ? `?${qs}` : ''}`
+    );
+  },
+
+  /**
+   * One-order money detail (order + escrow breakdown). Roles: admin+.
+   */
+  getOrderDetail: async (params: GetShopeeOrderDetailParams) => {
+    const query = new URLSearchParams();
+    query.set('order_sn', params.order_sn);
+    if (params.shop_id && params.shop_id > 0) {
+      query.set('shop_id', String(params.shop_id));
+    }
+    return api.get<ShopeeOrderDetail>(
+      `${API_VERSION}/integrations/marketplaces/shopee/orders/detail?${query.toString()}`
     );
   },
 };

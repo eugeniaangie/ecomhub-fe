@@ -8,11 +8,13 @@ import {
   shopeeAuthApi,
   type ShopeeAdsSpendPreview,
   type ShopeeConnectedShop,
+  type ShopeeOrderDetail,
   type ShopeeOrdersPreview,
 } from '@/lib/services/integrationsApi';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { DatePicker } from '@/components/ui/DatePicker';
+import { Modal } from '@/components/ui/Modal';
 import { PageHeader } from '@/components/layout/PageHeader';
 import {
   formatCurrency,
@@ -69,6 +71,10 @@ export default function SalesShopeeOrdersPage() {
   const [adsSpendError, setAdsSpendError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState('');
+  const [detail, setDetail] = useState<ShopeeOrderDetail | null>(null);
 
   useEffect(() => {
     document.title = 'Shopee Orders · Sales · EcomHub';
@@ -202,6 +208,37 @@ export default function SalesShopeeOrdersPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleOpenOrderDetail = async (orderSn: string) => {
+    if (!shopId || !orderSn) return;
+    setDetailOpen(true);
+    setDetail(null);
+    setDetailError('');
+    setDetailLoading(true);
+    try {
+      const data = await shopeeAuthApi.getOrderDetail({
+        shop_id: shopId,
+        order_sn: orderSn,
+      });
+      setDetail(data);
+    } catch (err) {
+      setDetailError(
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : 'Failed to load order detail'
+      );
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const handleCloseOrderDetail = () => {
+    setDetailOpen(false);
+    setDetail(null);
+    setDetailError('');
   };
 
   return (
@@ -358,7 +395,7 @@ export default function SalesShopeeOrdersPage() {
 
           {preview || adsSpend || adsSpendError ? (
             <>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {preview ? (
                   <>
                     <Card title="Orders">
@@ -381,12 +418,6 @@ export default function SalesShopeeOrdersPage() {
                         {formatCurrency(preview.total_escrow_amount)}
                       </p>
                       <p className="mt-1 text-xs text-gray-500">Seller expected (primary)</p>
-                    </Card>
-                    <Card title="Total buyer amount">
-                      <p className="text-2xl font-semibold tabular-nums text-gray-900">
-                        {formatCurrency(preview.total_buyer_amount)}
-                      </p>
-                      <p className="mt-1 text-xs text-gray-500">Buyer GMV (not seller net)</p>
                     </Card>
                   </>
                 ) : null}
@@ -445,6 +476,9 @@ export default function SalesShopeeOrdersPage() {
               </Card>
 
               <Card title="Orders">
+                <p className="mb-3 text-xs text-gray-500">
+                  Click a row for buyer / original / fee lines / escrow net.
+                </p>
                 {(preview.orders ?? []).length === 0 ? (
                   <p className="text-sm text-gray-500">No orders in this range.</p>
                 ) : (
@@ -461,15 +495,18 @@ export default function SalesShopeeOrdersPage() {
                             </>
                           ) : null}
                           <th className="px-3 py-2 font-medium text-right">Escrow</th>
-                          <th className="px-3 py-2 font-medium text-right">Buyer</th>
                           <th className="px-3 py-2 font-medium">Created</th>
                           <th className="px-3 py-2 font-medium">SKUs</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {preview.orders.map((o) => (
-                          <tr key={o.order_sn} className="text-gray-900">
-                            <td className="px-3 py-2 font-mono">{o.order_sn}</td>
+                          <tr
+                            key={o.order_sn}
+                            className="cursor-pointer text-gray-900 hover:bg-gray-50"
+                            onClick={() => void handleOpenOrderDetail(o.order_sn)}
+                          >
+                            <td className="px-3 py-2 font-mono text-blue-700">{o.order_sn}</td>
                             <td className="px-3 py-2">{o.order_status || '—'}</td>
                             {cancelBucketVisible ? (
                               <>
@@ -483,9 +520,6 @@ export default function SalesShopeeOrdersPage() {
                             ) : null}
                             <td className="px-3 py-2 text-right tabular-nums">
                               {formatCurrency(o.escrow_amount ?? 0)}
-                            </td>
-                            <td className="px-3 py-2 text-right tabular-nums">
-                              {formatCurrency(o.total_amount ?? 0)}
                             </td>
                             <td className="px-3 py-2 whitespace-nowrap text-gray-600">
                               {formatUnixLocal(o.create_time ?? 0)}
@@ -506,6 +540,158 @@ export default function SalesShopeeOrdersPage() {
           ) : null}
         </>
       )}
+
+      <Modal
+        isOpen={detailOpen}
+        onClose={handleCloseOrderDetail}
+        title={detail?.order_sn ? `Order ${detail.order_sn}` : 'Order detail'}
+        size="lg"
+        footer={
+          <Button variant="secondary" onClick={handleCloseOrderDetail}>
+            Close
+          </Button>
+        }
+      >
+        {detailLoading ? (
+          <p className="text-sm text-gray-500">Loading…</p>
+        ) : detailError ? (
+          <p className="text-sm text-red-700">{detailError}</p>
+        ) : detail ? (
+          <div className="space-y-4 text-sm">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <p className="text-xs text-gray-500">Status</p>
+                <p className="font-medium text-gray-900">{detail.order_status || '—'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Created</p>
+                <p className="font-medium text-gray-900">
+                  {formatUnixLocal(detail.create_time ?? 0)}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-md border border-gray-200 px-3 py-2">
+                <p className="text-xs text-gray-500">Original</p>
+                <p className="text-lg font-semibold tabular-nums text-gray-900">
+                  {formatCurrency(detail.original_price)}
+                </p>
+                <p className="text-xs text-gray-500">Listing before shop discount</p>
+              </div>
+              <div className="rounded-md border border-gray-200 px-3 py-2">
+                <p className="text-xs text-gray-500">After shop discount</p>
+                <p className="text-lg font-semibold tabular-nums text-gray-900">
+                  {formatCurrency(detail.selling_price)}
+                </p>
+                <p className="text-xs text-gray-500">Selling price (not buyer GMV)</p>
+              </div>
+              <div className="rounded-md border border-gray-200 px-3 py-2">
+                <p className="text-xs text-gray-500">Escrow (bersih expect)</p>
+                <p className="text-lg font-semibold tabular-nums text-gray-900">
+                  {detail.escrow_available
+                    ? formatCurrency(detail.escrow_amount)
+                    : '—'}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {detail.escrow_available
+                    ? 'Seller expected receive'
+                    : 'Escrow unavailable for this order'}
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <div className="mb-2 flex items-baseline justify-between gap-3">
+                <p className="font-medium text-gray-900">Rincian (Seller Centre style)</p>
+                {detail.escrow_available ? (
+                  <p className="text-sm text-gray-700">
+                    Total potongan:{' '}
+                    <span className="font-semibold tabular-nums text-red-700">
+                      {formatCurrency(-(detail.total_deductions ?? 0))}
+                    </span>
+                  </p>
+                ) : null}
+              </div>
+              {(detail.deductions ?? []).length === 0 ? (
+                <p className="text-gray-500">
+                  {detail.escrow_available
+                    ? 'No deduction lines.'
+                    : 'No escrow breakdown.'}
+                </p>
+              ) : (
+                <div className="overflow-x-auto rounded-md border border-gray-200">
+                  <table className="min-w-full divide-y divide-gray-100 text-sm">
+                    <thead>
+                      <tr className="text-left text-gray-500">
+                        <th className="px-3 py-2 font-medium">Line</th>
+                        <th className="px-3 py-2 font-medium text-right">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {detail.deductions.map((line) => (
+                        <tr key={line.key} className="text-gray-900">
+                          <td className="px-3 py-2">{line.label}</td>
+                          <td
+                            className={`px-3 py-2 text-right tabular-nums ${
+                              line.amount < 0 ? 'text-red-700' : 'text-gray-900'
+                            }`}
+                          >
+                            {formatCurrency(line.amount)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <p className="mb-2 font-medium text-gray-900">Items</p>
+              {(detail.items ?? []).length === 0 ? (
+                <p className="text-gray-500">No item lines.</p>
+              ) : (
+                <div className="overflow-x-auto rounded-md border border-gray-200">
+                  <table className="min-w-full divide-y divide-gray-100 text-sm">
+                    <thead>
+                      <tr className="text-left text-gray-500">
+                        <th className="px-3 py-2 font-medium">SKU</th>
+                        <th className="px-3 py-2 font-medium text-right">Qty</th>
+                        <th className="px-3 py-2 font-medium text-right">Original</th>
+                        <th className="px-3 py-2 font-medium text-right">After discount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {detail.items.map((it, idx) => (
+                        <tr key={`${it.sku}-${idx}`} className="text-gray-900">
+                          <td className="px-3 py-2 font-mono">{it.sku}</td>
+                          <td className="px-3 py-2 text-right tabular-nums">{it.quantity}</td>
+                          <td className="px-3 py-2 text-right tabular-nums">
+                            {formatCurrency(it.original_price ?? 0)}
+                          </td>
+                          <td className="px-3 py-2 text-right tabular-nums">
+                            {formatCurrency(it.discounted_price ?? 0)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <div className="mt-3 flex items-baseline justify-between gap-3 rounded-md border border-gray-100 bg-gray-50 px-3 py-2">
+                <div>
+                  <p className="text-xs text-gray-500">Buyer amount</p>
+                  <p className="text-xs text-gray-500">GMV buyer (vouchers already in)</p>
+                </div>
+                <p className="text-base font-semibold tabular-nums text-gray-900">
+                  {formatCurrency(detail.buyer_amount)}
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </Modal>
     </div>
   );
 }

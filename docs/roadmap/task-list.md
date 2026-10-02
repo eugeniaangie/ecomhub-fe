@@ -51,6 +51,7 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [ ] | FE27 | P3 | Responsive / narrow-viewport layout (phone-sized window) | UX |
 | [x] | FE28 | FEATURE | Shopee Returns page | Core F6d |
 | [x] | FE29 | FEATURE | Shopee Ads spend card on Sales overview | Core F6e |
+| [x] | FE30 | FEATURE | Shopee order row detail modal (buyer / original / fees / escrow) | Core orders/detail |
 
 **P0 left:** none (FE1 Done).
 
@@ -698,3 +699,13 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 **Depends on.** Core F6e.
 
 **Done (2026-10-02):** `shopeeAuthApi.previewAdsSpend` → `GET …/ads/spend/preview`; fifth card on `/sales/shopee` via `Promise.allSettled` (orders still show if ads fails). Footnote: live Partner CPC expense, not wallet/JE.
+
+---
+
+### FE30 — Shopee order row detail modal
+
+**Category:** FEATURE · **Status:** Done (2026-10-02) · **Backend:** `GET …/orders/detail` · **Noted:** 2026-10-02
+
+**Problem.** Overview showed buyer GMV as a summary card and table column — misleading for potongan/net. Operators need buyer / listing / fee lines / escrow only on demand.
+
+**Done (2026-10-02):** Removed Total buyer amount card + Buyer column. Order rows open a modal via `shopeeAuthApi.getOrderDetail` (`GET …/orders/detail`). Shows buyer amount, original/listing, escrow net, non-zero escrow lines, item prices.
