@@ -71,6 +71,7 @@ function ShopeeAdsFeed() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [didAutoLoad, setDidAutoLoad] = useState(false);
+  const [seriesOpen, setSeriesOpen] = useState(false);
 
   useEffect(() => {
     document.title = 'Shopee Ads · Sales · EcomHub';
@@ -355,7 +356,11 @@ function ShopeeAdsFeed() {
                 </Card>
               </div>
 
-              <Card title={preview.series_grain === 'hourly' ? 'Hourly series' : 'Daily series'}>
+              <Card
+                title={preview.series_grain === 'hourly' ? 'Hourly series' : 'Daily series'}
+                collapsed={!seriesOpen}
+                onToggleCollapse={() => setSeriesOpen((v) => !v)}
+              >
                 {(preview.series ?? []).length === 0 ? (
                   <p className="text-sm text-gray-500">No performance rows for this range.</p>
                 ) : (
