@@ -661,10 +661,10 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 
 **Category:** FEATURE · **Status:** Done · **Backend:** Core **F6d** · **Priority (2026-10-02):** next Shopee FE after FE25 (ahead of F6b1 recap and FE26)
 
-**Problem.** Orders preview can approx-label some cancels as `pengembalian` via `pickup_done_time` / `TO_RETURN`, but that is **not** Seller Centre returns. Operators need a dedicated **Sales → Returns** submenu with real return requests.
+**Problem.** Orders preview can approx-label some cancels as `pengembalian` via `pickup_done_time` / `TO_RETURN`, but that is **not** Seller Centre returns. Operators need a dedicated **Sales → Shopee Returns** submenu with real return requests.
 
 **UX (locked with Core F6d, 2026-10-02; label English 2026-10-02):** same overview shape as Shopee Orders —
-1. Nav: Sales → **Returns** (`/sales/returns`; wire in `lib/nav.ts`). UI copy English — not “Pengembalian”.
+1. Nav: Sales → **Shopee Returns** (`/sales/returns`; wire in `lib/nav.ts`). UI copy English — not “Pengembalian”.
 2. Filters: shop + month / date range (≤31d).
 3. Cards: return count · total pcs · **total refund nominal**.
 4. Detail: SKU(s), qty, reason / text_reason, refund amount, status, `order_sn`, `return_sn`; plus useful extras Core returns (reassessed reason, solution, logistics/due when present).
@@ -678,7 +678,7 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 
 **Next action.** — (Done)
 
-**Done (2026-10-02):** Sales → **Returns** `/sales/returns` (sibling of Orders so nav active state stays clean; UI label English — not “Pengembalian”). `shopeeAuthApi.previewReturns` → Core `…/returns/preview` with `fetch_all=true`. Cards: return count · total pcs · total refund. SKU summary + returns table (reason, solution, logistics/due). No client-side refund math.
+**Done (2026-10-02):** Sales → **Shopee Returns** `/sales/returns` (sibling of Orders so nav active state stays clean; UI label English — not “Pengembalian”). `shopeeAuthApi.previewReturns` → Core `…/returns/preview` with `fetch_all=true`. Cards: return count · total pcs · total refund. SKU summary + returns table (reason, solution, logistics/due). No client-side refund math.
 
 ---
 
