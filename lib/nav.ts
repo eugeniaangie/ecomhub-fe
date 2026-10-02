@@ -69,6 +69,16 @@ export const navDomains: NavDomain[] = [
         href: '/sales/shopee',
         description: 'Live Shopee order preview and escrow totals.',
       },
+      {
+        label: 'Shopee Returns',
+        href: '/sales/returns',
+        description: 'Shopee return requests and refund totals.',
+      },
+      {
+        label: 'Shopee Ads',
+        href: '/sales/ads',
+        description: 'Shop-level ads spend, ROAS, and wallet balance.',
+      },
     ],
   },
   {

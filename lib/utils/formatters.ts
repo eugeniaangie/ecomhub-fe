@@ -6,12 +6,14 @@
  * @returns Formatted currency string (e.g., "Rp 500.000")
  */
 export const formatCurrency = (amount: number): string => {
+  const n = Number(amount);
+  const safe = Number.isFinite(n) ? n : 0;
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
     currency: 'IDR',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(amount).replace('IDR', 'Rp');
+  }).format(safe).replace('IDR', 'Rp');
 };
 
 /**

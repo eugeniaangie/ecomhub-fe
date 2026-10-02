@@ -6,12 +6,15 @@ import { ApiError } from '@/lib/api';
 import { canConnectShopeeShop } from '@/lib/authHelpers';
 import {
   shopeeAuthApi,
+  type ShopeeAdsSpendPreview,
   type ShopeeConnectedShop,
+  type ShopeeOrderDetail,
   type ShopeeOrdersPreview,
 } from '@/lib/services/integrationsApi';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { DatePicker } from '@/components/ui/DatePicker';
+import { Modal } from '@/components/ui/Modal';
 import { PageHeader } from '@/components/layout/PageHeader';
 import {
   formatCurrency,
@@ -64,8 +67,17 @@ export default function SalesShopeeOrdersPage() {
   const [cancelBucket, setCancelBucket] = useState('');
   const [excludePembatalan, setExcludePembatalan] = useState(true);
   const [preview, setPreview] = useState<ShopeeOrdersPreview | null>(null);
+  const [adsSpend, setAdsSpend] = useState<ShopeeAdsSpendPreview | null>(null);
+  const [adsSpendError, setAdsSpendError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState('');
+  const [detail, setDetail] = useState<ShopeeOrderDetail | null>(null);
+  const [deductionsOpen, setDeductionsOpen] = useState(false);
+  const [skuSummaryOpen, setSkuSummaryOpen] = useState(false);
+  const [ordersListOpen, setOrdersListOpen] = useState(false);
 
   useEffect(() => {
     document.title = 'Shopee Orders · Sales · EcomHub';
@@ -109,6 +121,12 @@ export default function SalesShopeeOrdersPage() {
   const cancelBucketVisible = showCancelBucketFilter(orderStatus);
   const excludePembatalanVisible = showExcludePembatalan(orderStatus);
 
+  const handleToday = () => {
+    const today = getTodayFormatted();
+    setStartDate(today);
+    setEndDate(today);
+  };
+
   const handleThisMonth = () => {
     setStartDate(getFirstDayOfCurrentMonth());
     setEndDate(getTodayFormatted());
@@ -124,7 +142,9 @@ export default function SalesShopeeOrdersPage() {
 
   const handleLoad = async () => {
     setError('');
+    setAdsSpendError('');
     setPreview(null);
+    setAdsSpend(null);
 
     if (!shopId) {
       setError('Connect a Shopee shop first (Integrations → Shopee).');
@@ -141,29 +161,87 @@ export default function SalesShopeeOrdersPage() {
       return;
     }
 
+    const timeFrom = startOfDayUnix(startDate);
+    const timeTo = endOfDayUnix(endDate);
+
     setIsLoading(true);
     try {
-      const data = await shopeeAuthApi.previewOrders({
+      const [ordersResult, adsResult] = await Promise.allSettled([
+        shopeeAuthApi.previewOrders({
+          shop_id: shopId,
+          time_from: timeFrom,
+          time_to: timeTo,
+          fetch_all: true,
+          order_status: orderStatus || undefined,
+          cancel_bucket: cancelBucketVisible ? cancelBucket || undefined : undefined,
+          exclude_pembatalan: excludePembatalanVisible ? excludePembatalan : undefined,
+        }),
+        shopeeAuthApi.previewAdsSpend({
+          shop_id: shopId,
+          time_from: timeFrom,
+          time_to: timeTo,
+        }),
+      ]);
+
+      if (ordersResult.status === 'fulfilled') {
+        setPreview(ordersResult.value);
+      } else {
+        const err = ordersResult.reason;
+        setError(
+          err instanceof ApiError
+            ? err.message
+            : err instanceof Error
+              ? err.message
+              : 'Failed to load Shopee order preview'
+        );
+      }
+
+      if (adsResult.status === 'fulfilled') {
+        setAdsSpend(adsResult.value);
+      } else {
+        const err = adsResult.reason;
+        setAdsSpendError(
+          err instanceof ApiError
+            ? err.message
+            : err instanceof Error
+              ? err.message
+              : 'Failed to load Shopee ads spend'
+        );
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOpenOrderDetail = async (orderSn: string) => {
+    if (!shopId || !orderSn) return;
+    setDetailOpen(true);
+    setDetail(null);
+    setDetailError('');
+    setDetailLoading(true);
+    try {
+      const data = await shopeeAuthApi.getOrderDetail({
         shop_id: shopId,
-        time_from: startOfDayUnix(startDate),
-        time_to: endOfDayUnix(endDate),
-        fetch_all: true,
-        order_status: orderStatus || undefined,
-        cancel_bucket: cancelBucketVisible ? cancelBucket || undefined : undefined,
-        exclude_pembatalan: excludePembatalanVisible ? excludePembatalan : undefined,
+        order_sn: orderSn,
       });
-      setPreview(data);
+      setDetail(data);
     } catch (err) {
-      setError(
+      setDetailError(
         err instanceof ApiError
           ? err.message
           : err instanceof Error
             ? err.message
-            : 'Failed to load Shopee order preview'
+            : 'Failed to load order detail'
       );
     } finally {
-      setIsLoading(false);
+      setDetailLoading(false);
     }
+  };
+
+  const handleCloseOrderDetail = () => {
+    setDetailOpen(false);
+    setDetail(null);
+    setDetailError('');
   };
 
   return (
@@ -214,14 +292,31 @@ export default function SalesShopeeOrdersPage() {
                     <label className="mb-2 block text-sm font-medium text-gray-700">
                       Start date
                     </label>
-                    <DatePicker value={startDate} onChange={setStartDate} max={endDate} />
+                    <DatePicker
+                      value={startDate}
+                      onChange={setStartDate}
+                      rangePartner={endDate}
+                      rangeSide="start"
+                      onRangeChange={(start, end) => {
+                        setStartDate(start);
+                        setEndDate(end);
+                      }}
+                      maxRangeDays={MAX_RANGE_DAYS}
+                      max={getTodayFormatted()}
+                    />
                   </div>
                   <div className="min-w-40">
                     <label className="mb-2 block text-sm font-medium text-gray-700">End date</label>
                     <DatePicker
                       value={endDate}
                       onChange={setEndDate}
-                      min={startDate}
+                      rangePartner={startDate}
+                      rangeSide="end"
+                      onRangeChange={(start, end) => {
+                        setStartDate(start);
+                        setEndDate(end);
+                      }}
+                      maxRangeDays={MAX_RANGE_DAYS}
                       max={getTodayFormatted()}
                     />
                   </div>
@@ -265,7 +360,7 @@ export default function SalesShopeeOrdersPage() {
                       >
                         <option value="">All buckets</option>
                         <option value="pembatalan">Pembatalan (no pickup)</option>
-                        <option value="pengembalian">Pengembalian (approx)</option>
+                        <option value="pengembalian">Returns (approx)</option>
                       </select>
                     </div>
                   ) : null}
@@ -284,6 +379,9 @@ export default function SalesShopeeOrdersPage() {
                 ) : null}
 
                 <div className="flex flex-wrap gap-2">
+                  <Button variant="secondary" size="sm" type="button" onClick={handleToday}>
+                    Today
+                  </Button>
                   <Button variant="secondary" size="sm" type="button" onClick={handleThisMonth}>
                     This month
                   </Button>
@@ -299,7 +397,11 @@ export default function SalesShopeeOrdersPage() {
                   Max {MAX_RANGE_DAYS} days. Uses <code className="font-mono">fetch_all=true</code>{' '}
                   (Core splits ≤15d windows). Escrow = seller expected receive; buyer amount = GMV.
                   Cancel bucket only for CANCELLED. On All statuses: optional exclude pembatalan
-                  (early cancel, no pickup) — default on. Pengembalian page later.
+                  (early cancel, no pickup) — default on. Real returns:{' '}
+                  <Link href="/sales/returns" className="text-blue-600 hover:underline">
+                    Sales → Shopee Returns
+                  </Link>
+                  .
                 </p>
               </div>
             )}
@@ -311,39 +413,92 @@ export default function SalesShopeeOrdersPage() {
             </p>
           ) : null}
 
-          {preview ? (
+          {preview || adsSpend || adsSpendError ? (
             <>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Card title="Orders">
-                  <p className="text-2xl font-semibold tabular-nums text-gray-900">
-                    {preview.order_count}
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500">
-                    shop {preview.shop_id}
-                    {preview.token_refreshed ? ' · token refreshed' : ''}
-                  </p>
-                </Card>
-                <Card title="Total qty">
-                  <p className="text-2xl font-semibold tabular-nums text-gray-900">
-                    {preview.total_quantity ?? 0}
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500">Item units (SKU sum)</p>
-                </Card>
-                <Card title="Total escrow">
-                  <p className="text-2xl font-semibold tabular-nums text-gray-900">
-                    {formatCurrency(preview.total_escrow_amount)}
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500">Seller expected (primary)</p>
-                </Card>
-                <Card title="Total buyer amount">
-                  <p className="text-2xl font-semibold tabular-nums text-gray-900">
-                    {formatCurrency(preview.total_buyer_amount)}
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500">Buyer GMV (not seller net)</p>
-                </Card>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                {preview ? (
+                  <>
+                    <Card title="Orders">
+                      <p className="text-2xl font-semibold tabular-nums text-gray-900">
+                        {preview.order_count}
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        shop {preview.shop_id}
+                        {preview.token_refreshed ? ' · token refreshed' : ''}
+                      </p>
+                    </Card>
+                    <Card title="Total qty">
+                      <p className="text-2xl font-semibold tabular-nums text-gray-900">
+                        {preview.total_quantity ?? 0}
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">Item units (SKU sum)</p>
+                    </Card>
+                    <Card title="Total escrow">
+                      <p className="text-2xl font-semibold tabular-nums text-gray-900">
+                        {formatCurrency(preview.total_escrow_amount)}
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">Seller expected (primary)</p>
+                    </Card>
+                    <button
+                      type="button"
+                      className="group w-full cursor-pointer rounded-lg text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                      onClick={() => setDeductionsOpen(true)}
+                    >
+                      <Card
+                        title="Total deductions"
+                        className="cursor-pointer transition group-hover:border-blue-300 group-hover:shadow-md"
+                      >
+                        <p className="text-2xl font-semibold tabular-nums text-red-700">
+                          {formatCurrency(-(preview.total_deductions ?? 0))}
+                        </p>
+                        <p className="mt-1 text-xs text-gray-500 group-hover:text-gray-600">
+                          Fees & vouchers · click for breakdown
+                          {preview.escrow_partial ? ' · partial escrow' : ''}
+                        </p>
+                      </Card>
+                    </button>
+                  </>
+                ) : null}
+                <Link
+                  href={`/sales/ads?shop_id=${shopId || ''}&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`}
+                  className="group block w-full rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                >
+                  <Card
+                    title="Ads spend"
+                    className="cursor-pointer transition group-hover:border-blue-300 group-hover:shadow-md"
+                  >
+                    {adsSpendError ? (
+                      <>
+                        <p className="text-sm text-red-700">{adsSpendError}</p>
+                        <p className="mt-1 text-xs text-gray-500 group-hover:text-gray-600">
+                          Live Partner CPC · open Ads page
+                        </p>
+                      </>
+                    ) : adsSpend ? (
+                      <>
+                        <p className="text-2xl font-semibold tabular-nums text-gray-900">
+                          {formatCurrency(adsSpend.total_ads_spend)}
+                        </p>
+                        <p className="mt-1 text-xs text-gray-500 group-hover:text-gray-600">
+                          Live Partner CPC · open Ads page
+                          {adsSpend.used_hourly_api ? ' · hourly (1 day)' : ''}
+                          {adsSpend.token_refreshed ? ' · token refreshed' : ''}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-sm text-gray-500">—</p>
+                    )}
+                  </Card>
+                </Link>
               </div>
 
-              <Card title="SKU summary">
+              {preview ? (
+                <>
+              <Card
+                title="SKU summary"
+                collapsed={!skuSummaryOpen}
+                onToggleCollapse={() => setSkuSummaryOpen((v) => !v)}
+              >
                 {(preview.sku_summary ?? []).length === 0 ? (
                   <p className="text-sm text-gray-500">No SKU lines in this range.</p>
                 ) : (
@@ -370,7 +525,14 @@ export default function SalesShopeeOrdersPage() {
                 )}
               </Card>
 
-              <Card title="Orders">
+              <Card
+                title="Orders"
+                collapsed={!ordersListOpen}
+                onToggleCollapse={() => setOrdersListOpen((v) => !v)}
+              >
+                <p className="mb-3 text-xs text-gray-500">
+                  Click a row for buyer / original / fee lines / escrow net.
+                </p>
                 {(preview.orders ?? []).length === 0 ? (
                   <p className="text-sm text-gray-500">No orders in this range.</p>
                 ) : (
@@ -387,15 +549,18 @@ export default function SalesShopeeOrdersPage() {
                             </>
                           ) : null}
                           <th className="px-3 py-2 font-medium text-right">Escrow</th>
-                          <th className="px-3 py-2 font-medium text-right">Buyer</th>
                           <th className="px-3 py-2 font-medium">Created</th>
                           <th className="px-3 py-2 font-medium">SKUs</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {preview.orders.map((o) => (
-                          <tr key={o.order_sn} className="text-gray-900">
-                            <td className="px-3 py-2 font-mono">{o.order_sn}</td>
+                          <tr
+                            key={o.order_sn}
+                            className="cursor-pointer text-gray-900 hover:bg-gray-50"
+                            onClick={() => void handleOpenOrderDetail(o.order_sn)}
+                          >
+                            <td className="px-3 py-2 font-mono text-blue-700">{o.order_sn}</td>
                             <td className="px-3 py-2">{o.order_status || '—'}</td>
                             {cancelBucketVisible ? (
                               <>
@@ -410,9 +575,6 @@ export default function SalesShopeeOrdersPage() {
                             <td className="px-3 py-2 text-right tabular-nums">
                               {formatCurrency(o.escrow_amount ?? 0)}
                             </td>
-                            <td className="px-3 py-2 text-right tabular-nums">
-                              {formatCurrency(o.total_amount ?? 0)}
-                            </td>
                             <td className="px-3 py-2 whitespace-nowrap text-gray-600">
                               {formatUnixLocal(o.create_time ?? 0)}
                             </td>
@@ -426,10 +588,221 @@ export default function SalesShopeeOrdersPage() {
                   </div>
                 )}
               </Card>
+                </>
+              ) : null}
             </>
           ) : null}
         </>
       )}
+
+      <Modal
+        isOpen={detailOpen}
+        onClose={handleCloseOrderDetail}
+        title={detail?.order_sn ? `Order ${detail.order_sn}` : 'Order detail'}
+        size="lg"
+        footer={
+          <Button variant="secondary" onClick={handleCloseOrderDetail}>
+            Close
+          </Button>
+        }
+      >
+        {detailLoading ? (
+          <p className="text-sm text-gray-500">Loading…</p>
+        ) : detailError ? (
+          <p className="text-sm text-red-700">{detailError}</p>
+        ) : detail ? (
+          <div className="space-y-4 text-sm">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <p className="text-xs text-gray-500">Status</p>
+                <p className="font-medium text-gray-900">{detail.order_status || '—'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Created</p>
+                <p className="font-medium text-gray-900">
+                  {formatUnixLocal(detail.create_time ?? 0)}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-md border border-gray-200 px-3 py-2">
+                <p className="text-xs text-gray-500">Original</p>
+                <p className="text-lg font-semibold tabular-nums text-gray-900">
+                  {formatCurrency(detail.original_price)}
+                </p>
+                <p className="text-xs text-gray-500">Listing before shop discount</p>
+              </div>
+              <div className="rounded-md border border-gray-200 px-3 py-2">
+                <p className="text-xs text-gray-500">After shop discount</p>
+                <p className="text-lg font-semibold tabular-nums text-gray-900">
+                  {formatCurrency(detail.selling_price)}
+                </p>
+                <p className="text-xs text-gray-500">Selling price (not buyer GMV)</p>
+              </div>
+              <div className="rounded-md border border-gray-200 px-3 py-2">
+                <p className="text-xs text-gray-500">Escrow (expected net)</p>
+                <p className="text-lg font-semibold tabular-nums text-gray-900">
+                  {detail.escrow_available
+                    ? formatCurrency(detail.escrow_amount)
+                    : '—'}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {detail.escrow_available
+                    ? 'Seller expected receive'
+                    : 'Escrow unavailable for this order'}
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <div className="mb-2 flex items-baseline justify-between gap-3">
+                <p className="font-medium text-gray-900">Deductions</p>
+                {detail.escrow_available ? (
+                  <p className="text-sm text-gray-700">
+                    Total deductions:{' '}
+                    <span className="font-semibold tabular-nums text-red-700">
+                      {formatCurrency(-(detail.total_deductions ?? 0))}
+                    </span>
+                  </p>
+                ) : null}
+              </div>
+              {(detail.deductions ?? []).length === 0 ? (
+                <p className="text-gray-500">
+                  {detail.escrow_available
+                    ? 'No deduction lines.'
+                    : 'No escrow breakdown.'}
+                </p>
+              ) : (
+                <div className="overflow-x-auto rounded-md border border-gray-200">
+                  <table className="min-w-full divide-y divide-gray-100 text-sm">
+                    <thead>
+                      <tr className="text-left text-gray-500">
+                        <th className="px-3 py-2 font-medium">Line</th>
+                        <th className="px-3 py-2 font-medium text-right">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {detail.deductions.map((line) => (
+                        <tr key={line.key} className="text-gray-900">
+                          <td className="px-3 py-2">{line.label}</td>
+                          <td
+                            className={`px-3 py-2 text-right tabular-nums ${
+                              line.amount < 0 ? 'text-red-700' : 'text-gray-900'
+                            }`}
+                          >
+                            {formatCurrency(line.amount)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <p className="mb-2 font-medium text-gray-900">Items</p>
+              {(detail.items ?? []).length === 0 ? (
+                <p className="text-gray-500">No item lines.</p>
+              ) : (
+                <div className="overflow-x-auto rounded-md border border-gray-200">
+                  <table className="min-w-full divide-y divide-gray-100 text-sm">
+                    <thead>
+                      <tr className="text-left text-gray-500">
+                        <th className="px-3 py-2 font-medium">SKU</th>
+                        <th className="px-3 py-2 font-medium text-right">Qty</th>
+                        <th className="px-3 py-2 font-medium text-right">Original</th>
+                        <th className="px-3 py-2 font-medium text-right">After discount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {detail.items.map((it, idx) => (
+                        <tr key={`${it.sku}-${idx}`} className="text-gray-900">
+                          <td className="px-3 py-2 font-mono">{it.sku}</td>
+                          <td className="px-3 py-2 text-right tabular-nums">{it.quantity}</td>
+                          <td className="px-3 py-2 text-right tabular-nums">
+                            {formatCurrency(it.original_price ?? 0)}
+                          </td>
+                          <td className="px-3 py-2 text-right tabular-nums">
+                            {formatCurrency(it.discounted_price ?? 0)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <div className="mt-3 flex items-baseline justify-between gap-3 rounded-md border border-gray-100 bg-gray-50 px-3 py-2">
+                <div>
+                  <p className="text-xs text-gray-500">Buyer amount</p>
+                  <p className="text-xs text-gray-500">GMV buyer (vouchers already in)</p>
+                </div>
+                <p className="text-base font-semibold tabular-nums text-gray-900">
+                  {formatCurrency(detail.buyer_amount)}
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </Modal>
+
+      <Modal
+        isOpen={deductionsOpen}
+        onClose={() => setDeductionsOpen(false)}
+        title="Total deductions"
+        size="md"
+        footer={
+          <Button variant="secondary" onClick={() => setDeductionsOpen(false)}>
+            Close
+          </Button>
+        }
+      >
+        {preview ? (
+          <div className="space-y-4 text-sm">
+            <div className="flex items-baseline justify-between gap-3 rounded-md border border-gray-200 px-3 py-2">
+              <p className="text-gray-600">Total (fees & vouchers)</p>
+              <p className="text-lg font-semibold tabular-nums text-red-700">
+                {formatCurrency(-(preview.total_deductions ?? 0))}
+              </p>
+            </div>
+            {(preview.deduction_breakdown ?? []).length === 0 ? (
+              <p className="text-gray-500">
+                {preview.escrow_partial
+                  ? 'No deduction lines (escrow may be partial).'
+                  : 'No deduction lines for this range.'}
+              </p>
+            ) : (
+              <div className="overflow-x-auto rounded-md border border-gray-200">
+                <table className="min-w-full divide-y divide-gray-100 text-sm">
+                  <thead>
+                    <tr className="text-left text-gray-500">
+                      <th className="px-3 py-2 font-medium">Line</th>
+                      <th className="px-3 py-2 font-medium text-right">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {preview.deduction_breakdown!.map((line) => (
+                      <tr key={line.key} className="text-gray-900">
+                        <td className="px-3 py-2">{line.label}</td>
+                        <td className="px-3 py-2 text-right tabular-nums text-red-700">
+                          {formatCurrency(line.amount)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <p className="text-xs text-gray-500">
+              Aggregated from order escrow in this preview. Not ads spend. Not buyer GMV.
+              {preview.escrow_partial
+                ? ' Some orders failed escrow — totals may be understated.'
+                : ''}
+            </p>
+          </div>
+        ) : null}
+      </Modal>
     </div>
   );
 }
