@@ -2,6 +2,7 @@
 
 import { authApi, ApiError } from './api';
 import { auth } from './auth';
+import { canMutateTenantData, clearTenantData } from './tenant';
 import { UserRole } from './types/finance';
 
 /**
@@ -143,6 +144,7 @@ export const isManager = (): boolean => {
  * Allowed: superadmin, admin
  */
 export const canCreateCategory = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -151,6 +153,7 @@ export const canCreateCategory = (): boolean => {
  * Allowed: superadmin, admin
  */
 export const canUpdateCategory = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -159,6 +162,7 @@ export const canUpdateCategory = (): boolean => {
  * Allowed: superadmin, admin
  */
 export const canDeleteCategory = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -167,6 +171,7 @@ export const canDeleteCategory = (): boolean => {
  * Allowed: superadmin, admin, manager
  */
 export const canCreateFiscalPeriod = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin', 'manager']);
 };
 
@@ -175,6 +180,7 @@ export const canCreateFiscalPeriod = (): boolean => {
  * Allowed: superadmin, admin, manager
  */
 export const canUpdateFiscalPeriod = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin', 'manager']);
 };
 
@@ -183,6 +189,7 @@ export const canUpdateFiscalPeriod = (): boolean => {
  * Allowed: superadmin, admin
  */
 export const canDeleteFiscalPeriod = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -191,6 +198,7 @@ export const canDeleteFiscalPeriod = (): boolean => {
  * Allowed: superadmin, admin, manager
  */
 export const canCloseFiscalPeriod = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin', 'manager']);
 };
 
@@ -199,6 +207,7 @@ export const canCloseFiscalPeriod = (): boolean => {
  * Allowed: superadmin only
  */
 export const canReopenFiscalPeriod = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasRole('superadmin');
 };
 
@@ -234,6 +243,7 @@ export const canDeleteOperationalExpense = (expenseStatus: string): boolean => {
  * Allowed: superadmin, admin (if pending)
  */
 export const canApproveOperationalExpense = (expenseStatus: string): boolean => {
+  if (!canMutateTenantData()) return false;
   return expenseStatus === 'pending' && hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -242,6 +252,7 @@ export const canApproveOperationalExpense = (expenseStatus: string): boolean => 
  * Allowed: superadmin, admin (if pending)
  */
 export const canRejectOperationalExpense = (expenseStatus: string): boolean => {
+  if (!canMutateTenantData()) return false;
   return expenseStatus === 'pending' && hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -250,6 +261,7 @@ export const canRejectOperationalExpense = (expenseStatus: string): boolean => {
  * Allowed: superadmin, admin (if approved)
  */
 export const canPayOperationalExpense = (expenseStatus: string): boolean => {
+  if (!canMutateTenantData()) return false;
   return expenseStatus === 'approved' && hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -257,6 +269,7 @@ export const canPayOperationalExpense = (expenseStatus: string): boolean => {
  * Legacy function - use canApproveOperationalExpense instead
  */
 export const canApproveExpense = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -264,6 +277,7 @@ export const canApproveExpense = (): boolean => {
  * Legacy function - use canRejectOperationalExpense instead
  */
 export const canRejectExpense = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -271,6 +285,7 @@ export const canRejectExpense = (): boolean => {
  * Legacy function - use canPayOperationalExpense instead
  */
 export const canPayExpense = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -279,6 +294,7 @@ export const canPayExpense = (): boolean => {
  * Allowed: superadmin, admin
  */
 export const canCreateJournalEntry = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -287,6 +303,7 @@ export const canCreateJournalEntry = (): boolean => {
  * Allowed: superadmin (any status), admin (if draft)
  */
 export const canUpdateJournalEntry = (entryStatus: string): boolean => {
+  if (!canMutateTenantData()) return false;
   if (hasRole('superadmin')) return true;
   return entryStatus === 'draft' && hasRole('admin');
 };
@@ -296,6 +313,7 @@ export const canUpdateJournalEntry = (entryStatus: string): boolean => {
  * Allowed: superadmin, admin (if draft)
  */
 export const canDeleteJournalEntry = (entryStatus: string): boolean => {
+  if (!canMutateTenantData()) return false;
   return entryStatus === 'draft' && hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -304,6 +322,7 @@ export const canDeleteJournalEntry = (entryStatus: string): boolean => {
  * Allowed: superadmin, admin (if draft)
  */
 export const canApproveJournalEntry = (entryStatus?: string): boolean => {
+  if (!canMutateTenantData()) return false;
   if (entryStatus !== undefined && entryStatus !== 'draft') {
     return false;
   }
@@ -315,6 +334,7 @@ export const canApproveJournalEntry = (entryStatus?: string): boolean => {
  * Allowed: superadmin, admin (if draft)
  */
 export const canRejectJournalEntry = (entryStatus?: string): boolean => {
+  if (!canMutateTenantData()) return false;
   if (entryStatus !== undefined && entryStatus !== 'draft') {
     return false;
   }
@@ -326,6 +346,7 @@ export const canRejectJournalEntry = (entryStatus?: string): boolean => {
  * Allowed: superadmin, admin (if approved)
  */
 export const canPostJournalEntry = (entryStatus?: string): boolean => {
+  if (!canMutateTenantData()) return false;
   if (entryStatus !== undefined && entryStatus !== 'approved') {
     return false;
   }
@@ -337,6 +358,7 @@ export const canPostJournalEntry = (entryStatus?: string): boolean => {
  * Allowed: superadmin, admin, manager
  */
 export const canCreateAdBudget = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin', 'manager']);
 };
 
@@ -345,6 +367,7 @@ export const canCreateAdBudget = (): boolean => {
  * Allowed: superadmin, admin, manager
  */
 export const canUpdateAdBudget = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin', 'manager']);
 };
 
@@ -353,6 +376,7 @@ export const canUpdateAdBudget = (): boolean => {
  * Allowed: superadmin, admin, manager
  */
 export const canUpdateAdBudgetSpent = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin', 'manager']);
 };
 
@@ -361,6 +385,7 @@ export const canUpdateAdBudgetSpent = (): boolean => {
  * Allowed: superadmin, admin
  */
 export const canDeleteAdBudget = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -369,6 +394,7 @@ export const canDeleteAdBudget = (): boolean => {
  * Allowed: superadmin, admin
  */
 export const canCreateCapitalInvestor = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -377,6 +403,7 @@ export const canCreateCapitalInvestor = (): boolean => {
  * Allowed: superadmin, admin
  */
 export const canUpdateCapitalInvestor = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -385,6 +412,7 @@ export const canUpdateCapitalInvestor = (): boolean => {
  * Allowed: superadmin, admin
  */
 export const canUpdateCapitalInvestorReturnPaid = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -393,6 +421,7 @@ export const canUpdateCapitalInvestorReturnPaid = (): boolean => {
  * Allowed: superadmin, admin
  */
 export const canUpdateCapitalInvestorStatus = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -401,6 +430,7 @@ export const canUpdateCapitalInvestorStatus = (): boolean => {
  * Allowed: superadmin, admin
  */
 export const canDeleteCapitalInvestor = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -409,6 +439,7 @@ export const canDeleteCapitalInvestor = (): boolean => {
  * Allowed: superadmin, admin
  */
 export const canCreateExpenseCategory = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -417,6 +448,7 @@ export const canCreateExpenseCategory = (): boolean => {
  * Allowed: superadmin, admin
  */
 export const canUpdateExpenseCategory = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -425,6 +457,7 @@ export const canUpdateExpenseCategory = (): boolean => {
  * Allowed: superadmin, admin
  */
 export const canDeleteExpenseCategory = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -433,6 +466,7 @@ export const canDeleteExpenseCategory = (): boolean => {
  * Allowed: superadmin, admin
  */
 export const canCreateAccount = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -441,6 +475,7 @@ export const canCreateAccount = (): boolean => {
  * Allowed: superadmin, admin
  */
 export const canUpdateAccount = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -449,6 +484,7 @@ export const canUpdateAccount = (): boolean => {
  * Allowed: superadmin, admin
  */
 export const canDeleteAccount = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -466,6 +502,7 @@ export const canView = (): boolean => {
  * Allowed: superadmin, admin — matches Core authorize-url gate.
  */
 export const canConnectShopeeShop = (): boolean => {
+  if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin']);
 };
 
@@ -478,7 +515,11 @@ export const clearUserData = (): void => {
   localStorage.removeItem('user_roles');
   localStorage.removeItem('user_role');
   localStorage.removeItem('user_id');
+  clearTenantData();
 };
+
+/** Re-export for pages that gate creates without importing lib/tenant. */
+export { canMutateTenantData };
 
 /**
  * Logout user - calls logout API and clears auth token + roles
