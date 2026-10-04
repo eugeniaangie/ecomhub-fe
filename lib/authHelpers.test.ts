@@ -17,11 +17,21 @@ function clearAuthStorage() {
   localStorage.removeItem('user_roles');
   localStorage.removeItem('user_role');
   localStorage.removeItem('user_id');
+  sessionStorage.removeItem('tenant_can_mutate');
+  sessionStorage.removeItem('tenant_id');
+  sessionStorage.removeItem('tenant_scope');
+  sessionStorage.removeItem('allowed_tenants');
+}
+
+/** FE35 — most mutate can* predicates require tenant_can_mutate. */
+function allowTenantMutate() {
+  sessionStorage.setItem('tenant_can_mutate', '1');
 }
 
 describe('authHelpers', () => {
   beforeEach(() => {
     clearAuthStorage();
+    allowTenantMutate();
   });
 
   describe('getUserRoles / setUserRoles', () => {
@@ -118,6 +128,12 @@ describe('authHelpers', () => {
       expect(canApproveOperationalExpense('approved')).toBe(false);
 
       setUserRoles(['staff']);
+      expect(canApproveOperationalExpense('pending')).toBe(false);
+    });
+
+    it('blocks approve when view-only (no tenant membership)', () => {
+      setUserRoles(['admin']);
+      sessionStorage.setItem('tenant_can_mutate', '0');
       expect(canApproveOperationalExpense('pending')).toBe(false);
     });
   });
