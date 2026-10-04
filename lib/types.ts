@@ -36,9 +36,23 @@ export interface UserInfo {
   last_login: string;
 }
 
+/** One tenant the caller may use (Core F7d). Scope key is tenant_id — not Shopee shop_id. */
+export interface AllowedTenant {
+  tenant_id: number;
+  name: string;
+  is_active: boolean;
+  /** Optional display helper from marketplace_accounts; not the shell scope key. */
+  shopee_shop_id?: number | null;
+}
+
 export interface GetMeResponse {
   user: UserInfo;
   roles: string[];
+  /** "all" = superadmin switcher; "single" = membership-bound (0 or 1). */
+  tenant_scope: 'all' | 'single';
+  allowed_tenants: AllowedTenant[];
+  /** Tenant resolved for this request (header / membership / server fallback). */
+  active_tenant_id?: number | null;
 }
 
 // Master Category (Hierarchical)

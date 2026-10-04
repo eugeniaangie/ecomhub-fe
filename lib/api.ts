@@ -1,6 +1,7 @@
 // API client wrapper for backend communication
 
 import { auth } from './auth';
+import { clearTenantData, getActiveTenantId, TENANT_HEADER } from './tenant';
 import type { ApiResponse, LoginResponse } from './types';
 import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from './utils/pagination';
 
@@ -38,6 +39,7 @@ function isAuthSessionEndpoint(endpoint: string): boolean {
 
 function clearClientSession(): void {
   auth.clearToken();
+  clearTenantData();
   if (typeof window === 'undefined') return;
   localStorage.removeItem('user_roles');
   localStorage.removeItem('user_role');
@@ -161,6 +163,13 @@ async function request<T>(
       if (raw) {
         const cleanToken = raw.trim().replace(/^Bearer\s+/i, '');
         if (cleanToken) headers['Authorization'] = `Bearer ${cleanToken}`;
+      }
+    }
+    // F7b/FE32 — scoped APIs; omit on auth session endpoints (no tenant yet).
+    if (!isAuthSessionEndpoint(endpoint)) {
+      const tenantId = getActiveTenantId();
+      if (tenantId != null) {
+        headers[TENANT_HEADER] = String(tenantId);
       }
     }
     return headers;

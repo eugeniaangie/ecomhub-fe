@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { authApi, ensureAccessToken } from '@/lib/api';
 import { auth } from '@/lib/auth';
 import { setUserRoles, setCurrentUserId } from '@/lib/authHelpers';
+import { applyMeTenantState, clearTenantData } from '@/lib/tenant';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 
@@ -49,11 +50,14 @@ function LoginForm() {
     try {
       const response = await authApi.login(username, password);
       auth.setToken(response.access_token);
+      // Drop previous user's tenant selection before /auth/me (header must not forge).
+      clearTenantData();
 
       try {
         const meData = await authApi.getMe();
         setUserRoles(meData.roles);
         setCurrentUserId(meData.user.id);
+        applyMeTenantState(meData);
       } catch (meError) {
         console.error('Error fetching user info:', meError);
       }

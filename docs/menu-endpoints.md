@@ -10,7 +10,7 @@ Current-state map of what each screen calls. When a screen’s endpoints change,
 
 | Screen | Endpoints |
 |--------|-----------|
-| Login | `POST /auth/login` → `access_token` + HttpOnly `refresh_token` cookie; then `GET /auth/me` |
+| Login | `POST /auth/login` → `access_token` + HttpOnly `refresh_token` cookie; then `GET /auth/me` (includes `tenant_scope`, `allowed_tenants`, `active_tenant_id` — F7d). Scoped APIs send header `X-Tenant-ID`. |
 | Register | `POST /auth/register` → same session shape as login |
 | Silent renew | `POST /auth/refresh` (cookie only; `credentials: 'include'`) |
 | Logout | `POST /auth/logout` (revokes refresh cookie server-side) |

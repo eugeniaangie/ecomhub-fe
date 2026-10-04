@@ -53,6 +53,12 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE29 | FEATURE | Shopee Ads spend card on Sales overview | Core F6e |
 | [x] | FE30 | FEATURE | Shopee order row detail modal (buyer / original / fees / escrow) | Core orders/detail |
 | [x] | FE31 | FEATURE | Shopee Ads performance page | Core F6f |
+| [x] | FE32 | FEATURE | Global tenant context + switcher (superadmin only) | Core F7d |
+| [ ] | FE33 | FEATURE | Wire all pages to tenant context (Sales + Finance scope) | Core F7b |
+| [ ] | FE34 | FEATURE | Settings › Users — roles + tenant membership (superadmin) | Core F7c |
+| [ ] | FE35 | FEATURE | Role/empty-state readiness across dashboard for multi-tenant | Core F7 |
+| [ ] | FE36 | FEATURE | Settings › Tenants — create/list tenants (superadmin) | Core F7c |
+
 
 **P0 left:** none (FE1 Done).
 
@@ -720,3 +726,93 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 **Problem.** Operators want a dedicated Ads view (spend, ROAS, GMV, clicks, wallet saldo, daily series) without loading campaign APIs or weighing down the Sales overview.
 
 **Done (2026-10-02):** Sales → **Shopee Ads** `/sales/ads`. `shopeeAuthApi.previewAdsPerformance` → `GET …/ads/performance/preview`. Cards: spend · broad ROAS · broad GMV · clicks · wallet; secondary direct ROAS/GMV; daily/hourly table with CSS spend bars. Overview Ads card links here with `shop_id` / `start_date` / `end_date`. No chart library; no campaign/product breakdown.
+
+---
+
+### FE32 — Global tenant context + switcher (superadmin only)
+
+**Category:** FEATURE · **Status:** Done (2026-10-04) · **Backend:** Core **F7d** · **Noted:** 2026-10-04 · **Decided:** Core Decision 14
+
+**Naming.** Shell state key is **`tenant_id`**. Do **not** call it `shop_id` — that name is reserved for Shopee Partner ids on integration calls.
+
+**Goal.**
+
+1. Bootstrap from Core F7d: `allowed_tenants[]` + `tenant_scope`.
+2. Persist selected `tenant_id` (e.g. `sessionStorage`).
+3. **Switcher UI only for superadmin.** Admin sees fixed tenant name (no switch control).
+4. Every API client sends active `tenant_id` the way Core F7b expects (header/query — match Core).
+
+**Empty / no-membership states (Decision 14):** Non-superadmin with zero memberships may use the shell **view-only** — gray out create/edit/connect (banner: belum di-assign ke toko). Do **not** fetch tenant-scoped data that could leak another tenant (empty lists). Not a hard logout.
+
+**Depends on.** Core F7d DTO — **Done (2026-10-04)** on `GET /auth/me`: `tenant_scope`, `allowed_tenants[]`, `active_tenant_id`. Transport for scoped APIs: header **`X-Tenant-ID`**. **Out of scope:** membership admin UI (FE34).
+
+**Done (2026-10-04):**
+- `lib/tenant.ts` — sessionStorage `tenant_id` / scope / allowed; `applyMeTenantState` from `/auth/me`.
+- `lib/api.ts` sends `X-Tenant-ID` on non-auth requests; cleared on logout / force re-login.
+- `TenantProvider` + nav `TenantSwitcher` (select + reload for superadmin; fixed label for single).
+- View-only banner when `!canMutate`; mutate `can*` predicates gated by `canMutateTenantData()`.
+- Login clears prior tenant then hydrates from me.
+
+**Next.** FE33 (pages that still use local Shopee shop pickers); FE34/FE36 after Core F7c.
+
+---
+
+### FE33 — Wire all pages to tenant context
+
+**Category:** FEATURE · **Status:** Open · **Backend:** Core **F7b** · **Noted:** 2026-10-04 · **Depends on:** FE32 · **Decided:** Decision 14 (full isolation)
+
+**Goal.** Sales **and** Finance (and other domains) use the active `tenant_id`. Replace per-page Shopee shop pickers with tenant context; when calling Shopee APIs, pass Shopee `shop_id` from the tenant’s connection row (or let Core default inside tenant) — never conflate the two ids in FE state.
+
+**Depends on.** FE32 + Core F7b. Update `menu-endpoints.md` when wiring changes.
+
+---
+
+### FE34 — Settings › Users (roles + tenant membership)
+
+**Category:** FEATURE · **Status:** Open · **Backend:** Core **F7c** · **Noted:** 2026-10-04 · **Depends on:** Core F7c · **Nav:** Settings domain (was intentionally unbuilt — now in scope for F7)
+
+**Goal.** Superadmin page to **list users**, update **roles**, and assign/replace/clear **tenant membership** (admin → one tenant). Subscribe/billing later can drive membership automatically; this screen stays the manual control plane.
+
+**UX (v0):**
+1. Settings → **Users** (`/settings/users`).
+2. Table: username, email, roles, tenant name (or “—” if none / view-only).
+3. Actions: edit roles; assign tenant (picker from FE36 list); clear membership.
+4. Gate: `isSuperadmin()` render-only; Core enforces.
+
+**Out of scope.** Self-serve signup; Stripe/subscribe automation (future); non-superadmin user admin.
+
+**Depends on.** Core F7c user list + membership + role APIs. Update `menu-endpoints.md` + render Settings in nav.
+
+---
+
+### FE35 — Role / empty-state readiness across dashboard for multi-tenant
+
+**Category:** FEATURE · **Status:** Open · **Backend:** Core **F7** · **Noted:** 2026-10-04 · **Depends on:** FE32
+
+**Goal.**
+
+1. Predicates: `canSwitchTenant` (superadmin only), `canAssignTenantMembership`, `hasTenantMembership` / `canMutateInTenant`, connect/reconnect rules per Decision 14.
+2. **No membership:** grayed creates + banner; pages remain navigable (view-only); no cross-tenant reads.
+3. Deep links with foreign `tenant_id` → forbidden/empty (no silent fallback).
+4. Smoke: superadmin switches tenant A↔B and **Finance + Sales both change**; admin locked; user without membership cannot create; no cross-tenant bleed.
+
+**Out of scope.** Implementing Core migrations.
+
+---
+
+### FE36 — Settings › Tenants (create / list)
+
+**Category:** FEATURE · **Status:** Open · **Backend:** Core **F7c** · **Noted:** 2026-10-04 · **Depends on:** Core F7c create/list tenants
+
+**Problem.** Design previously left Settings unbuilt. Superadmin still needs a place to **create a new tenant (toko)** and see existing ones (e.g. `midriffmuse`) before assigning users (FE34).
+
+**Goal.**
+1. Settings → **Tenants** (`/settings/tenants`) — superadmin only.
+2. List tenants (`id`, `name`, `slug`, `is_active`).
+3. Create tenant (name + slug); optional org later — v0 can attach to org `midriffmuse`’s organization or create under same org.
+4. No delete in v0 (RESTRICT FKs); deactivate (`is_active`) OK if Core supports it.
+
+**Out of scope.** Per-tenant CoA clone wizard (may be Core follow-up when create tenant); billing/subscribe.
+
+**Next action.** After Core F7c tenant CRUD sketch; wire nav Settings hub.
+

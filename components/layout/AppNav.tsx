@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { logout } from '@/lib/authHelpers';
 import { domainForPath, isPathActive, navDomains, type NavDomain } from '@/lib/nav';
 import { Button } from '../ui/Button';
+import { TenantSwitcher } from './TenantSwitcher';
 
 const ACTIVE_BG = '#6A89A7';
 
@@ -67,14 +68,17 @@ export const AppNav: React.FC = () => {
           ))}
         </nav>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleLogout}
-          className="relative z-10 ml-auto shrink-0 text-gray-300 hover:bg-gray-800 hover:text-white"
-        >
-          Logout
-        </Button>
+        <div className="relative z-10 ml-auto flex shrink-0 items-center">
+          <TenantSwitcher />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLogout}
+            className="text-gray-300 hover:bg-gray-800 hover:text-white"
+          >
+            Logout
+          </Button>
+        </div>
       </div>
     </header>
   );
