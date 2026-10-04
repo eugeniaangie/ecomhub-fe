@@ -4,6 +4,7 @@ import { useTenant } from './TenantProvider';
 
 /**
  * FE32 — superadmin: select active tenant. Admin: fixed label only.
+ * Switcher uses tenant_scope === 'all' (same rule as canSwitchTenant / FE35).
  */
 export function TenantSwitcher() {
   const { ready, scope, allowedTenants, activeTenantId, activeTenant, setTenantId } =

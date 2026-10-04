@@ -6,13 +6,13 @@ import { ApiError } from '@/lib/api';
 import { canConnectShopeeShop } from '@/lib/authHelpers';
 import {
   shopeeAuthApi,
-  type ShopeeConnectedShop,
   type ShopeeReturnsPreview,
 } from '@/lib/services/integrationsApi';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { useTenant } from '@/components/layout/TenantProvider';
 import {
   formatCurrency,
   formatDateForAPI,
@@ -50,10 +50,10 @@ function formatReturnSolution(solution: number | undefined): string {
 
 export default function SalesShopeeReturnsPage() {
   const canAccess = canConnectShopeeShop();
-  const [shops, setShops] = useState<ShopeeConnectedShop[]>([]);
-  const [shopsLoading, setShopsLoading] = useState(true);
-  const [shopsError, setShopsError] = useState('');
-  const [shopId, setShopId] = useState<number>(0);
+  const { ready: tenantReady, activeTenant } = useTenant();
+  const [hasConnection, setHasConnection] = useState(false);
+  const [connectionLoading, setConnectionLoading] = useState(true);
+  const [connectionError, setConnectionError] = useState('');
   const [startDate, setStartDate] = useState(getFirstDayOfCurrentMonth());
   const [endDate, setEndDate] = useState(getTodayFormatted());
   const [returnStatus, setReturnStatus] = useState('');
@@ -65,40 +65,35 @@ export default function SalesShopeeReturnsPage() {
     document.title = 'Shopee Returns · Sales · EcomHub';
   }, []);
 
-  const loadShops = useCallback(async () => {
-    if (!canAccess) {
-      setShopsLoading(false);
-      setShops([]);
+  const loadConnection = useCallback(async () => {
+    if (!canAccess || !tenantReady) {
+      setConnectionLoading(false);
+      setHasConnection(false);
       return;
     }
-    setShopsError('');
-    setShopsLoading(true);
+    setConnectionError('');
+    setConnectionLoading(true);
     try {
       const data = await shopeeAuthApi.listConnectedShops();
       const list = Array.isArray(data) ? data.filter((s) => s.is_active) : [];
-      setShops(list);
-      setShopId((prev) => {
-        if (prev && list.some((s) => s.shop_id === prev)) return prev;
-        return list[0]?.shop_id ?? 0;
-      });
+      setHasConnection(list.length > 0);
     } catch (err) {
-      setShops([]);
-      setShopId(0);
-      setShopsError(
+      setHasConnection(false);
+      setConnectionError(
         err instanceof ApiError
           ? err.message
           : err instanceof Error
             ? err.message
-            : 'Failed to load connected shops'
+            : 'Failed to load Shopee connection'
       );
     } finally {
-      setShopsLoading(false);
+      setConnectionLoading(false);
     }
-  }, [canAccess]);
+  }, [canAccess, tenantReady]);
 
   useEffect(() => {
-    void loadShops();
-  }, [loadShops]);
+    void loadConnection();
+  }, [loadConnection]);
 
   const handleToday = () => {
     const today = getTodayFormatted();
@@ -123,7 +118,7 @@ export default function SalesShopeeReturnsPage() {
     setError('');
     setPreview(null);
 
-    if (!shopId) {
+    if (!hasConnection) {
       setError('Connect a Shopee shop first (Integrations → Shopee).');
       return;
     }
@@ -140,8 +135,8 @@ export default function SalesShopeeReturnsPage() {
 
     setIsLoading(true);
     try {
+      // Omit shop_id — Core resolves inside active tenant (FE33 / F7b).
       const data = await shopeeAuthApi.previewReturns({
-        shop_id: shopId,
         time_from: startOfDayUnix(startDate),
         time_to: endOfDayUnix(endDate),
         fetch_all: true,
@@ -174,15 +169,16 @@ export default function SalesShopeeReturnsPage() {
       ) : (
         <>
           <Card title="Filters">
-            {shopsLoading ? (
-              <p className="text-sm text-gray-500">Loading shops…</p>
-            ) : shopsError ? (
+            {connectionLoading ? (
+              <p className="text-sm text-gray-500">Checking Shopee connection…</p>
+            ) : connectionError ? (
               <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                {shopsError}
+                {connectionError}
               </p>
-            ) : shops.length === 0 ? (
+            ) : !hasConnection ? (
               <p className="text-sm text-gray-600">
-                No active Shopee shop. Connect one under{' '}
+                No active Shopee shop for this tenant
+                {activeTenant?.name ? ` (${activeTenant.name})` : ''}. Connect one under{' '}
                 <Link href="/integrations/shopee" className="text-blue-600 hover:underline">
                   Integrations → Shopee
                 </Link>
@@ -190,21 +186,20 @@ export default function SalesShopeeReturnsPage() {
               </p>
             ) : (
               <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  Tenant:{' '}
+                  <span className="font-medium text-gray-900">
+                    {activeTenant?.name ?? '—'}
+                  </span>
+                  {activeTenant?.shopee_shop_id ? (
+                    <>
+                      {' '}
+                      · Shopee shop{' '}
+                      <span className="font-mono">{activeTenant.shopee_shop_id}</span>
+                    </>
+                  ) : null}
+                </p>
                 <div className="flex flex-wrap items-end gap-4">
-                  <div className="min-w-40">
-                    <label className="mb-2 block text-sm font-medium text-gray-700">Shop</label>
-                    <select
-                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      value={shopId || ''}
-                      onChange={(e) => setShopId(Number(e.target.value))}
-                    >
-                      {shops.map((s) => (
-                        <option key={s.id} value={s.shop_id}>
-                          {s.shop_id}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
                   <div className="min-w-40">
                     <label className="mb-2 block text-sm font-medium text-gray-700">
                       Start date
@@ -269,15 +264,16 @@ export default function SalesShopeeReturnsPage() {
                   <Button variant="secondary" size="sm" type="button" onClick={handleLast7Days}>
                     Last 7 days
                   </Button>
-                  <Button onClick={handleLoad} isLoading={isLoading} disabled={!shopId}>
+                  <Button onClick={handleLoad} isLoading={isLoading} disabled={!hasConnection}>
                     Load preview
                   </Button>
                 </div>
 
                 <p className="text-xs text-gray-500">
-                  Real Seller Centre returns via <code className="font-mono">get_return_list</code>{' '}
-                  (not the Orders cancel-bucket approx). Date filter = return create time. Max{' '}
-                  {MAX_RANGE_DAYS} days with <code className="font-mono">fetch_all=true</code>.
+                  Scoped by active tenant. Real Seller Centre returns via{' '}
+                  <code className="font-mono">get_return_list</code> (not the Orders cancel-bucket
+                  approx). Date filter = return create time. Max {MAX_RANGE_DAYS} days with{' '}
+                  <code className="font-mono">fetch_all=true</code>.
                 </p>
               </div>
             )}

@@ -152,6 +152,23 @@ export const navDomains: NavDomain[] = [
       },
     ],
   },
+  {
+    id: 'settings',
+    label: 'Settings',
+    href: '/settings',
+    items: [
+      {
+        label: 'Tenants',
+        href: '/settings/tenants',
+        description: 'Create and manage toko (tenants). Superadmin only.',
+      },
+      {
+        label: 'Users',
+        href: '/settings/users',
+        description: 'Roles and tenant membership. Superadmin only.',
+      },
+    ],
+  },
 ];
 
 export function domainForPath(pathname: string): NavDomain | undefined {
@@ -173,6 +190,9 @@ export function domainForPath(pathname: string): NavDomain | undefined {
   }
   if (pathname.startsWith('/integrations') || pathname.startsWith('/shopee-auth-callback')) {
     return navDomains.find((d) => d.id === 'integrations');
+  }
+  if (pathname.startsWith('/settings')) {
+    return navDomains.find((d) => d.id === 'settings');
   }
   return undefined;
 }

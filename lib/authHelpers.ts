@@ -216,7 +216,8 @@ export const canReopenFiscalPeriod = (): boolean => {
  * Allowed: all authenticated users (superadmin, admin, manager, staff, viewer)
  */
 export const canCreateOperationalExpense = (): boolean => {
-  // All authenticated users can create
+  if (!canMutateTenantData()) return false;
+  // All authenticated users with a tenant can create
   return true;
 };
 
@@ -225,7 +226,7 @@ export const canCreateOperationalExpense = (): boolean => {
  * Allowed: all authenticated users (if status is pending)
  */
 export const canUpdateOperationalExpense = (expenseStatus: string): boolean => {
-  // All authenticated users can update if status is pending
+  if (!canMutateTenantData()) return false;
   return expenseStatus === 'pending';
 };
 
@@ -234,7 +235,7 @@ export const canUpdateOperationalExpense = (expenseStatus: string): boolean => {
  * Allowed: all authenticated users (if status is pending)
  */
 export const canDeleteOperationalExpense = (expenseStatus: string): boolean => {
-  // All authenticated users can delete if status is pending
+  if (!canMutateTenantData()) return false;
   return expenseStatus === 'pending';
 };
 
@@ -505,6 +506,39 @@ export const canConnectShopeeShop = (): boolean => {
   if (!canMutateTenantData()) return false;
   return hasAnyRole(['superadmin', 'admin']);
 };
+
+/** Superadmin may switch active tenant (FE32 / FE35). */
+export const canSwitchTenant = (): boolean => {
+  return isSuperadmin();
+};
+
+/** Superadmin Settings › Tenants (FE36). */
+export const canManageTenants = (): boolean => {
+  return isSuperadmin();
+};
+
+/** Superadmin Settings › Users — roles + membership (FE34 / FE35). */
+export const canAssignTenantMembership = (): boolean => {
+  return isSuperadmin();
+};
+
+/** Superadmin Settings › Users list / role edit. */
+export const canManageUsers = (): boolean => {
+  return isSuperadmin();
+};
+
+/**
+ * Non-superadmin with at least one membership, or superadmin (all tenants).
+ * Zero-membership non-superadmin → view-only (Decision 14).
+ */
+export const hasTenantMembership = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  if (isSuperadmin()) return true;
+  return canMutateTenantData();
+};
+
+/** Alias — mutate creates/edits when tenant context allows it. */
+export const canMutateInTenant = (): boolean => canMutateTenantData();
 
 /**
  * Clear all client-side auth user keys (roles + id).
