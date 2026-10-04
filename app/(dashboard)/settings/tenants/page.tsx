@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { authApi } from '@/lib/api';
+import { canManageTenants } from '@/lib/authHelpers';
 import { tenantsApi } from '@/lib/services/tenantsApi';
 import type { TenantListItem } from '@/lib/types/settings';
 import { useTenant } from '@/components/layout/TenantProvider';
@@ -20,21 +21,9 @@ function slugify(name: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
-/** Render-only superadmin gate (Core still enforces). Avoids authHelpers import cycle. */
-function canManageTenantsLocal(): boolean {
-  if (typeof window === 'undefined') return false;
-  try {
-    const raw = localStorage.getItem('user_roles');
-    if (!raw) return localStorage.getItem('user_role') === 'superadmin';
-    const roles = JSON.parse(raw) as unknown;
-    return Array.isArray(roles) && roles.includes('superadmin');
-  } catch {
-    return false;
-  }
-}
-
 export default function SettingsTenantsPage() {
-  const [canManage] = useState(() => canManageTenantsLocal());
+  // Render gate only — Core enforces. Mounted after PageWrapper auth.
+  const canManage = canManageTenants();
   const { hydrateFromMe } = useTenant();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
