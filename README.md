@@ -98,7 +98,7 @@ Unlinked but still reachable by URL: `/finance/dashboard` (legacy Shopee summary
 | Catalog | Products, Product Attributes, Pricing Rules, Inventory | inside **Catalog** (Inventory may graduate to its own domain) |
 | Operations | Orders, Fulfillment, Fraud review | new top-level **Operations** (Shopee order preview lives under **Sales** for now) |
 | Integrations | TikTok / other channels, sync status, settlements (Shopee Connect is live under **Integrations**) | **Integrations** |
-| Settings | Users & Roles, Profile, Preferences | new top-level **Settings** |
+| Settings | Tenants + Users (superadmin; Profile later) | top-level **Settings** (FE34/FE36) |
 | Finance reports | Profit & Loss, Cash Flow, Balance Sheet | **Finance** hub cards |
 
 Status for frontend work is tracked in [`docs/roadmap/task-list.md`](docs/roadmap/task-list.md), not here.

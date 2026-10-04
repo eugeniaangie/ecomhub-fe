@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { logout } from '@/lib/authHelpers';
+import { isSuperadmin, logout } from '@/lib/authHelpers';
 import { domainForPath, isPathActive, navDomains, type NavDomain } from '@/lib/nav';
 import { Button } from '../ui/Button';
 import { TenantSwitcher } from './TenantSwitcher';
@@ -16,6 +16,10 @@ export const AppNav: React.FC = () => {
   const activeDomain = domainForPath(pathname);
   const [openId, setOpenId] = useState<string | null>(null);
   const navRef = useRef<HTMLElement>(null);
+  // Settings is superadmin-only (FE34 / FE36) — render gate only; Core enforces.
+  const visibleDomains = navDomains.filter(
+    (d) => d.id !== 'settings' || isSuperadmin()
+  );
 
   useEffect(() => {
     const onPointerDown = (event: MouseEvent) => {
@@ -53,7 +57,7 @@ export const AppNav: React.FC = () => {
           className="absolute inset-0 flex items-center justify-center gap-1"
           aria-label="Primary"
         >
-          {navDomains.map((domain) => (
+          {visibleDomains.map((domain) => (
             <DomainControl
               key={domain.id}
               domain={domain}

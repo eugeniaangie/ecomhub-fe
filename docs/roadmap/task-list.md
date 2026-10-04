@@ -54,10 +54,10 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE30 | FEATURE | Shopee order row detail modal (buyer / original / fees / escrow) | Core orders/detail |
 | [x] | FE31 | FEATURE | Shopee Ads performance page | Core F6f |
 | [x] | FE32 | FEATURE | Global tenant context + switcher (superadmin only) | Core F7d |
-| [ ] | FE33 | FEATURE | Wire all pages to tenant context (Sales + Finance scope) | Core F7b |
-| [ ] | FE34 | FEATURE | Settings › Users — roles + tenant membership (superadmin) | Core F7c |
-| [ ] | FE35 | FEATURE | Role/empty-state readiness across dashboard for multi-tenant | Core F7 |
-| [ ] | FE36 | FEATURE | Settings › Tenants — create/list tenants (superadmin) | Core F7c |
+| [x] | FE33 | FEATURE | Wire all pages to tenant context (Sales + Finance scope) | Core F7b |
+| [x] | FE34 | FEATURE | Settings › Users — roles + tenant membership (superadmin) | Core F7c |
+| [x] | FE35 | FEATURE | Role/empty-state readiness across dashboard for multi-tenant | Core F7 |
+| [x] | FE36 | FEATURE | Settings › Tenants — create/list tenants (superadmin) | Core F7c |
 
 
 **P0 left:** none (FE1 Done).
@@ -753,23 +753,25 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 - View-only banner when `!canMutate`; mutate `can*` predicates gated by `canMutateTenantData()`.
 - Login clears prior tenant then hydrates from me.
 
-**Next.** FE33 (pages that still use local Shopee shop pickers); FE34/FE36 after Core F7c.
+**Next.** FE33–FE36 Done (2026-10-04).
 
 ---
 
 ### FE33 — Wire all pages to tenant context
 
-**Category:** FEATURE · **Status:** Open · **Backend:** Core **F7b** · **Noted:** 2026-10-04 · **Depends on:** FE32 · **Decided:** Decision 14 (full isolation)
+**Category:** FEATURE · **Status:** Done (2026-10-04) · **Backend:** Core **F7b** · **Noted:** 2026-10-04 · **Depends on:** FE32 · **Decided:** Decision 14 (full isolation)
 
 **Goal.** Sales **and** Finance (and other domains) use the active `tenant_id`. Replace per-page Shopee shop pickers with tenant context; when calling Shopee APIs, pass Shopee `shop_id` from the tenant’s connection row (or let Core default inside tenant) — never conflate the two ids in FE state.
 
 **Depends on.** FE32 + Core F7b. Update `menu-endpoints.md` when wiring changes.
 
+**Done (2026-10-04):** Removed shop pickers from Sales Orders / Returns / Ads. Pages check tenant-scoped `…/connections`, show active tenant label, and omit `shop_id` so Core resolves the connection under `X-Tenant-ID`. Finance already scoped via FE32 header. Ads deep-link no longer carries `shop_id`.
+
 ---
 
 ### FE34 — Settings › Users (roles + tenant membership)
 
-**Category:** FEATURE · **Status:** Open · **Backend:** Core **F7c** · **Noted:** 2026-10-04 · **Depends on:** Core F7c · **Nav:** Settings domain (was intentionally unbuilt — now in scope for F7)
+**Category:** FEATURE · **Status:** Done (2026-10-04) · **Backend:** Core **F7c** · **Noted:** 2026-10-04 · **Depends on:** Core F7c · **Nav:** Settings domain (was intentionally unbuilt — now in scope for F7)
 
 **Goal.** Superadmin page to **list users**, update **roles**, and assign/replace/clear **tenant membership** (admin → one tenant). Subscribe/billing later can drive membership automatically; this screen stays the manual control plane.
 
@@ -781,13 +783,15 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 
 **Out of scope.** Self-serve signup; Stripe/subscribe automation (future); non-superadmin user admin.
 
-**Depends on.** Core F7c user list + membership + role APIs. Update `menu-endpoints.md` + render Settings in nav.
+**Depends on.** Core F7c — **Done (2026-10-04):** `GET /users`, `PUT /users/:id/roles`, `PUT/DELETE /users/:id/tenant-membership`. Update `menu-endpoints.md` + render Settings in nav.
+
+**Done (2026-10-04):** Settings nav (superadmin-only) + `/settings/users` with paginated list, roles modal, assign/clear tenant membership via `usersApi` / `tenantsApi`. Superadmin rows show “All tenants” (no membership actions).
 
 ---
 
 ### FE35 — Role / empty-state readiness across dashboard for multi-tenant
 
-**Category:** FEATURE · **Status:** Open · **Backend:** Core **F7** · **Noted:** 2026-10-04 · **Depends on:** FE32
+**Category:** FEATURE · **Status:** Done (2026-10-04) · **Backend:** Core **F7** · **Noted:** 2026-10-04 · **Depends on:** FE32
 
 **Goal.**
 
@@ -798,11 +802,13 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 
 **Out of scope.** Implementing Core migrations.
 
+**Done (2026-10-04):** Added `canSwitchTenant`, `canManageTenants`, `canManageUsers`, `canAssignTenantMembership`, `hasTenantMembership`, `canMutateInTenant`. TenantSwitcher uses `canSwitchTenant`. Op-expense create/update/delete now gate on `canMutateTenantData()`. View-only banner from FE32 unchanged. Active tenant is sessionStorage + `X-Tenant-ID` (no URL `tenant_id` deep-link path to harden).
+
 ---
 
 ### FE36 — Settings › Tenants (create / list)
 
-**Category:** FEATURE · **Status:** Open · **Backend:** Core **F7c** · **Noted:** 2026-10-04 · **Depends on:** Core F7c create/list tenants
+**Category:** FEATURE · **Status:** Done (2026-10-04) · **Backend:** Core **F7c** · **Noted:** 2026-10-04 · **Depends on:** Core F7c create/list tenants
 
 **Problem.** Design previously left Settings unbuilt. Superadmin still needs a place to **create a new tenant (toko)** and see existing ones (e.g. `midriffmuse`) before assigning users (FE34).
 
@@ -814,5 +820,7 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 
 **Out of scope.** Per-tenant CoA clone wizard (may be Core follow-up when create tenant); billing/subscribe.
 
-**Next action.** After Core F7c tenant CRUD sketch; wire nav Settings hub.
+**Depends on.** Core F7c — **Done (2026-10-04):** `GET/POST /tenants`, `PATCH /tenants/:id` (`is_active`). Create has **no CoA clone** yet.
+
+**Done (2026-10-04):** `/settings/tenants` list + create modal (name/slug/optional timezone) + activate/deactivate. Refreshes `/auth/me` after create/toggle so the top-bar switcher picks up new tenants.
 
