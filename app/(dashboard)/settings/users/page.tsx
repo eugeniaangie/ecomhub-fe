@@ -1,6 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import {
+  canAssignTenantMembership,
+  canManageUsers,
+} from '@/lib/authHelpers';
 import { tenantsApi } from '@/lib/services/tenantsApi';
 import { usersApi } from '@/lib/services/usersApi';
 import type { TenantListItem, UserListItem } from '@/lib/types/settings';
@@ -17,22 +21,10 @@ function isSuperadminUser(user: UserListItem): boolean {
   return (user.roles ?? []).includes('superadmin');
 }
 
-/** Render-only superadmin gate (Core still enforces). Avoids authHelpers import cycle. */
-function canManageUsersLocal(): boolean {
-  if (typeof window === 'undefined') return false;
-  try {
-    const raw = localStorage.getItem('user_roles');
-    if (!raw) return localStorage.getItem('user_role') === 'superadmin';
-    const roles = JSON.parse(raw) as unknown;
-    return Array.isArray(roles) && roles.includes('superadmin');
-  } catch {
-    return false;
-  }
-}
-
 export default function SettingsUsersPage() {
-  const [canManage] = useState(() => canManageUsersLocal());
-  const canAssign = canManage;
+  // Render gates only — Core enforces. Mounted after PageWrapper auth.
+  const canManage = canManageUsers();
+  const canAssign = canAssignTenantMembership();
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');

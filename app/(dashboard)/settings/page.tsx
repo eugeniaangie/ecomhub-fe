@@ -1,32 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { DomainHub } from '@/components/layout/DomainHub';
 import { Card } from '@/components/ui/Card';
+import { canManageTenants } from '@/lib/authHelpers';
 import { navDomains } from '@/lib/nav';
 
 const settings = navDomains.find((d) => d.id === 'settings')!;
 
-function canAccessSettingsLocal(): boolean {
-  if (typeof window === 'undefined') return false;
-  try {
-    const raw = localStorage.getItem('user_roles');
-    if (!raw) return localStorage.getItem('user_role') === 'superadmin';
-    const roles = JSON.parse(raw) as unknown;
-    return Array.isArray(roles) && roles.includes('superadmin');
-  } catch {
-    return false;
-  }
-}
-
 export default function SettingsHubPage() {
-  const [canAccess] = useState(() => canAccessSettingsLocal());
-
   useEffect(() => {
     document.title = 'Settings · EcomHub';
   }, []);
 
-  if (!canAccess) {
+  // Render gate only — Core RequireRole(superadmin). Mounted after PageWrapper auth.
+  if (!canManageTenants()) {
     return (
       <Card title="Access">
         <p className="text-sm text-gray-600">
