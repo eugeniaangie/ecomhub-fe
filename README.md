@@ -1,5 +1,9 @@
 # EcomHub - Internal Dashboard
 
+[![Visitors](https://api.visitorbadge.io/api/visitors?path=eugeniaangie%2Fecomhub-fe&label=Visitors&countColor=%236A89A7)](https://github.com/eugeniaangie/ecomhub-fe)
+
+> Visitor count is a third-party README view counter (increments when the badge loads). It is **not** GitHub Insights clone stats and does not identify visitors.
+
 ## Local development
 
 1. Copy `.env.example` to `.env.local` (already gitignored).
