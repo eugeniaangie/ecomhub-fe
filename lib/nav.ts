@@ -1,8 +1,8 @@
 /**
  * App navigation — EcomHub domains and features.
  *
- * Layout pattern follows  (dark top bar → domain hub → feature page).
- * Labels, grouping and routes are EcomHub-only (decision D7).
+ * Layout: dark top bar → domain hub → feature page (decision D7).
+ * Labels, grouping and routes are EcomHub-only.
  */
 
 export interface NavItem {

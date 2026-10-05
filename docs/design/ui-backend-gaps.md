@@ -6,7 +6,7 @@
 
 **Status doc** — append resolutions with date; do not delete rows when filled (mark **Filled** and point to the endpoint / task).
 
-Related: [``](./) · FE FE14–FE16 · core T32–T34
+Related: FE FE14–FE16 · core T32–T34
 
 ---
 

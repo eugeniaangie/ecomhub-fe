@@ -40,7 +40,7 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [ ] | FE16 | FEATURE | Restructure Finance UI — Overview · Accounts · Transactions · Channels | T34 |
 | [x] | FE17 | FEATURE | Phase A shell — sidebar IA + empty Overview/Accounts/Transactions/Channels | design |
 | [x] | FE18 | FEATURE | Hierarchical sidebar IA — domain groups, section captions, Marketing split | design D6 |
-| [x] | FE19 | FEATURE | Dark top-bar nav + domain hubs ( pattern, EcomHub features) | design D7 |
+| [x] | FE19 | FEATURE | Dark top-bar nav + domain hubs (EcomHub features) | design D7 |
 | [x] | FE20 | P2 | Default list page size = 5 | — |
 | [ ] | FE21 | FEATURE | Wire Home Dashboard ops KPIs (sales / profit / by-channel) | gaps G1–G3 |
 | [x] | FE22 | P1 | Wire paginated `ad-expenses/detail` | T15 Done |
@@ -388,7 +388,7 @@ One session for the trivial, independent fixes. Deliberately bundled — none de
 
 ## FEATURE — Finance UI restructure
 
-The target shape is **Overview · Accounts · Transactions · Channels**, with channel as a reporting dimension rather than a top-level split — no separate "Shopee Finance" and "TikTok Finance" page trees, so adding Lazada or Blibli is data rather than new pages. The reasoning lives in the backend backlog under `T34`. Design decisions: [`../design/`](../design/).
+The target shape is **Overview · Accounts · Transactions · Channels**, with channel as a reporting dimension rather than a top-level split — no separate "Shopee Finance" and "TikTok Finance" page trees, so adding Lazada or Blibli is data rather than new pages. The reasoning lives in the backend backlog under `T34`.
 
 Order: **FE17 (shell) → FE8 → FE14 / FE15 → FE16 (wire real data / retire legacy).**
 
@@ -406,9 +406,9 @@ Order: **FE17 (shell) → FE8 → FE14 / FE15 → FE16 (wire real data / retire 
 
 ### FE18 — Hierarchical sidebar IA (domain groups)
 
-**Category:** FEATURE · **Status:** Done (2026-09-26) · **Decision:** `D6` in [`../design/`](../design/)
+**Category:** FEATURE · **Status:** Done (2026-09-26) · **Decision:** `D6`
 
-**Problem.** After `FE17` the sidebar was still close to a flat list, `Master Data` mixed product categories with accounting setup, and every planned integration (Shopee Open API, other channels) would have added another top-level entry. Developer asked for hierarchical **grouping** while explicitly keeping the dark sidebar and EcomHub's visual identity — grouping as UX inspiration, not a visual clone.
+**Problem.** After `FE17` the sidebar was still close to a flat list, `Master Data` mixed product categories with accounting setup, and every planned integration (Shopee Open API, other channels) would have added another top-level entry. Developer asked for hierarchical domain **grouping** while explicitly keeping the dark sidebar and EcomHub's visual identity — grouping as UX structure, not a visual clone.
 
 **Done (2026-09-26):** Top level is now `Dashboard · Finance · Marketing · Catalog`. Finance is subdivided by non-clickable section captions (`Views` / `Records` / `Setup`), so depth stays at two clickable levels. `Master Data` retired: Categories → Catalog, accounting setup → Finance › Setup. Ads moved to a top-level **Marketing** group **and** to matching routes — `/marketing/ad-budgets`, `/marketing/ad-expenses`. Unbuilt areas (Products, Inventory, Operations, Integrations, Settings) are deliberately not rendered.
 
@@ -424,9 +424,9 @@ Order: **FE17 (shell) → FE8 → FE14 / FE15 → FE16 (wire real data / retire 
 
 ### FE19 — Dark top-bar nav + domain hubs
 
-**Category:** FEATURE · **Status:** Done (2026-09-26) · **Decision:** `D7` in [`../design/`](../design/)
+**Category:** FEATURE · **Status:** Done (2026-09-26) · **Decision:** `D7`
 
-**Problem.** FE18 put hierarchical *grouping* into a sidebar. The intended reference was  **navigation layout**: domains on a top bar, domain click → hub of cards, caret → dropdown shortcuts — while keeping EcomHub's dark identity on that bar and EcomHub's own features.
+**Problem.** FE18 put hierarchical *grouping* into a sidebar. The intended layout was a **top-bar navigation**: domains on a top bar, domain click → hub of cards, caret → dropdown shortcuts — while keeping EcomHub's dark identity on that bar and EcomHub's own features.
 
 **Done (2026-09-26):** Removed `Sidebar` / `Topbar`. Added `AppNav` (dark top bar), `DomainHub`, and `lib/nav.ts`. Hubs at `/finance`, `/marketing`, `/catalog`; Finance setup at `/finance/setup`. `/finance` is a hub again (reverses D3). No page CRUD/report logic, service client, or API call changed.
 

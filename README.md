@@ -28,7 +28,7 @@ Production (Vercel) must set `NEXT_PUBLIC_API_BASE_URL` to the Railway API host 
 
 ## Navigation structure
 
-Dark **top bar** + domain **hubs** (decision **D7** in [`docs/design/`](docs/design/)).  supplies the navigation *pattern*; menus and features are EcomHub's.
+Dark **top bar** + domain **hubs** (decision **D7** — top-bar domains, hub cards, caret dropdown). Menus and features are EcomHub's.
 
 ```
 [ EcomHub | Dashboard | Catalog ▾ | Marketing ▾ | Sales ▾ | Finance ▾ | Settings ▾ | Logout ]

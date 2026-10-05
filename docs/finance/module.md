@@ -1,6 +1,6 @@
 # Finance module
 
-Current-state guide for the finance screens. Status and open work live in [`docs/roadmap/task-list.md`](../roadmap/task-list.md). Screen → endpoint map: [`docs/menu-endpoints.md`](../menu-endpoints.md). Design IA: [`docs/design/`](../design/). UI ahead of API: [`docs/design/ui-backend-gaps.md`](../design/ui-backend-gaps.md).
+Current-state guide for the finance screens. Status and open work live in [`docs/roadmap/task-list.md`](../roadmap/task-list.md). Screen → endpoint map: [`docs/menu-endpoints.md`](../menu-endpoints.md). UI ahead of API: [`docs/design/ui-backend-gaps.md`](../design/ui-backend-gaps.md).
 
 Roles come from `GET /auth/me` after login (stored via `lib/authHelpers.ts`). Do not set `user_role` / `user_id` by hand in the console — that path is obsolete and misleading.
 
@@ -10,7 +10,7 @@ Client-side `can*` checks only control what to render. The backend owns authoris
 
 ## Information architecture (2026-09-26)
 
-Chrome is a **dark top bar** with domains `Dashboard · Catalog · Marketing · Finance` (decision **D7** in [`../design/`](../design/); grouping from **D6**). Clicking a domain opens a **hub** of feature cards; the caret opens the same list as a dropdown.
+Chrome is a **dark top bar** with domains `Dashboard · Catalog · Marketing · Finance` (decision **D7**; domain grouping from **D6**). Clicking a domain opens a **hub** of feature cards; the caret opens the same list as a dropdown.
 
 - **Home** `/dashboard` — ops / profit pulse (empty until report APIs; gaps G1–G3). Leaf in the top bar (no hub).
 - **Finance** `/finance` — hub cards: Overview, Accounts, Transactions, Channels, Journal Entries, Operational Expenses, Capital & Investors. Gear → `/finance/setup` (Chart of Accounts, Expense Categories, Fiscal Periods).
