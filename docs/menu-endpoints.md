@@ -168,14 +168,21 @@ Route still lives under `/master/*`; only the sidebar group changed (decision **
 | `/marketing` | Marketing domain hub |
 | `/catalog` | Catalog domain hub |
 | `/sales` | Sales domain hub |
-| `/integrations` | Integrations domain hub |
-| `/settings` | Settings domain hub (superadmin; cards only) |
+| `/settings` | Settings domain hub (admin+: Shopee Integration; superadmin: Tenants/Users) |
 | `/shopee-auth-callback` | Shopee OAuth return — POSTs `code` + `shop_id` to Core `…/shopee/token` (F6a3) |
 | `/master` | Older standalone categories CRUD — unlinked, retire separately |
 
+Legacy FE routes (redirect): `/integrations` → `/settings`, `/integrations/shopee` → `/settings/integration/shopee`, `/sales/shopee` → `/sales/shopee/orders`, `/sales/returns` → `/sales/shopee/returns`, `/sales/ads` → `/sales/shopee/ads`.
+
 ---
 
-## Settings (superadmin) — FE34 / FE36
+## Settings — FE34 / FE36 / FE37
+
+### Shopee Integration (`/settings/integration/shopee`) — FE37 (was Integrations)
+
+- `GET /integrations/marketplaces/shopee/connections` — list our OAuth connections (no raw tokens); page shows status + Re-connect.
+- `GET /integrations/marketplaces/shopee/authorize-url` — `{ authorize_url }`; FE opens same-tab (admin+).
+- `POST /integrations/marketplaces/shopee/token` — body `{ code, shop_id }` → connected shop (no raw tokens). Called from `/shopee-auth-callback`.
 
 ### Tenants (`/settings/tenants`)
 
@@ -196,32 +203,22 @@ Route still lives under `/master/*`; only the sidebar group changed (decision **
 
 ## Sales
 
-### Shopee Orders (`/sales/shopee`) — FE25 + FE29 + FE33
+### Shopee Orders (`/sales/shopee/orders`) — FE25 + FE29 + FE33
 
 - `GET /integrations/marketplaces/shopee/connections` — presence check for active tenant (no shop picker; scope via `X-Tenant-ID`).
-- `GET /integrations/marketplaces/shopee/orders/preview` — live list+detail+escrow (admin+). Query: optional `shop_id` (omitted — Core defaults inside tenant), `time_from`, `time_to`, `order_status`, `fetch_all`, `cancel_bucket` (`pembatalan`|`pengembalian` approx; CANCELLED drill-down), `cancel_reason`, `exclude_pembatalan` (drop early cancel / no pickup — used on All statuses). Response: `order_count`, `total_quantity`, `total_escrow_amount`, `total_deductions`, `deduction_breakdown[]`, `sku_summary[]`, `orders[]` (+ cancel fields), `cancel_reason_options`. Overview cards: Orders · Qty · Escrow · **Total deductions** (click → breakdown) · Ads spend (links to `/sales/ads`).
+- `GET /integrations/marketplaces/shopee/orders/preview` — live list+detail+escrow (admin+). Query: optional `shop_id` (omitted — Core defaults inside tenant), `time_from`, `time_to`, `order_status`, `fetch_all`, `cancel_bucket` (`pembatalan`|`pengembalian` approx; CANCELLED drill-down), `cancel_reason`, `exclude_pembatalan` (drop early cancel / no pickup — used on All statuses). Response: `order_count`, `total_quantity`, `total_escrow_amount`, `total_deductions`, `deduction_breakdown[]`, `sku_summary[]`, `orders[]` (+ cancel fields), `cancel_reason_options`. Overview cards: Orders · Qty · Escrow · **Total deductions** (click → breakdown) · Ads spend (links to `/sales/shopee/ads`).
 - `GET /integrations/marketplaces/shopee/orders/detail` — one `order_sn` drill-down (admin+). Query: `order_sn`; optional `shop_id` omitted under tenant scope. Response: `buyer_amount`, `original_price`, `escrow_amount`, `deductions[]`, `items[]`. Row click on orders table opens modal.
 - `GET /integrations/marketplaces/shopee/ads/spend/preview` — live Partner CPC ads **expense** sum (admin+, FE29). Same optional `shop_id` / `time_from` / `time_to`. Response: `total_ads_spend`, `day_count`, `used_hourly_api`. Not wallet balance; not Marketing JE ad-expenses.
 
-### Shopee Returns (`/sales/returns`) — FE28 / Core F6d + FE33
+### Shopee Returns (`/sales/shopee/returns`) — FE28 / Core F6d + FE33
 
 - `GET /integrations/marketplaces/shopee/connections` — presence check (no shop picker).
 - `GET /integrations/marketplaces/shopee/returns/preview` — live `get_return_list` (admin+). Query: optional `shop_id` omitted, `time_from`, `time_to`, `fetch_all=true`, optional `return_status`. Response: `return_count`, `total_quantity`, `total_refund_amount`, `sku_summary[]`, `returns[]`. Do **not** treat orders preview `cancel_bucket=pengembalian` as this screen.
 
-### Shopee Ads (`/sales/ads`) — FE31 / Core F6f + FE33
+### Shopee Ads (`/sales/shopee/ads`) — FE31 / Core F6f + FE33
 
 - `GET /integrations/marketplaces/shopee/connections` — presence check (no shop picker).
 - `GET /integrations/marketplaces/shopee/ads/performance/preview` — shop-level CPC performance (admin+). Query: optional `shop_id` omitted, `time_from`, `time_to`. Response: `total_ads_spend`, impressions/clicks, direct/broad GMV & orders & period ROAS, `series[]` (`series_grain` daily|hourly), optional `ads_wallet_balance` / `balance_as_of`. Overview Ads spend card links here with `start_date` / `end_date` (no `shop_id`). Not campaign/product; not F1; wallet ≠ spend.
-
----
-
-## Integrations
-
-### Shopee Connect (`/integrations/shopee`)
-
-- `GET /integrations/marketplaces/shopee/connections` — list our OAuth connections (no raw tokens); page shows status + Re-connect.
-- `GET /integrations/marketplaces/shopee/authorize-url` — `{ authorize_url }`; FE opens same-tab (admin+).
-- `POST /integrations/marketplaces/shopee/token` — body `{ code, shop_id }` → connected shop (no raw tokens). Called from `/shopee-auth-callback`.
 
 ---
 

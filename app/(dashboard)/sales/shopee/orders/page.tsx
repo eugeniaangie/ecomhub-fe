@@ -142,7 +142,7 @@ export default function SalesShopeeOrdersPage() {
     setAdsSpend(null);
 
     if (!hasConnection) {
-      setError('Connect a Shopee shop first (Integrations → Shopee).');
+      setError('Connect a Shopee shop first (Settings → Shopee Integration).');
       return;
     }
 
@@ -260,8 +260,8 @@ export default function SalesShopeeOrdersPage() {
               <p className="text-sm text-gray-600">
                 No active Shopee shop for this tenant
                 {activeTenant?.name ? ` (${activeTenant.name})` : ''}. Connect one under{' '}
-                <Link href="/integrations/shopee" className="text-blue-600 hover:underline">
-                  Integrations → Shopee
+                <Link href="/settings/integration/shopee" className="text-blue-600 hover:underline">
+                  Settings → Shopee Integration
                 </Link>
                 .
               </p>
@@ -392,7 +392,7 @@ export default function SalesShopeeOrdersPage() {
                   Escrow = seller expected receive; buyer amount = GMV. Cancel bucket only for
                   CANCELLED. On All statuses: optional exclude pembatalan (early cancel, no
                   pickup) — default on. Real returns:{' '}
-                  <Link href="/sales/returns" className="text-blue-600 hover:underline">
+                  <Link href="/sales/shopee/returns" className="text-blue-600 hover:underline">
                     Sales → Shopee Returns
                   </Link>
                   .
@@ -454,7 +454,7 @@ export default function SalesShopeeOrdersPage() {
                   </>
                 ) : null}
                 <Link
-                  href={`/sales/ads?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`}
+                  href={`/sales/shopee/ads?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`}
                   className="group block w-full rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                 >
                   <Card

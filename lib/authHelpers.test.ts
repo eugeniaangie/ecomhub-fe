@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  canAccessSettings,
   canApproveJournalEntry,
   canApproveOperationalExpense,
   canConnectShopeeShop,
@@ -92,6 +93,15 @@ describe('authHelpers', () => {
       expect(canConnectShopeeShop()).toBe(true);
       setUserRoles(['manager']);
       expect(canConnectShopeeShop()).toBe(false);
+    });
+
+    it('canAccessSettings is admin or superadmin', () => {
+      setUserRoles(['admin']);
+      expect(canAccessSettings()).toBe(true);
+      setUserRoles(['superadmin']);
+      expect(canAccessSettings()).toBe(true);
+      setUserRoles(['manager']);
+      expect(canAccessSettings()).toBe(false);
     });
   });
 

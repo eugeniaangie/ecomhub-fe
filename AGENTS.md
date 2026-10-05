@@ -75,7 +75,7 @@ app/ (routes) → lib/services/*Api → lib/api.ts → backend HTTP API
 - **Response envelope.** The backend wraps everything in `{ code, business_code, status, message, data }`; `lib/api.ts` returns `data`. Paginated responses put `{ results, page, limit, total_pages, total_results }` inside `data`.
 - **Business codes matter.** The backend sends a `business_code` alongside the HTTP status (`"00"` success, `"93"` unauthorized, `"94"` unauthenticated, `"90"` rate limited). Where both are available, branch on the business code — HTTP status alone has been ambiguous in practice.
 - **Types mirror the API, they do not reinterpret it.** Optional and nullable fields on the Go side must be optional in TypeScript. A field the API can omit is not `string`.
-- **Money is a number from the API.** Format at the render boundary with the shared formatters; never re-derive a total in the UI that the API already computes, and never round before display.
+- **Money is a number from the API.** Backend stores exact decimals (`money.Amount`); JSON wire stays numeric. Format at the render boundary with the shared formatters; never re-derive a total in the UI that the API already computes, and never round before display.
 - **Dates are `YYYY-MM-DD` on the wire.** Report endpoints take `start_date` / `end_date`; entity timestamps come back as ISO datetimes.
 - **Permissions live in `lib/authHelpers.ts`.** Add a `can*` predicate there rather than inlining a role check in a component, and keep it matching the role rules the backend actually enforces.
 - **Follow the surrounding code.** Patterns are inconsistent in places; match the local file and note the inconsistency rather than reformatting it.

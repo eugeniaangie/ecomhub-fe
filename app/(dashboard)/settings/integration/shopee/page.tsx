@@ -43,7 +43,7 @@ export default function ShopeeConnectPage() {
   }, [canConnect]);
 
   useEffect(() => {
-    document.title = 'Shopee · Integrations · EcomHub';
+    document.title = 'Shopee Integration · Settings · EcomHub';
   }, []);
 
   useEffect(() => {
@@ -80,7 +80,7 @@ export default function ShopeeConnectPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Shopee" />
+      <PageHeader title="Shopee Integration" />
 
       <Card title="Shop connection">
         {!canConnect ? (

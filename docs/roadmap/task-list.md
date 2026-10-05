@@ -58,6 +58,8 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE34 | FEATURE | Settings › Users — roles + tenant membership (superadmin) | Core F7c |
 | [x] | FE35 | FEATURE | Role/empty-state readiness across dashboard for multi-tenant | Core F7 |
 | [x] | FE36 | FEATURE | Settings › Tenants — create/list tenants (superadmin) | Core F7c |
+| [x] | FE37 | FEATURE | Move Shopee Connect under Settings › Shopee Integration | IA |
+| [x] | FE38 | FEATURE | Nest Sales Shopee routes under `/sales/shopee/…` | IA |
 
 
 **P0 left:** none (FE1 Done).
@@ -586,6 +588,7 @@ Wire real data in FE8/FE14/FE15; FE16 finishes migration and retirement of `/fin
 - **Integrations** domain in top nav: hub `/integrations`, **Shopee** `/integrations/shopee` with Connect (gated by `canConnectShopeeShop` = admin/superadmin) — same-tab `window.location.assign(authorize_url)`.
 - Callback `/shopee-auth-callback` reads `code` + `shop_id` and **POSTs** `shopeeAuthApi.exchangeToken` (Core F6a3). Shows connected shop id / token expiry — not raw tokens.
 - **Done (2026-09-30):** `shopeeAuthApi.listConnectedShops` + Integrations page shows active shops / Re-connect (not a blank Connect every visit).
+- **Moved (2026-10-05 / FE37):** Connect lives under **Settings › Shopee Integration** (`/settings/integration/shopee`); legacy `/integrations*` redirects.
 
 **Not done here.** Automatic RefreshAccessToken before sales sync (F6b); non-admin operator role.
 
@@ -620,7 +623,8 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 
 **Cross-ref:** Core [`SHOPEE_MONTHLY_RECAP.md`](../../../ecomhub-core/docs/guides/SHOPEE_MONTHLY_RECAP.md) · F6c still the later full recap screen.
 
-**Done (2026-09-30):** New top-nav **Sales** domain — hub `/sales`, **Shopee Orders** `/sales/shopee`. `shopeeAuthApi.previewOrders` + connections shop picker; date range ≤31d; `fetch_all=true`; default status `COMPLETED`; totals / SKU table / order list. Connect stays under Integrations.
+**Done (2026-09-30):** New top-nav **Sales** domain — hub `/sales`, **Shopee Orders** `/sales/shopee`. `shopeeAuthApi.previewOrders` + connections shop picker; date range ≤31d; `fetch_all=true`; default status `COMPLETED`; totals / SKU table / order list. Connect stayed under Integrations (later moved — **FE37**).
+**Moved (2026-10-05 / FE38):** Orders at `/sales/shopee/orders`.
 
 **Note (2026-09-30):** Core parallel escrow (concurrency 8) — **no FE change**; same preview response, faster wall time only. Progressive UX = **FE26** (Open), only if still feels slow after parallel.
 
@@ -687,6 +691,7 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 **Next action.** — (Done)
 
 **Done (2026-10-02):** Sales → **Shopee Returns** `/sales/returns` (sibling of Orders so nav active state stays clean; UI label English — not “Pengembalian”). `shopeeAuthApi.previewReturns` → Core `…/returns/preview` with `fetch_all=true`. Cards: return count · total pcs · total refund. SKU summary + returns table (reason, solution, logistics/due). No client-side refund math.
+**Moved (2026-10-05 / FE38):** `/sales/shopee/returns` (channel-prefixed; Orders is `/sales/shopee/orders`).
 
 ---
 
@@ -706,6 +711,7 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 **Depends on.** Core F6e.
 
 **Done (2026-10-02):** `shopeeAuthApi.previewAdsSpend` → `GET …/ads/spend/preview`; fifth card on `/sales/shopee` via `Promise.allSettled` (orders still show if ads fails). Footnote: live Partner CPC expense, not wallet/JE. Card links to `/sales/ads` with shop + date query params (FE31).
+**Moved (2026-10-05 / FE38):** card host `/sales/shopee/orders`; Ads link `/sales/shopee/ads`.
 
 ---
 
@@ -726,6 +732,7 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 **Problem.** Operators want a dedicated Ads view (spend, ROAS, GMV, clicks, wallet saldo, daily series) without loading campaign APIs or weighing down the Sales overview.
 
 **Done (2026-10-02):** Sales → **Shopee Ads** `/sales/ads`. `shopeeAuthApi.previewAdsPerformance` → `GET …/ads/performance/preview`. Cards: spend · broad ROAS · broad GMV · clicks · wallet; secondary direct ROAS/GMV; daily/hourly table with CSS spend bars. Overview Ads card links here with `shop_id` / `start_date` / `end_date`. No chart library; no campaign/product breakdown.
+**Moved (2026-10-05 / FE38):** `/sales/shopee/ads`.
 
 ---
 
@@ -823,4 +830,35 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 **Depends on.** Core F7c — **Done (2026-10-04):** `GET/POST /tenants`, `PATCH /tenants/:id` (`is_active`). Create has **no CoA clone** yet.
 
 **Done (2026-10-04):** `/settings/tenants` list + create modal (name/slug/optional timezone) + activate/deactivate. Refreshes `/auth/me` after create/toggle so the top-bar switcher picks up new tenants.
+
+---
+
+### FE37 — Move Shopee Connect under Settings › Shopee Integration
+
+**Category:** FEATURE · **Status:** Done (2026-10-05) · **Noted:** 2026-10-05 · **Depends on:** FE24
+
+**Problem.** Top nav had a separate **Integrations** domain with only one item (Shopee Connect), while **Settings** already existed for Tenants/Users — too many top-level menus for one OAuth screen.
+
+**Goal.**
+1. Remove top-level Integrations.
+2. Settings → **Shopee Integration** at `/settings/integration/shopee`.
+3. Keep admin+ access to Connect; Tenants/Users remain superadmin-only.
+4. Redirect legacy `/integrations` and `/integrations/shopee`.
+
+**Done (2026-10-05):** Nav + hub under Settings; page at `/settings/integration/shopee`; `canAccessSettings` for admin+; item-level filters; next.config redirects; Sales/callback copy updated; `menu-endpoints.md` + README synced.
+
+---
+
+### FE38 — Nest Sales Shopee routes under `/sales/shopee/…`
+
+**Category:** FEATURE · **Status:** Done (2026-10-05) · **Noted:** 2026-10-05 · **Depends on:** FE25 / FE28 / FE31
+
+**Problem.** Sales used flat paths (`/sales/returns`, `/sales/ads`) beside `/sales/shopee`. Adding TikTok (or other channels) under the same flat pattern would make ownership ambiguous.
+
+**Goal.**
+1. `/sales/shopee/orders` · `/sales/shopee/returns` · `/sales/shopee/ads`
+2. Redirect legacy `/sales/shopee`, `/sales/returns`, `/sales/ads`
+3. Leave room for future `/sales/tiktok/…`
+
+**Done (2026-10-05):** Pages moved; nav + internal Orders→Returns/Ads links updated; redirects in `next.config.ts`; README + `menu-endpoints.md` synced.
 

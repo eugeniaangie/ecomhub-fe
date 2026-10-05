@@ -108,7 +108,7 @@ function ShopeeAuthCallbackContent() {
             <p className="text-gray-600">
               The authorization code is single-use. Refreshing this page after a successful
               connect reuses a spent code and will fail. Use{' '}
-              <Link href="/integrations/shopee" className="text-blue-600 hover:underline">
+              <Link href="/settings/integration/shopee" className="text-blue-600 hover:underline">
                 Connect Shopee
               </Link>{' '}
               again only if you need a new authorization.
@@ -124,8 +124,8 @@ function ShopeeAuthCallbackContent() {
           <p className="text-sm text-gray-600">
             No <code className="font-mono">code</code> or{' '}
             <code className="font-mono">shop_id</code> in the URL. Open{' '}
-            <Link href="/integrations/shopee" className="text-blue-600 hover:underline">
-              Integrations → Shopee
+            <Link href="/settings/integration/shopee" className="text-blue-600 hover:underline">
+              Settings → Shopee Integration
             </Link>{' '}
             to connect or view status.
           </p>
@@ -133,8 +133,8 @@ function ShopeeAuthCallbackContent() {
       </Card>
 
       <p className="text-sm">
-        <Link href="/integrations/shopee" className="text-blue-600 hover:underline">
-          Back to Shopee Connect
+        <Link href="/settings/integration/shopee" className="text-blue-600 hover:underline">
+          Back to Shopee Integration
         </Link>
       </p>
     </div>
