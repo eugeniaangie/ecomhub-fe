@@ -193,8 +193,8 @@ Catalog    → Categories (/master/categories)
 
 1. **Top level = business domains, few of them.** A new feature joins an existing domain unless it is a new noun of the business.
 2. **Two clickable levels maximum.** Further grouping uses non-clickable section captions (`Views` / `Records` / `Setup`) inside an expanded group — not a third accordion.
-3. **Marketplaces never become top-level.** Shopee / TikTok / future channels go under **Integrations** (connection, API keys, sync); their money is read through **Finance › Channels**, consistent with core `T34` treating channel as a reporting dimension.
-4. **Unbuilt areas are not rendered.** Catalog › Products/Inventory, Operations, Integrations and Settings stay out of the sidebar until they have a screen — no dead ends.
+3. **Marketplaces never become top-level.** Shopee / TikTok / future channels go under **Settings** (connection, API keys, sync — Shopee is **Settings › Shopee Integration**); their money is read through **Finance › Channels**, consistent with core `T34` treating channel as a reporting dimension.
+4. **Unbuilt areas are not rendered.** Catalog › Products/Inventory and Operations stay out of the top bar until they have a screen — no dead ends.
 
 **Consequences accepted:**
 

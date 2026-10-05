@@ -3,12 +3,36 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { isSuperadmin, logout } from '@/lib/authHelpers';
-import { domainForPath, isPathActive, navDomains, type NavDomain } from '@/lib/nav';
+import {
+  canAccessSettings,
+  canConnectShopeeShop,
+  canManageTenants,
+  canManageUsers,
+  logout,
+} from '@/lib/authHelpers';
+import {
+  domainForPath,
+  isPathActive,
+  navDomains,
+  SETTINGS_SHOPEE_INTEGRATION_HREF,
+  type NavDomain,
+  type NavItem,
+} from '@/lib/nav';
 import { Button } from '../ui/Button';
 import { TenantSwitcher } from './TenantSwitcher';
 
 const ACTIVE_BG = '#6A89A7';
+
+function visibleNavItems(domain: NavDomain): NavItem[] {
+  const items = [...(domain.items ?? []), ...(domain.setup ?? [])];
+  if (domain.id !== 'settings') return items;
+  return items.filter((item) => {
+    if (item.href === SETTINGS_SHOPEE_INTEGRATION_HREF) return canConnectShopeeShop();
+    if (item.href === '/settings/tenants') return canManageTenants();
+    if (item.href === '/settings/users') return canManageUsers();
+    return false;
+  });
+}
 
 export const AppNav: React.FC = () => {
   const pathname = usePathname() ?? '';
@@ -16,9 +40,9 @@ export const AppNav: React.FC = () => {
   const activeDomain = domainForPath(pathname);
   const [openId, setOpenId] = useState<string | null>(null);
   const navRef = useRef<HTMLElement>(null);
-  // Settings is superadmin-only (FE34 / FE36) — render gate only; Core enforces.
+  // Settings: admin+ (Shopee Integration) / superadmin (Tenants, Users) — render gate; Core enforces.
   const visibleDomains = navDomains.filter(
-    (d) => d.id !== 'settings' || isSuperadmin()
+    (d) => d.id !== 'settings' || canAccessSettings()
   );
 
   useEffect(() => {
@@ -119,10 +143,7 @@ const DomainControl: React.FC<DomainControlProps> = ({
     );
   }
 
-  const dropdownItems = [
-    ...(domain.items ?? []),
-    ...(domain.setup ?? []),
-  ];
+  const dropdownItems = visibleNavItems(domain);
 
   return (
     <div className="relative">

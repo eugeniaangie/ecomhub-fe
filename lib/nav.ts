@@ -23,6 +23,9 @@ export interface NavDomain {
   setup?: NavItem[];
 }
 
+/** Shopee Partner OAuth connect screen (under Settings). */
+export const SETTINGS_SHOPEE_INTEGRATION_HREF = '/settings/integration/shopee';
+
 export const navDomains: NavDomain[] = [
   {
     id: 'dashboard',
@@ -66,17 +69,17 @@ export const navDomains: NavDomain[] = [
     items: [
       {
         label: 'Shopee Orders',
-        href: '/sales/shopee',
+        href: '/sales/shopee/orders',
         description: 'Live Shopee order preview and escrow totals.',
       },
       {
         label: 'Shopee Returns',
-        href: '/sales/returns',
+        href: '/sales/shopee/returns',
         description: 'Shopee return requests and refund totals.',
       },
       {
         label: 'Shopee Ads',
-        href: '/sales/ads',
+        href: '/sales/shopee/ads',
         description: 'Shop-level ads spend, ROAS, and wallet balance.',
       },
     ],
@@ -141,22 +144,15 @@ export const navDomains: NavDomain[] = [
     ],
   },
   {
-    id: 'integrations',
-    label: 'Integrations',
-    href: '/integrations',
-    items: [
-      {
-        label: 'Shopee',
-        href: '/integrations/shopee',
-        description: 'Connect a Shopee shop via Partner OAuth.',
-      },
-    ],
-  },
-  {
     id: 'settings',
     label: 'Settings',
     href: '/settings',
     items: [
+      {
+        label: 'Shopee Integration',
+        href: SETTINGS_SHOPEE_INTEGRATION_HREF,
+        description: 'Connect a Shopee shop via Partner OAuth.',
+      },
       {
         label: 'Tenants',
         href: '/settings/tenants',
@@ -188,10 +184,12 @@ export function domainForPath(pathname: string): NavDomain | undefined {
   if (pathname.startsWith('/catalog') || pathname.startsWith('/master')) {
     return navDomains.find((d) => d.id === 'catalog');
   }
-  if (pathname.startsWith('/integrations') || pathname.startsWith('/shopee-auth-callback')) {
-    return navDomains.find((d) => d.id === 'integrations');
-  }
-  if (pathname.startsWith('/settings')) {
+  // Legacy /integrations URLs redirect to Settings; callback stays under Settings IA.
+  if (
+    pathname.startsWith('/settings') ||
+    pathname.startsWith('/integrations') ||
+    pathname.startsWith('/shopee-auth-callback')
+  ) {
     return navDomains.find((d) => d.id === 'settings');
   }
   return undefined;

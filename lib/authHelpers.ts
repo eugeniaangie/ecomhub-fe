@@ -528,6 +528,14 @@ export const canManageUsers = (): boolean => {
 };
 
 /**
+ * Settings domain in the top nav (FE37).
+ * Superadmin sees Tenants/Users; admin+ sees Shopee Integration.
+ */
+export const canAccessSettings = (): boolean => {
+  return canManageTenants() || canConnectShopeeShop();
+};
+
+/**
  * Non-superadmin with at least one membership, or superadmin (all tenants).
  * Zero-membership non-superadmin → view-only (Decision 14).
  */

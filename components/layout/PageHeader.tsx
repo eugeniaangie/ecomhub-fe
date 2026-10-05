@@ -23,7 +23,7 @@ export interface PageHeaderProps {
 }
 
 /**
- * Page title with optional `Domain / Page` breadcrumb (same pattern as Integrations → Shopee).
+ * Page title with optional `Domain / Page` breadcrumb (same pattern as Settings → Shopee Integration).
  */
 export const PageHeader: React.FC<PageHeaderProps> = ({
   title,

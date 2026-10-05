@@ -31,7 +31,7 @@ Production (Vercel) must set `NEXT_PUBLIC_API_BASE_URL` to the Railway API host 
 Dark **top bar** + domain **hubs** (decision **D7** in [`docs/design/jubelio-reference-ux.md`](docs/design/jubelio-reference-ux.md)). Jubelio supplies the navigation *pattern*; menus and features are EcomHub's.
 
 ```
-[ EcomHub | Dashboard | Catalog ▾ | Marketing ▾ | Sales ▾ | Finance ▾ | Integrations ▾ | Logout ]
+[ EcomHub | Dashboard | Catalog ▾ | Marketing ▾ | Sales ▾ | Finance ▾ | Settings ▾ | Logout ]
 
 Finance hub          Overview · Accounts · Transactions · Channels
                      Journal Entries · Operational Expenses · Capital & Investors
@@ -39,19 +39,20 @@ Finance hub          Overview · Accounts · Transactions · Channels
 
 Marketing hub        Ad Budgets · Ad Expenses
 
-Sales hub            Shopee Orders (live preview / escrow)
-                     Shopee Returns (refund overview)
+Sales hub            Shopee Orders · Shopee Returns · Shopee Ads
+                     (paths under `/sales/shopee/…`; TikTok later as `/sales/tiktok/…`)
 
 Catalog hub          Categories
 
-Integrations hub     Shopee (Connect shop via Partner OAuth)
+Settings hub         Shopee Integration (Connect shop via Partner OAuth)
+                     Tenants · Users (superadmin)
 ```
 
 Rules that keep this from sprawling:
 
 1. **Top level = domains, few of them.** A new feature joins an existing domain unless it is a new noun of the business.
 2. **Domain label → hub; caret → dropdown** of the same items. No third accordion level.
-3. **Marketplaces never become top-level.** Connections go under **Integrations**; sales previews under **Sales**; money is read through **Finance › Channels** (backend `T34`).
+3. **Marketplaces never become top-level.** Connections go under **Settings › Shopee Integration**; sales previews under **Sales**; money is read through **Finance › Channels** (backend `T34`).
 4. **Unbuilt areas are not rendered** in the top bar until they have a screen.
 
 ---
@@ -77,13 +78,16 @@ Rules that keep this from sprawling:
 | Marketing | Ad Budgets | `/marketing/ad-budgets` |
 | Marketing | Ad Expenses | `/marketing/ad-expenses` |
 | Sales | Domain hub | `/sales` |
-| Sales | Shopee Orders (preview) | `/sales/shopee` |
-| Sales | Shopee Returns | `/sales/returns` |
+| Sales | Shopee Orders (preview) | `/sales/shopee/orders` |
+| Sales | Shopee Returns | `/sales/shopee/returns` |
+| Sales | Shopee Ads | `/sales/shopee/ads` |
 | Catalog | Domain hub | `/catalog` |
 | Catalog | Categories | `/master/categories` |
-| Integrations | Domain hub | `/integrations` |
-| Integrations | Shopee Connect | `/integrations/shopee` |
-| Integrations | Shopee OAuth callback | `/shopee-auth-callback` |
+| Settings | Domain hub | `/settings` |
+| Settings | Shopee Integration | `/settings/integration/shopee` |
+| Settings | Tenants (superadmin) | `/settings/tenants` |
+| Settings | Users (superadmin) | `/settings/users` |
+| Settings | Shopee OAuth callback | `/shopee-auth-callback` |
 
 Unlinked but still reachable by URL: `/finance/dashboard` (legacy Shopee summary) and `/master` (older standalone categories CRUD). Ads live only under `/marketing/*`.
 
@@ -97,8 +101,8 @@ Unlinked but still reachable by URL: `/finance/dashboard` (legacy Shopee summary
 |---|---|---|
 | Catalog | Products, Product Attributes, Pricing Rules, Inventory | inside **Catalog** (Inventory may graduate to its own domain) |
 | Operations | Orders, Fulfillment, Fraud review | new top-level **Operations** (Shopee order preview lives under **Sales** for now) |
-| Integrations | TikTok / other channels, sync status, settlements (Shopee Connect is live under **Integrations**) | **Integrations** |
-| Settings | Tenants + Users (superadmin; Profile later) | top-level **Settings** (FE34/FE36) |
+| Settings | TikTok / other channel connects, sync status, settlements (Shopee Connect is live under **Settings › Shopee Integration**) | inside **Settings** |
+| Settings | Profile (later) | top-level **Settings** (Tenants / Users / Shopee Integration live) |
 | Finance reports | Profit & Loss, Cash Flow, Balance Sheet | **Finance** hub cards |
 
 Status for frontend work is tracked in [`docs/roadmap/task-list.md`](docs/roadmap/task-list.md), not here.
