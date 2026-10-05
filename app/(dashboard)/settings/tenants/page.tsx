@@ -39,22 +39,24 @@ export default function SettingsTenantsPage() {
     document.title = 'Tenants · Settings · EcomHub';
   }, []);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (opts?: { silent?: boolean }) => {
     if (!canManage) {
       setIsLoading(false);
       setTenants([]);
       return;
     }
+    const silent = Boolean(opts?.silent);
     try {
-      setIsLoading(true);
+      if (!silent) setIsLoading(true);
       setError('');
       const data = await tenantsApi.list();
       setTenants(Array.isArray(data) ? data : []);
     } catch (err: unknown) {
-      setTenants([]);
+      // Keep current rows on silent refresh so create/toggle UI does not blank out.
+      if (!silent) setTenants([]);
       setError(err instanceof Error ? err.message : 'Failed to load tenants');
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, [canManage]);
 
@@ -97,14 +99,31 @@ export default function SettingsTenantsPage() {
     try {
       setSaving(true);
       setFormError('');
-      await tenantsApi.create({
+      const created = await tenantsApi.create({
         name,
         slug,
         timezone: form.timezone.trim() || undefined,
       });
+      // Show the new row immediately from the create response (do not wait on /me).
+      setTenants((prev) => {
+        if (prev.some((t) => t.id === created.id)) return prev;
+        return [
+          ...prev,
+          {
+            id: created.id,
+            name: created.name,
+            slug: created.slug,
+            is_active: created.is_active,
+            shopee_shop_id: null,
+          },
+        ];
+      });
       setIsModalOpen(false);
-      await refreshMeTenants();
-      await loadData();
+      setForm({ name: '', slug: '', timezone: '' });
+      setSlugTouched(false);
+      // Reconcile with server list, then refresh switcher allowed_tenants.
+      await loadData({ silent: true });
+      void refreshMeTenants();
     } catch (err: unknown) {
       setFormError(err instanceof Error ? err.message : 'Failed to create tenant');
     } finally {
@@ -121,9 +140,14 @@ export default function SettingsTenantsPage() {
     try {
       setTogglingId(item.id);
       setError('');
-      await tenantsApi.updateActive(item.id, { is_active: next });
-      await refreshMeTenants();
-      await loadData();
+      const updated = await tenantsApi.updateActive(item.id, { is_active: next });
+      setTenants((prev) =>
+        prev.map((t) =>
+          t.id === updated.id ? { ...t, is_active: updated.is_active } : t
+        )
+      );
+      await loadData({ silent: true });
+      void refreshMeTenants();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : `Failed to ${label} tenant`);
     } finally {
