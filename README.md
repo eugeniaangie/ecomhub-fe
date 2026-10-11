@@ -46,7 +46,7 @@ Marketing hub        Ad Budgets · Ad Expenses
 Sales hub            Shopee Orders · Shopee Returns · Shopee Ads
                      (paths under `/sales/shopee/…`; TikTok later as `/sales/tiktok/…`)
 
-Catalog hub          Categories
+Catalog hub          Products · Categories
 
 Settings hub         Shopee Integration (Connect shop via Partner OAuth)
                      Tenants · Users (superadmin)
@@ -86,6 +86,8 @@ Rules that keep this from sprawling:
 | Sales | Shopee Returns | `/sales/shopee/returns` |
 | Sales | Shopee Ads | `/sales/shopee/ads` |
 | Catalog | Domain hub | `/catalog` |
+| Catalog | Products | `/catalog/products` |
+| Catalog | Product detail / edit | `/catalog/products/:id`, `/catalog/products/:id/edit`, `/catalog/products/new` |
 | Catalog | Categories | `/master/categories` |
 | Settings | Domain hub | `/settings` |
 | Settings | Shopee Integration | `/settings/integration/shopee` |
@@ -103,7 +105,7 @@ Unlinked but still reachable by URL: `/finance/dashboard` (legacy Shopee summary
 
 | Area | Likely contents | Home in the IA |
 |---|---|---|
-| Catalog | Products, Product Attributes, Pricing Rules, Inventory | inside **Catalog** (Inventory may graduate to its own domain) |
+| Catalog | Product Attributes, Pricing Rules, Inventory; push / Publish / Unlist (FE39) | inside **Catalog** (Products list/CRUD/import live as FE41; Inventory may graduate to its own domain) |
 | Operations | Orders, Fulfillment, Fraud review | new top-level **Operations** (Shopee order preview lives under **Sales** for now) |
 | Settings | TikTok / other channel connects, sync status, settlements (Shopee Connect is live under **Settings › Shopee Integration**) | inside **Settings** |
 | Settings | Profile (later) | top-level **Settings** (Tenants / Users / Shopee Integration live) |

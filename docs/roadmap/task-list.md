@@ -60,6 +60,10 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE36 | FEATURE | Settings › Tenants — create/list tenants (superadmin) | Core F7c |
 | [x] | FE37 | FEATURE | Move Shopee Connect under Settings › Shopee Integration | IA |
 | [x] | FE38 | FEATURE | Nest Sales Shopee routes under `/sales/shopee/…` | IA |
+| [ ] | FE39 | FEATURE | Catalog › Products (umbrella) — push / Publish / Unlist / conflict after Core **F8g**; first UI slice is **FE41** | Core F8g |
+| [ ] | FE40 | FEATURE | **Important** — Unified Shopee returns view (buyer + system/logistics), filter by origin, total qty + SKU list — blocked on Core F6g analysis | Core F6g |
+| [x] | FE41 | FEATURE | Catalog › Products list/detail/create-edit + Shopee import (no push UI) — Core F8b/F8d/F8e Done | Core F8b / F8d / F8e |
+| [x] | FE42 | FEATURE | Shopee import: preview → select all / pick items + is_imported badges | Core **F8l** Done (`item_ids` + `is_imported`) |
 
 
 **P0 left:** none (FE1 Done).
@@ -461,7 +465,7 @@ One transactions feed across all accounts and channels, filterable by account, c
 
 ### FE16 — Restructure the Finance UI
 
-**Category:** FEATURE · **Status:** Blocked on `FE8`, `FE14`, `FE15` · **Backend counterpart:** `T34` · **Shell:** `FE17` Done
+**Category:** FEATURE · **Status:** Open · **Backend counterpart:** `T34` · **Shell:** `FE17` Done · **Note (2026-10-10):** no longer blocked on FE8/FE15 (both Done); FE14/T32 still Deferred — Channels stay placeholder; remaining work is Overview polish + retire legacy `/finance/dashboard` + unused `shopee/*` client calls when safe
 
 | Screen | Answers | Backed by | Route (shell) |
 |---|---|---|---|
@@ -861,4 +865,109 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 3. Leave room for future `/sales/tiktok/…`
 
 **Done (2026-10-05):** Pages moved; nav + internal Orders→Returns/Ads links updated; redirects in `next.config.ts`; README + `menu-endpoints.md` synced.
+
+---
+
+### FE39 — Catalog › Products (umbrella: push / Publish / Unlist)
+
+**Category:** FEATURE · **Status:** Open — **first UI slice → FE41**; push parts still blocked on Core **F8g** · **Noted:** 2026-10-09 · **Depends on:** Core **F8g** (push) · **Related:** FE41 · **Design:** `ecomhub-core/docs/analysis/product-domain.md`
+
+**Problem.** README plans Catalog › Products but there is no page, service client or types; the backend has no Product endpoints (the old routes are commented out in Core).
+
+**Goal.** Full Catalog: list/detail/drafts, Shopee import, push with diff/conflict, Publish/Unlist, size chart / live stock-price controls as designed. **Split (2026-10-11):** implement catalog + import first as **FE41** (Core F8b/F8d/F8e already shipped); keep push / Publish / Unlist / conflict / push-form proxies in this task until Core F8g exists.
+
+**Explicitly out of scope.** **No delete UI** — no delete/archive/bulk-delete buttons and no "remove missing items" in import (Product deletion is deferred in Core F8/T21). No client-side computation of SKUs or accounting values; no image upload until Core F8e.
+
+**Why it matters.** Without it the catalog can only be reached by API calls.
+
+**Affected area.** `app/(dashboard)/catalog/…` (new), `lib/services/` product client, `lib/types/`, `lib/authHelpers.ts` (`can*` predicate matching the backend's role rules), `docs/menu-endpoints.md`, README menu status.
+
+**Next action.** Resume when Core F8g lands — read push/publish handlers + Swagger; do not invent FE push shapes from the analysis sketch alone. Catalog list/detail/CRUD + import shipped as **FE41** (Done 2026-10-11).
+
+**Update (2026-10-11):** Core **F8b / F8e / F8c / F8d Done**. Catalog read/write + `POST …/shopee/products/import` exist. Umbrella FE39 no longer blocks on “no API”; **FE41** is the next buildable slice. Push / Publish / Unlist / conflict remain here pending F8g.
+
+**Update (2026-10-11):** **FE41 Done** — Products UI live under Catalog. This umbrella now only tracks push / Publish / Unlist / conflict / push-form extras pending Core F8g.
+
+**Update (2026-10-09):** Core direction changed — EcomHub is the product master and **pushes to Shopee in the MVP** (Core **F8g**). FE39 scope grows to: draft create/edit (save half-done products), editable SKU + product code, per-channel sync status badges, category mapping (internal → Shopee category), push action with diff preview and a **conflict screen** (pull from Shopee vs overwrite), import. Still **no delete UI**. Depends additionally on Core F8e (image upload) and F8g.
+
+**Note (2026-10-09):** Core design docs are closed (`ecomhub-core/docs/analysis/product-domain.md` §15.11–§15.12). Planned role rule: product writes/import/push for `superadmin` + `admin`, reads for all authenticated roles — add a `can*` predicate when the Core routes exist. The §15.12 route table is a **sketch**, not the contract. No removal of variants/options/images in the MVP.
+
+**Update (2026-10-10):** Core push-completeness review (`ecomhub-core/docs/analysis/product-domain.md` §15.15, Core **F8i / F8j / F8k**) may add to FE39: size chart selection (F8i), more fields in the push form (F8j), and — per developer decision — **editing stock and price on live products** with a safety flow (F8k; options include diff + explicit confirm for live listings, or a separate EcomHub edit state). Nothing to build until those Core analyses are Done and the F8b/F8g contracts exist; do not infer shapes from the analysis doc. Stock/price edits will be their own explicit actions, not part of a generic save.
+
+**Update (2026-10-10, F8j):** Core F8j analysis (`ecomhub-core/docs/analysis/product-domain.md` §15.18, awaiting developer review) fixes the MVP push form: **form fields** = name, description, per-variant price, weight, package dimensions, Shopee category, images, product code, attributes (rendered from the category's attribute tree), brand (dropdown), logistics channels (**create only** — Shopee's `update_item` does not accept them, so after create they are read-only snapshot), initial stock (one entry). Condition, pre-order and "dangerous item" are fixed backend defaults (no controls), unless Core PQ30 (pre-order) says otherwise. The create button needs the Core preflight list (§15.18.5) satisfied. Still: do not infer shapes from the analysis doc — wait for the Core F8b/F8g contracts. **Developer decision (2026-10-10):** the **pre-order** control (is pre-order + days to ship) is wanted for upcoming products but is **low priority** — build it last in FE39; the Core contract will already accept it.
+
+**Update (2026-10-10, F8i):** Core F8i analysis (`ecomhub-core/docs/analysis/product-domain.md` §15.19, awaiting developer review) adds a **Size chart** section to the push form: shown only when the chosen category's live `size_chart_limit` supports it, required when mandatory; **template** = dropdown of the category's Shopee templates (name from detail) with a preview table — templates are created in Seller Centre, so no create button; **image** = upload control (own `media_assets`, not the photo gallery); plus a clear action. **Developer decision (2026-10-10):** both kinds are in the MVP (no staging); the template preview must render all three measurement types (single dropdown, single number, number range). Nothing to build until the Core F8b/F8g contracts exist.
+
+**Update (2026-10-09):** FE39 also includes **Publish** / **Unlist** buttons (Shopee listing visibility `NORMAL` ↔ `UNLIST` via Core F8g). That is **not** a delete UI — product stays; only Shopee storefront visibility changes. Still no delete/archive/bulk-delete. **All Product UI copy is English** (buttons, badges, messages) — Core `product-domain.md` §15.11 #13.
+
+---
+
+### FE41 — Catalog › Products list / detail / create-edit + Shopee import
+
+**Category:** FEATURE · **Status:** Done (2026-10-11) · **Noted:** 2026-10-11 · **Parent umbrella:** FE39 · **Depends on:** Core **F8b** (Done), **F8d** (Done), **F8e** (Done) · **Not in this slice:** Core **F8g** push / Publish / Unlist
+
+**Problem.** Core can create products and import from Shopee, but the FE Catalog still has no Products screens — operators only have Swagger/API.
+
+**Goal.** English Catalog › Products UI:
+- List + search (name / SKU / status / sync badges when present)
+- Detail (options, variants + master SKU, images, channel listing snapshot: external ids / status)
+- Create / edit draft (F8b contract: options/variants add-only; editable SKU + product_code; image upload via F8e)
+- **Import from Shopee** — call `POST /integrations/marketplaces/shopee/products/import` (single request, page_size≤100); show per-item `created|updated|skipped_kit|failed`; optional offset loop if `has_next_page`
+- Category channel-mappings UI if cheap (existing Core routes)
+
+**Explicitly out of scope.** No delete UI. No push / Publish / Unlist / conflict screen / size-chart push form / live stock-price commands (those stay on FE39 until F8g). No client-side SKU inventing beyond what the API returns.
+
+**Why it matters.** Unblocks real catalog use and dry-run of import against Seller Centre without waiting for push.
+
+**Affected area.** `app/(dashboard)/catalog/…` (new Products routes), `components/` product domain, `lib/services/` product + shopee import client, `lib/types/`, `lib/authHelpers.ts` (`can*` for admin/superadmin writes), nav under Catalog, `docs/menu-endpoints.md`, README menu status.
+
+**Next action.** Read Core Swagger/handlers for `/products*` and `…/shopee/products/import` (and preview if useful). Propose page set + route map; wait for confirmation before coding.
+
+**Done (2026-10-11):** Catalog › Products under `/catalog/products` (+ `/new`, `/:id`, `/:id/edit`). Clients: `lib/services/productsApi.ts`, `shopeeAuthApi.importProducts`; types in `lib/types/product.ts`; `canWriteProduct` / `canImportShopeeProducts`. List filters + Import modal (optional `has_next_page` loop); detail shows options/variants/SKU edit/images/listings; create/edit via `ProductForm` (add-only options/variants). No delete, no push/Publish/Unlist. Category channel-mappings left for a later slice. Docs: `menu-endpoints.md`, README nav.
+
+**Note (2026-10-11):** Import UI is page / “import all pages” only. Preview-then-select + already-imported badges → **FE42**.
+
+---
+
+### FE42 — Shopee import: preview → select (all / pick) + `is_imported` state
+
+**Category:** FEATURE · **Status:** Done (2026-10-11) · **Noted:** 2026-10-11 · **Parent:** FE41 (import UX follow-up) · **Depends on:** Core **F8l** (Done) · **Related:** FE39
+
+**Problem.** FE41 Import modal calls `POST …/products/import` immediately for a whole page (optional loop). Operators cannot preview the Shopee catalog first, choose **import all** vs **selected items**, or see which items are **already imported** vs still new on a later open.
+
+**What Core already has (F8c + F8l Done 2026-10-11).** `GET …/shopee/products/preview` — list page **or** `item_ids` (comma-separated, ≤100); each product includes `is_imported` + `product_id` / `listing_id` when a listing exists. `POST …/products/import` accepts the same `item_ids` (or page mode when omitted). Re-import returns `updated` (idempotent).
+
+**Resolved (2026-10-11):** Core **F8l** shipped the selective + `is_imported` contract — FE no longer blocked on a Core gap.
+
+**Goal.**
+1. Open Import → load **preview** (paginate / loop pages as needed).
+2. Checkbox list: **Select all** on the loaded set, or pick individual items; kit rows shown as non-importable if preview marks them.
+3. Confirm → import only the selection (after Core supports it); keep an **Import all (current page / shop)** path if still useful.
+4. On reopen: each row shows **already imported** vs **not yet** (and optionally link to the EcomHub product).
+
+**Explicitly out of scope.** No delete / “gone from Shopee” reconcile (Core F8f / §11.4). No push UI (FE39).
+
+**Why it matters.** Safer dry-runs and partial catalog onboarding without pulling the whole shop every click.
+
+**Affected area.** `app/(dashboard)/catalog/products/page.tsx` (import modal), `lib/services/integrationsApi.ts` (`previewProducts` + import params), types, `docs/menu-endpoints.md`.
+
+**Next action.** Read Core Swagger/handlers after `make swagger` (F8l): wire import modal to preview → checkboxes → `import?item_ids=…`. Use `is_imported` from preview. Do not fake selective import by only changing `offset`/`page_size`.
+
+**Done (2026-10-11):** Import modal → `ShopeeProductImportModal`: open loads preview (page_size 50) + Load more; checkboxes default empty; Select all (non-kit only); kit rows disabled with “Kit — cannot import”; Imported / Not imported badges + product link; import via `item_ids` (chunked ≤100); re-import allowed. Page-mode blind import removed. Clients: `previewProducts` + `item_ids` on `importProducts`. Docs: `menu-endpoints.md`.
+
+**Update (2026-10-11) — Core F8m:** Import modal / `importProducts` now POST body `products` (selected preview rows) so Core does not re-fetch Shopee on commit. Query `item_ids` remains available as a live-fetch fallback on the client helper.
+
+---
+
+### FE40 — Unified Shopee returns view (buyer + system/logistics)
+
+**Category:** FEATURE · **Status:** Open — **blocked on Core F6g analysis** · **Noted:** 2026-10-10 · **Important** (developer) · **Backend:** Core **F6g** · **Related:** FE28, FE25
+
+**Problem.** Returns are split across two screens. Buyer-initiated returns (wrong size, damaged…) are on Sales → Shopee Returns (`get_return_list`). System/logistics returns (parcel lost, failed delivery, COD refused) only appear on Sales → Shopee Orders as `CANCELLED` + cancel bucket "Returns (approx)", mixed together, distinguishable only by the `Cancel reason` text. The Orders page does not expose the `cancel_reason` filter even though `previewOrders` and Core already support it. Current mapping: Core [`SHOPEE_RETURNS_AND_CANCELLATIONS.md`](../../../ecomhub-core/docs/guides/SHOPEE_RETURNS_AND_CANCELLATIONS.md).
+
+**Why it matters.** Operator needs one place for **total returned qty + SKU list** per period, split by buyer vs system and by "goods back vs lost", for stock reconciliation. Two screens with different date fields and a possible double count (`TO_RETURN` + return request) make that a manual guess.
+
+**Affected area.** `app/(dashboard)/sales/shopee/returns/page.tsx` (or a new menu — undecided in F6g), possibly `app/(dashboard)/sales/shopee/orders/page.tsx`, `lib/services/integrationsApi.ts`, `docs/menu-endpoints.md`.
+
+**Next action.** Wait for Core F6g analysis + contract (read the handler/Swagger — do not infer shapes). Do not merge or dedupe the two existing endpoints client-side to fake a unified total.
 

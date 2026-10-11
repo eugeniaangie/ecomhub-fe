@@ -147,6 +147,29 @@ CRUD and workflow screens under the Finance sidebar group, after the Views secti
 
 ## Catalog
 
+### Products (`/catalog/products`) — FE41 / FE42
+
+| Path | Notes |
+|------|--------|
+| `/catalog/products` | List + search/status/sync filters + Import from Shopee modal |
+| `/catalog/products/new` | Create draft (admin+) |
+| `/catalog/products/:id` | Detail — options, variants/SKU edit, images, channel listings |
+| `/catalog/products/:id/edit` | Edit product (add-only options/variants; admin+) |
+
+- `GET /products` — paginated list (`search`, `status`, `sync_status`, …)
+- `GET /products/:id` — detail with options, variants, images, listings
+- `POST /products` — create (admin+)
+- `PUT /products/:id` — update (admin+)
+- `PUT /products/:id/variants/:variant_id` — SKU / position (admin+)
+- `POST /products/:id/images` — multipart `file` upload (admin+)
+- `PUT /products/:id/images` — reorder / set primary (admin+)
+- `GET /integrations/marketplaces/shopee/products/preview` — Import modal list (admin+; `shop_id`, `offset`, `page_size`; each row has `is_imported` / `product_id`)
+- `POST /integrations/marketplaces/shopee/products/import` — import selection (admin+; body `{ shop_id, products }` from preview — Core F8m, no Shopee re-fetch; ≤100 per request; chunks if more selected)
+- `GET /integrations/marketplaces/shopee/connections` — shop picker for import
+- `GET /categories` — category dropdown on create/edit
+
+Import UX (FE42): preview → checkboxes (Select all / pick; kit rows disabled) → import selected. Re-import allowed. No delete UI. No push / Publish / Unlist (FE39 / Core F8g).
+
 ### Categories (`/master/categories`)
 
 - `GET /categories`
@@ -213,7 +236,7 @@ Legacy FE routes (redirect): `/integrations` → `/settings`, `/integrations/sho
 ### Shopee Returns (`/sales/shopee/returns`) — FE28 / Core F6d + FE33
 
 - `GET /integrations/marketplaces/shopee/connections` — presence check (no shop picker).
-- `GET /integrations/marketplaces/shopee/returns/preview` — live `get_return_list` (admin+). Query: optional `shop_id` omitted, `time_from`, `time_to`, `fetch_all=true`, optional `return_status`. Response: `return_count`, `total_quantity`, `total_refund_amount`, `sku_summary[]`, `returns[]`. Do **not** treat orders preview `cancel_bucket=pengembalian` as this screen.
+- `GET /integrations/marketplaces/shopee/returns/preview` — live `get_return_list` (admin+). Query: optional `shop_id` omitted, `time_from`, `time_to`, `fetch_all=true`, optional `return_status`. Response: `return_count`, `total_quantity`, `total_refund_amount`, `sku_summary[]`, `returns[]`. Do **not** treat orders preview `cancel_bucket=pengembalian` as this screen. Which screen/filter shows each return or cancel case: Core [`SHOPEE_RETURNS_AND_CANCELLATIONS.md`](../../ecomhub-core/docs/guides/SHOPEE_RETURNS_AND_CANCELLATIONS.md).
 
 ### Shopee Ads (`/sales/shopee/ads`) — FE31 / Core F6f + FE33
 

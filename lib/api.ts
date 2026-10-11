@@ -152,12 +152,18 @@ async function request<T>(
   body?: unknown,
   options?: RequestOptions
 ): Promise<T> {
+  const isFormData =
+    typeof FormData !== 'undefined' && body instanceof FormData;
+
   const buildHeaders = (): Record<string, string> => {
     const headers: Record<string, string> = {
       accept: 'application/json',
-      'Content-Type': 'application/json',
       ...(options?.headers as Record<string, string>),
     };
+    // Browser sets multipart boundary when body is FormData — do not force JSON.
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json';
+    }
     if (!options?.skipAuth) {
       const raw = auth.getToken();
       if (raw) {
@@ -180,7 +186,12 @@ async function request<T>(
       ...options,
       method,
       headers: buildHeaders(),
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body:
+        body === undefined
+          ? undefined
+          : isFormData
+            ? (body as FormData)
+            : JSON.stringify(body),
       credentials: 'include',
     });
 

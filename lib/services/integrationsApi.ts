@@ -231,6 +231,107 @@ export interface GetShopeeOrderDetailParams {
   order_sn: string;
 }
 
+export interface ImportShopeeProductsParams {
+  shop_id?: number;
+  offset?: number;
+  page_size?: number;
+  /** Selective live-fetch import (F8l); max 100. Ignored when products is set. */
+  item_ids?: number[];
+  /**
+   * Trusted commit from a prior preview (Core F8m). When set, Core skips Shopee re-fetch.
+   * Pass the full normalized preview rows for the selected item_ids (≤100).
+   */
+  products?: ShopeeNormalizedProduct[];
+}
+
+export interface PreviewShopeeProductsParams {
+  shop_id?: number;
+  offset?: number;
+  page_size?: number;
+  item_ids?: number[];
+  item_status?: string;
+}
+
+export type ShopeeProductImportStatus =
+  | 'created'
+  | 'updated'
+  | 'skipped_kit'
+  | 'failed';
+
+export interface ShopeeProductImportItemResult {
+  item_id: number;
+  status: ShopeeProductImportStatus | string;
+  product_id?: number | null;
+  listing_id?: number | null;
+  message?: string;
+}
+
+export interface ShopeeProductsImportResult {
+  shop_id: number;
+  total_count: number;
+  has_next_page: boolean;
+  next_offset: number;
+  created: number;
+  updated: number;
+  skipped_kit: number;
+  failed: number;
+  items: ShopeeProductImportItemResult[];
+  not_returned?: number[];
+  token_refreshed: boolean;
+}
+
+/** One normalized Shopee item from products/preview (F8c / F8l). */
+export interface ShopeeNormalizedProduct {
+  item_id: number;
+  item_status?: string;
+  item_name?: string;
+  item_sku?: string;
+  is_kit?: boolean;
+  skipped_kit?: boolean;
+  is_imported?: boolean;
+  product_id?: number | null;
+  listing_id?: number | null;
+  has_model?: boolean;
+  brand_name?: string;
+}
+
+export interface ShopeeProductsPreviewResult {
+  shop_id: number;
+  total_count: number;
+  has_next_page: boolean;
+  next_offset: number;
+  list_count: number;
+  products: ShopeeNormalizedProduct[];
+  not_returned?: number[];
+  token_refreshed: boolean;
+}
+
+const MAX_ITEM_IDS = 100;
+
+function appendShopAndPaging(
+  query: URLSearchParams,
+  params: {
+    shop_id?: number;
+    offset?: number;
+    page_size?: number;
+    item_ids?: number[];
+  }
+) {
+  if (params.shop_id && params.shop_id > 0) {
+    query.set('shop_id', String(params.shop_id));
+  }
+  if (params.item_ids && params.item_ids.length > 0) {
+    query.set('item_ids', params.item_ids.join(','));
+    return;
+  }
+  if (params.offset != null && params.offset >= 0) {
+    query.set('offset', String(params.offset));
+  }
+  if (params.page_size && params.page_size > 0) {
+    query.set('page_size', String(params.page_size));
+  }
+}
+
 export const shopeeAuthApi = {
   /**
    * Signed Shopee auth_partner URL. Open in the browser to connect a shop.
@@ -376,6 +477,62 @@ export const shopeeAuthApi = {
     }
     return api.get<ShopeeOrderDetail>(
       `${API_VERSION}/integrations/marketplaces/shopee/orders/detail?${query.toString()}`
+    );
+  },
+
+  /**
+   * Live Shopee product preview (F8c / F8l). No DB writes except reading is_imported.
+   * List page mode, or selective via item_ids (≤100).
+   */
+  previewProducts: async (params: PreviewShopeeProductsParams = {}) => {
+    const query = new URLSearchParams();
+    appendShopAndPaging(query, params);
+    if (params.item_status) query.set('item_status', params.item_status);
+    const qs = query.toString();
+    return api.get<ShopeeProductsPreviewResult>(
+      `${API_VERSION}/integrations/marketplaces/shopee/products/preview${qs ? `?${qs}` : ''}`
+    );
+  },
+
+  /**
+   * Import Shopee items into the catalog (Core F8d / F8l / F8m). Roles: admin+.
+   * Prefer `products` (commit from preview — no Shopee re-fetch). Else page mode or item_ids.
+   */
+  importProducts: async (params: ImportShopeeProductsParams = {}) => {
+    if (params.products && params.products.length > MAX_ITEM_IDS) {
+      throw new Error(`At most ${MAX_ITEM_IDS} products per import request`);
+    }
+    if (params.item_ids && params.item_ids.length > MAX_ITEM_IDS) {
+      throw new Error(`At most ${MAX_ITEM_IDS} item_ids per import request`);
+    }
+
+    const body: {
+      shop_id?: number;
+      products?: ShopeeNormalizedProduct[];
+    } = {};
+    if (params.shop_id && params.shop_id > 0) {
+      body.shop_id = params.shop_id;
+    }
+
+    if (params.products && params.products.length > 0) {
+      body.products = params.products;
+      const query = new URLSearchParams();
+      if (params.shop_id && params.shop_id > 0) {
+        query.set('shop_id', String(params.shop_id));
+      }
+      const qs = query.toString();
+      return api.post<ShopeeProductsImportResult>(
+        `${API_VERSION}/integrations/marketplaces/shopee/products/import${qs ? `?${qs}` : ''}`,
+        body
+      );
+    }
+
+    const query = new URLSearchParams();
+    appendShopAndPaging(query, params);
+    const qs = query.toString();
+    return api.post<ShopeeProductsImportResult>(
+      `${API_VERSION}/integrations/marketplaces/shopee/products/import${qs ? `?${qs}` : ''}`,
+      body.shop_id ? body : {}
     );
   },
 };

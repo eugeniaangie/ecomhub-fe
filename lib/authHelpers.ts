@@ -507,6 +507,24 @@ export const canConnectShopeeShop = (): boolean => {
   return hasAnyRole(['superadmin', 'admin']);
 };
 
+/**
+ * Create / update products, variants, images (Core F8b / F8e).
+ * Allowed: superadmin, admin. Reads are open to any authenticated role.
+ */
+export const canWriteProduct = (): boolean => {
+  if (!canMutateTenantData()) return false;
+  return hasAnyRole(['superadmin', 'admin']);
+};
+
+/**
+ * Import Shopee products into the catalog (Core F8d).
+ * Allowed: superadmin, admin — same gate as products/import.
+ */
+export const canImportShopeeProducts = (): boolean => {
+  if (!canMutateTenantData()) return false;
+  return hasAnyRole(['superadmin', 'admin']);
+};
+
 /** Superadmin may switch active tenant (FE32 / FE35). */
 export const canSwitchTenant = (): boolean => {
   return isSuperadmin();
