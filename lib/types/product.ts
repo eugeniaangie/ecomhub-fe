@@ -42,6 +42,7 @@ export interface ProductOptionValue {
   position: number;
   option_value: string;
   media_asset_id?: number | null;
+  channel_media_id?: number | null;
   created_at: string;
   updated_at: string;
   created_by?: number | null;
@@ -90,12 +91,8 @@ export interface ProductVariantDetail extends ProductVariant {
 export interface MediaAsset {
   id: number;
   tenant_id: number;
-  origin: string;
-  status: string;
-  storage_provider?: string | null;
-  storage_key?: string | null;
-  source_url?: string | null;
-  external_image_id?: string | null;
+  storage_provider: string;
+  storage_key: string;
   content_type?: string | null;
   byte_size?: number | null;
   width?: number | null;
@@ -105,11 +102,23 @@ export interface MediaAsset {
   updated_at: string;
 }
 
+export interface ChannelMedia {
+  id: number;
+  tenant_id: number;
+  platform: string;
+  external_image_id: string;
+  source_url?: string | null;
+  image_url?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ProductImage {
   id: number;
   tenant_id: number;
   product_id: number;
-  media_asset_id: number;
+  media_asset_id?: number | null;
+  channel_media_id?: number | null;
   position: number;
   is_primary: boolean;
   created_at: string;
@@ -121,6 +130,7 @@ export interface ProductImage {
 export interface ProductImageDetail extends ProductImage {
   image_url?: string;
   media?: MediaAsset | null;
+  channel_media?: ChannelMedia | null;
 }
 
 export interface ChannelListingVariant {
