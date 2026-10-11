@@ -64,6 +64,8 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [ ] | FE40 | FEATURE | **Important** — Unified Shopee returns view (buyer + system/logistics), filter by origin, total qty + SKU list — blocked on Core F6g analysis | Core F6g |
 | [x] | FE41 | FEATURE | Catalog › Products list/detail/create-edit + Shopee import (no push UI) — Core F8b/F8d/F8e Done | Core F8b / F8d / F8e |
 | [x] | FE42 | FEATURE | Shopee import: preview → select all / pick items + is_imported badges | Core **F8l** Done (`item_ids` + `is_imported`) |
+| [x] | FE43 | FEATURE | Product detail = inline editable form (retire /edit); image zoom | UX / FE41 follow-up |
+| [ ] | FE44 | FEATURE | **Deferred** — Product delete / remove option·value·variant·image UI | Core F8f / product deletion |
 
 
 **P0 left:** none (FE1 Done).
@@ -956,6 +958,26 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 **Done (2026-10-11):** Import modal → `ShopeeProductImportModal`: open loads preview (page_size 50) + Load more; checkboxes default empty; Select all (non-kit only); kit rows disabled with “Kit — cannot import”; Imported / Not imported badges + product link; import via `item_ids` (chunked ≤100); re-import allowed. Page-mode blind import removed. Clients: `previewProducts` + `item_ids` on `importProducts`. Docs: `menu-endpoints.md`.
 
 **Update (2026-10-11) — Core F8m:** Import modal / `importProducts` now POST body `products` (selected preview rows) so Core does not re-fetch Shopee on commit. Query `item_ids` remains available as a live-fetch fallback on the client helper.
+
+---
+
+### FE43 — Product detail = inline editable form (retire /edit)
+
+**Category:** FEATURE · **Status:** Done (2026-10-11) · **Noted:** 2026-10-11 · **Parent:** FE41 UX follow-up · **Related:** FE44
+
+**Problem.** Separate Edit page only explained “add variants”, while SKU editing lived on the read-only detail — operators were confused. Wanted one screen.
+
+**Done (2026-10-11):** `/catalog/products/:id` is the editor for admin+ (`ProductForm` + Save; existing variant SKUs editable in the same form; description `resize-y`). Images via `ProductImageGallery` (upload, set primary, click-to-zoom / zoom-in cursor). Channel listings stay read-only. `/edit` redirects to detail. No delete/remove UI (see **FE44**).
+
+---
+
+### FE44 — Deferred: product delete / remove option·value·variant·image UI
+
+**Category:** FEATURE · **Status:** Open — **Deferred** · **Noted:** 2026-10-11 · **Depends on:** Core product deletion / remove APIs (F8f / product-domain §11; not in MVP)
+
+**Problem.** Operators will eventually need to remove options, values, variants, or images. Core MVP has **no** delete/remove routes (add-only + RESTRICT).
+
+**Next action.** When Core ships delete/remove (or soft-archive) contracts, add FE controls on the inline detail editor. Do not invent FE delete against missing APIs.
 
 ---
 

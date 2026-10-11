@@ -87,7 +87,7 @@ Rules that keep this from sprawling:
 | Sales | Shopee Ads | `/sales/shopee/ads` |
 | Catalog | Domain hub | `/catalog` |
 | Catalog | Products | `/catalog/products` |
-| Catalog | Product detail / edit | `/catalog/products/:id`, `/catalog/products/:id/edit`, `/catalog/products/new` |
+| Catalog | Product detail (inline edit) / new | `/catalog/products/:id`, `/catalog/products/new` (`/:id/edit` redirects to detail) |
 | Catalog | Categories | `/master/categories` |
 | Settings | Domain hub | `/settings` |
 | Settings | Shopee Integration | `/settings/integration/shopee` |

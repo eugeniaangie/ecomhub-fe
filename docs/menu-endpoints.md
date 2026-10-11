@@ -147,14 +147,14 @@ CRUD and workflow screens under the Finance sidebar group, after the Views secti
 
 ## Catalog
 
-### Products (`/catalog/products`) — FE41 / FE42
+### Products (`/catalog/products`) — FE41 / FE42 / FE43
 
 | Path | Notes |
 |------|--------|
 | `/catalog/products` | List + search/status/sync filters + Import from Shopee modal |
 | `/catalog/products/new` | Create draft (admin+) |
-| `/catalog/products/:id` | Detail — options, variants/SKU edit, images, channel listings |
-| `/catalog/products/:id/edit` | Edit product (add-only options/variants; admin+) |
+| `/catalog/products/:id` | Detail = inline editable form (admin+): Save; images + zoom; listings read-only |
+| `/catalog/products/:id/edit` | Redirects to `/:id` (FE43) |
 
 - `GET /products` — paginated list (`search`, `status`, `sync_status`, …)
 - `GET /products/:id` — detail with options, variants, images, listings

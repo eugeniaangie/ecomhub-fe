@@ -12,13 +12,21 @@ import type {
   ProductStatus,
   ProductVariantInput,
 } from '@/lib/types/product';
+import { variantOptionLabels } from '@/lib/utils/productLabels';
+
+export type ProductFormSkuUpdate = { variantId: number; sku: string };
 
 export interface ProductFormProps {
   mode: 'create' | 'edit';
   initial?: ProductDetail | null;
   isSubmitting?: boolean;
   error?: string;
-  onSubmit: (body: ProductFormBody) => void | Promise<void>;
+  cancelLabel?: string;
+  submitLabel?: string;
+  onSubmit: (
+    body: ProductFormBody,
+    extras: { skuUpdates: ProductFormSkuUpdate[] }
+  ) => void | Promise<void>;
   onCancel: () => void;
 }
 
@@ -82,6 +90,8 @@ export function ProductForm({
   initial,
   isSubmitting = false,
   error = '',
+  cancelLabel = 'Cancel',
+  submitLabel,
   onSubmit,
   onCancel,
 }: ProductFormProps) {
@@ -98,6 +108,11 @@ export function ProductForm({
   const [pkgH, setPkgH] = useState(seed?.package_height_cm ?? '');
   const [options, setOptions] = useState<OptionDraft[]>(seed?.options ?? []);
   const [newVariants, setNewVariants] = useState<VariantDraft[]>([]);
+  const [skuEdits, setSkuEdits] = useState<Record<number, string>>(() => {
+    const map: Record<number, string> = {};
+    for (const v of initial?.variants ?? []) map[v.id] = v.sku;
+    return map;
+  });
   const [categories, setCategories] = useState<MasterCategory[]>([]);
   const [localError, setLocalError] = useState('');
 
@@ -210,7 +225,20 @@ export function ProductForm({
     e.preventDefault();
     const body = buildBody();
     if (!body) return;
-    await onSubmit(body);
+
+    const skuUpdates: ProductFormSkuUpdate[] = [];
+    for (const v of initial?.variants ?? []) {
+      const next = (skuEdits[v.id] ?? '').trim();
+      if (!next) {
+        setLocalError('Each existing variant needs a SKU.');
+        return;
+      }
+      if (next !== v.sku) {
+        skuUpdates.push({ variantId: v.id, sku: next });
+      }
+    }
+
+    await onSubmit(body, { skuUpdates });
   };
 
   return (
@@ -284,13 +312,16 @@ export function ProductForm({
             Description
           </label>
           <textarea
-            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder:text-gray-400"
+            className="min-h-24 w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder:text-gray-400"
             rows={4}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             maxLength={10000}
             placeholder="Optional; product description for the listing"
           />
+          <p className="mt-1 text-xs text-gray-500">
+            Drag the corner to resize if the description is long.
+          </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-4">
           <Input
@@ -334,8 +365,8 @@ export function ProductForm({
           <div>
             <h2 className="text-sm font-semibold text-gray-900">Options</h2>
             <p className="text-xs text-gray-500">
-              Up to 2 axes (e.g. Color, Size). On edit, existing options are
-              renamed; new ones are added — nothing is removed.
+              Up to 2 axes (e.g. Color, Size). You can rename values and add
+              new ones. Removing options/values is not available yet.
             </p>
           </div>
           {options.length < 2 && (
@@ -453,12 +484,10 @@ export function ProductForm({
       <section className="space-y-4 rounded-lg border border-gray-200 bg-white p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 className="text-sm font-semibold text-gray-900">
-              {mode === 'edit' ? 'Add variants' : 'Variants'}
-            </h2>
+            <h2 className="text-sm font-semibold text-gray-900">Variants</h2>
             <p className="text-xs text-gray-500">
               {mode === 'edit'
-                ? 'Only new variants are sent. Edit existing SKUs on the detail page.'
+                ? 'Edit SKUs below. Add new variants with option values that match option order. Removing variants is not available yet.'
                 : 'SKU blank = auto-generated. Manual SKUs become A–Z / 0–9 with - (e.g. kaos hitam m → KAOS-HITAM-M). Option values must match option order.'}
             </p>
           </div>
@@ -479,11 +508,50 @@ export function ProductForm({
             Add variant
           </Button>
         </div>
+
+        {mode === 'edit' && (initial?.variants?.length ?? 0) > 0 ? (
+          <div className="overflow-x-auto rounded-md border border-gray-100">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 text-left text-xs uppercase text-gray-500">
+                  <th className="px-3 py-2">Options</th>
+                  <th className="px-3 py-2">SKU</th>
+                  <th className="px-3 py-2">Source</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {initial!.variants.map((v) => (
+                  <tr key={v.id}>
+                    <td className="px-3 py-2 text-gray-900">
+                      {variantOptionLabels(v, initial!.options ?? [])}
+                    </td>
+                    <td className="px-3 py-2">
+                      <Input
+                        value={skuEdits[v.id] ?? v.sku}
+                        onChange={(e) =>
+                          setSkuEdits((prev) => ({
+                            ...prev,
+                            [v.id]: e.target.value,
+                          }))
+                        }
+                        placeholder="e.g. KAOS-HITAM-M"
+                      />
+                    </td>
+                    <td className="px-3 py-2 text-gray-700">{v.sku_source}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+
         {newVariants.length === 0 ? (
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-600">
             {mode === 'create'
               ? 'No variants yet — API can create a default sellable unit when options are empty.'
-              : 'No new variants to add.'}
+              : (initial?.variants?.length ?? 0) > 0
+                ? 'Use Add variant to create more combinations.'
+                : 'No variants yet — add one below.'}
           </p>
         ) : (
           newVariants.map((v, vi) => (
@@ -543,10 +611,11 @@ export function ProductForm({
 
       <div className="flex flex-wrap justify-end gap-2">
         <Button type="button" variant="secondary" onClick={onCancel}>
-          Cancel
+          {cancelLabel}
         </Button>
         <Button type="submit" isLoading={isSubmitting}>
-          {mode === 'create' ? 'Create product' : 'Save changes'}
+          {submitLabel ??
+            (mode === 'create' ? 'Create product' : 'Save changes')}
         </Button>
       </div>
     </form>
