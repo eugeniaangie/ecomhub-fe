@@ -15,10 +15,16 @@ import {
   canWriteProduct,
 } from '@/lib/authHelpers';
 import { productsApi } from '@/lib/services/productsApi';
-import type { Product, ProductStatus } from '@/lib/types/product';
+import type {
+  ListingSyncStatus,
+  Product,
+  ProductStatus,
+} from '@/lib/types/product';
 import {
   PRODUCT_STATUS_COLORS,
   PRODUCT_STATUS_LABELS,
+  SYNC_STATUS_COLORS,
+  SYNC_STATUS_LABELS,
 } from '@/lib/utils/productLabels';
 import {
   DEFAULT_PAGE,
@@ -79,7 +85,7 @@ export default function CatalogProductsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Products"
-        description="EcomHub product master — create drafts, edit SKUs, and import from Shopee."
+        description="EcomHub product master — create drafts, edit SKUs, import from Shopee, and push listings from product detail."
         actions={
           <>
             {canImport && (
@@ -178,6 +184,7 @@ export default function CatalogProductsPage() {
                   <th className="px-3 py-2">Name</th>
                   <th className="px-3 py-2">Code</th>
                   <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Sync</th>
                   <th className="px-3 py-2">Updated</th>
                   <th className="px-3 py-2" />
                 </tr>
@@ -185,6 +192,9 @@ export default function CatalogProductsPage() {
               <tbody className="divide-y divide-gray-100">
                 {products.map((p) => {
                   const st = (p.status || 'draft') as ProductStatus;
+                  const syncFilterStatus = syncFilter
+                    ? (syncFilter as ListingSyncStatus)
+                    : null;
                   return (
                     <tr key={p.id} className="hover:bg-gray-50">
                       <td className="px-3 py-2 font-medium text-gray-900">
@@ -207,18 +217,47 @@ export default function CatalogProductsPage() {
                           }
                         />
                       </td>
+                      <td className="px-3 py-2">
+                        {syncFilterStatus ? (
+                          <StatusBadge
+                            label={
+                              SYNC_STATUS_LABELS[syncFilterStatus] ||
+                              syncFilter
+                            }
+                            colorClass={
+                              SYNC_STATUS_COLORS[syncFilterStatus] ||
+                              'bg-gray-100 text-gray-800'
+                            }
+                          />
+                        ) : (
+                          <span
+                            className="text-gray-400"
+                            title="Open detail for per-listing sync status"
+                          >
+                            —
+                          </span>
+                        )}
+                      </td>
                       <td className="px-3 py-2 text-gray-600">
                         {p.updated_at
                           ? new Date(p.updated_at).toLocaleString()
                           : '—'}
                       </td>
-                      <td className="px-3 py-2 text-right">
+                      <td className="px-3 py-2 text-right space-x-3">
                         <Link
                           href={`/catalog/products/${p.id}`}
                           className="text-blue-600 hover:underline"
                         >
                           View
                         </Link>
+                        {canWrite && (
+                          <Link
+                            href={`/catalog/products/new?copy_from=${p.id}`}
+                            className="text-blue-600 hover:underline"
+                          >
+                            Copy
+                          </Link>
+                        )}
                       </td>
                     </tr>
                   );

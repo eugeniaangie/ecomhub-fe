@@ -60,12 +60,13 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE36 | FEATURE | Settings › Tenants — create/list tenants (superadmin) | Core F7c |
 | [x] | FE37 | FEATURE | Move Shopee Connect under Settings › Shopee Integration | IA |
 | [x] | FE38 | FEATURE | Nest Sales Shopee routes under `/sales/shopee/…` | IA |
-| [ ] | FE39 | FEATURE | Catalog › Products (umbrella) — push / Publish / Unlist / conflict after Core **F8g**; first UI slice is **FE41** | Core F8g |
+| [x] | FE39 | FEATURE | Catalog › Products (umbrella) — push actions + form dropdowns (Core **F8g** + **F8n** Done) | Core F8g / F8n Done |
 | [ ] | FE40 | FEATURE | **Important** — Unified Shopee returns view (buyer + system/logistics), filter by origin, total qty + SKU list — blocked on Core F6g analysis | Core F6g |
 | [x] | FE41 | FEATURE | Catalog › Products list/detail/create-edit + Shopee import (no push UI) — Core F8b/F8d/F8e Done | Core F8b / F8d / F8e |
 | [x] | FE42 | FEATURE | Shopee import: preview → select all / pick items + is_imported badges | Core **F8l** Done (`item_ids` + `is_imported`) |
 | [x] | FE43 | FEATURE | Product detail = inline editable form (retire /edit); image zoom | UX / FE41 follow-up |
 | [ ] | FE44 | FEATURE | **Deferred** — Product delete / remove option·value·variant·image UI | Core F8f / product deletion |
+| [x] | FE45 | FEATURE | Catalog › Products — **Copy product** (new draft from existing; no channel listing / Shopee ids) | FE41 create API |
 
 
 **P0 left:** none (FE1 Done).
@@ -870,25 +871,43 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 
 ---
 
-### FE39 — Catalog › Products (umbrella: push / Publish / Unlist)
+### FE39 — Catalog › Products (umbrella: push / Publish / Unlist / pull / stock)
 
-**Category:** FEATURE · **Status:** Open — **first UI slice → FE41**; push parts still blocked on Core **F8g** · **Noted:** 2026-10-09 · **Depends on:** Core **F8g** (push) · **Related:** FE41 · **Design:** `ecomhub-core/docs/analysis/product-domain.md`
+**Category:** FEATURE · **Status:** Done (2026-10-13) · **Noted:** 2026-10-09 · **Depends on:** Core **F8g** (Done), **F8n** (Done) · **Related:** FE41 · **Design:** `ecomhub-core/docs/analysis/product-domain.md` · **Contract:** Core handlers + Swagger (not the §15.12 sketch alone)
 
 **Problem.** README plans Catalog › Products but there is no page, service client or types; the backend has no Product endpoints (the old routes are commented out in Core).
 
 **Goal.** Full Catalog: list/detail/drafts, Shopee import, push with diff/conflict, Publish/Unlist, size chart / live stock-price controls as designed. **Split (2026-10-11):** implement catalog + import first as **FE41** (Core F8b/F8d/F8e already shipped); keep push / Publish / Unlist / conflict / push-form proxies in this task until Core F8g exists.
 
-**Explicitly out of scope.** **No delete UI** — no delete/archive/bulk-delete buttons and no "remove missing items" in import (Product deletion is deferred in Core F8/T21). No client-side computation of SKUs or accounting values; no image upload until Core F8e.
+**Explicitly out of scope.** **No delete UI** — no delete/archive/bulk-delete buttons and no "remove missing items" in import (Product deletion is deferred in Core F8/T21). No client-side computation of SKUs or accounting values; no image upload until Core F8e. **Copy product** is **FE45** (separate).
 
 **Why it matters.** Without it the catalog can only be reached by API calls.
 
 **Affected area.** `app/(dashboard)/catalog/…` (new), `lib/services/` product client, `lib/types/`, `lib/authHelpers.ts` (`can*` predicate matching the backend's role rules), `docs/menu-endpoints.md`, README menu status.
 
-**Next action.** Resume when Core F8g lands — read push/publish handlers + Swagger; do not invent FE push shapes from the analysis sketch alone. Catalog list/detail/CRUD + import shipped as **FE41** (Done 2026-10-11).
+**Next action.** ~~Resume when Core F8g lands~~ ~~wire FE against F8g/F8n~~ **Done** — see resolution below.
 
 **Update (2026-10-11):** Core **F8b / F8e / F8c / F8d Done**. Catalog read/write + `POST …/shopee/products/import` exist. Umbrella FE39 no longer blocks on “no API”; **FE41** is the next buildable slice. Push / Publish / Unlist / conflict remain here pending F8g.
 
 **Update (2026-10-11):** **FE41 Done** — Products UI live under Catalog. This umbrella now only tracks push / Publish / Unlist / conflict / push-form extras pending Core F8g.
+
+**Update (2026-10-13) — Core F8g Done; FE39 unblocked.** No new FE ID — this task is the FE work for the full F8g surface. Build against Core (English UI):
+
+| Action | Core route (sketch → shipped) |
+|---|---|
+| Push create/update (+ `is_dry_run`, `is_live_confirmed`, `overwrite_conflict`) | `POST …/listings/:listing_id/push` |
+| Pull (refresh / resolve conflict) | `POST …/listings/:listing_id/pull` |
+| Publish / Unlist | `POST …/publish` · `…/unlist` |
+| Update stock (absolute set + `expected_stock`) | `POST …/listings/:listing_id/stock` |
+| Conflict UX | badges + pull vs overwrite (push body `overwrite_conflict`) |
+
+Also still in FE39 (from earlier notes): listing draft / push-form fields (category attrs, brand, logistics, size chart, initial stock on create), sync-status badges, pre-order control last (low priority). Do not invent shapes — use Swagger/handlers.
+
+**Update (2026-10-13) — Core F8n Open.** Full form **dropdowns** (logistics, attributes, brands, item-limit, size-chart templates) need Core thin GET proxies — tracked as Core **F8n** (not shipped; only sketched in §15.12). FE39 can still ship **actions first** (push / pull / publish / unlist / stock + conflict) against F8g. Form pickers land after F8n + Swagger. Remaining Core after form proxies: **F8h** (orders↔variants).
+
+**Update (2026-10-13) — Core F8n Done.** GET proxies shipped (`…/logistics`, `…/categories/:id/attributes|brands|size-charts`, `…/item-limit`, `…/size-charts/:id`). Wire FE clients after user runs Core `make swagger`. Actions + dropdowns both unblocked here; remaining Core product work: **F8h**.
+
+**Done (2026-10-13):** Product detail — `ShopeeListingDraftForm` (shop, category mapping, prices/initial stock, logistics, attrs, brand, size chart, pre-order) + `ChannelListingsPanel` (sync badges, last_push_error, Pull / Dry-run push / Push / Publish / Unlist / Stock with live confirm + conflict overwrite). Clients: `productsApi` listing methods + `shopeeAuthApi` F8n GETs + `masterCategoryApi` channel-mappings. List keeps sync filter; per-listing sync badge on detail (Core list has no sync field). English UI. No delete (FE44). Docs: `menu-endpoints.md`, README.
 
 **Update (2026-10-09):** Core direction changed — EcomHub is the product master and **pushes to Shopee in the MVP** (Core **F8g**). FE39 scope grows to: draft create/edit (save half-done products), editable SKU + product code, per-channel sync status badges, category mapping (internal → Shopee category), push action with diff preview and a **conflict screen** (pull from Shopee vs overwrite), import. Still **no delete UI**. Depends additionally on Core F8e (image upload) and F8g.
 
@@ -978,6 +997,45 @@ GET /api/v1/integrations/marketplaces/shopee/orders/preview
 **Problem.** Operators will eventually need to remove options, values, variants, or images. Core MVP has **no** delete/remove routes (add-only + RESTRICT).
 
 **Next action.** When Core ships delete/remove (or soft-archive) contracts, add FE controls on the inline detail editor. Do not invent FE delete against missing APIs.
+
+---
+
+### FE45 — Copy product (new draft from an existing one)
+
+**Category:** FEATURE · **Status:** Done (2026-10-13) · **Noted:** 2026-10-13 · **Related:** FE41 · **Depends on:** existing Core `POST /products` (+ detail GET); **no** dedicated Core copy route today
+
+**Problem.** Operators often create product B that is almost the same as product A (same options/variants/images/description). Today they must re-enter everything on `/catalog/products/new`.
+
+**Why it matters.** Faster catalog setup for near-duplicates (colourways, similar SKUs) without a full recreate.
+
+**FE vs Core.** Mostly an **FE** workflow against APIs that already exist — there is **no** `POST …/products/:id/copy` in Core. MVP approach: **Copy** on list/detail → open create form prefilled from `GET /products/:id` → `POST /products` as a **new draft**. Do **not** invent a Core copy endpoint unless FE composition hits a hard wall (images / SKU races).
+
+**Copy scope (proposed — confirm before build).**
+
+| Include | Exclude |
+|---|---|
+| Name (e.g. suffix ` (copy)`), description, category, weight, package dims, status → **draft** | Channel listings / `ext_*` / sync status / push history |
+| Options + values + variant matrix (new rows) | Shopee `item_id` / `model_id` links |
+| Product images (re-attach via existing image APIs after create, or open questions below) | Listing draft prices / initial stock / logistics |
+
+**SKU / product_code.** Must be unique per tenant. Prefill empty or leave Core to generate / `-2` on collision — do not copy source SKUs verbatim without a plan. Prefer: clear SKU fields in the prefilled form and let the operator (or Core create) assign new ones.
+
+**Open questions (answer before implement).**
+
+1. Images: re-upload bytes, re-link same `media_asset` / `channel_media`, or copy without images and upload later?
+2. List/detail entry points: both **Copy** buttons, or detail only?
+3. After create: land on new product detail, or stay on the prefilled form until Save?
+
+**Resolved (2026-10-13) — open questions:**
+1. **Images not copied** — Core has no attach-by-`media_asset_id` on create; multipart re-upload from URL is fragile. Upload on the new product after save.
+2. **Both** list (**Copy**) and detail (**Copy product**) → `/catalog/products/new?copy_from=:id`.
+3. Prefill → operator reviews → **Create copy** → land on **new product detail** (same as create).
+
+**Done (2026-10-13):** `buildProductCopySeed` + `ProductForm` `copySeed`; new page loads `copy_from`; excludes listings/images/SKUs/`product_code`; name gets ` (copy)`; status draft. Docs: `menu-endpoints.md`.
+
+**Affected area.** Catalog products list + detail, `ProductForm` create path, `lib/services/productsApi.ts`, English UI copy (“Copy product”), `docs/menu-endpoints.md` if routes/query params change.
+
+**Next action.** ~~Confirm copy scope + open questions above; then implement FE-only compose.~~ **Done.**
 
 ---
 

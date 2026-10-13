@@ -1,8 +1,10 @@
-// Product catalog API (Core F8b / F8e)
+// Product catalog API (Core F8b / F8e / F8g listing actions)
 
 import { api } from '../api';
 import type { PaginatedResponse } from '../types';
 import type {
+  ChannelListingDetail,
+  ChannelListingDraftForm,
   Product,
   ProductDetail,
   ProductForm,
@@ -11,6 +13,10 @@ import type {
   ProductListParams,
   ProductVariant,
   ProductVariantForm,
+  ShopeeListingPushForm,
+  ShopeeListingStockForm,
+  ShopeeListingVisibilityForm,
+  ShopeeProductPushResult,
 } from '../types/product';
 
 const API_VERSION = '/api/v1';
@@ -70,6 +76,74 @@ export const productsApi = {
     return api.put<ProductImageDetail[]>(
       `${API_VERSION}/products/${productId}/images`,
       data
+    );
+  },
+
+  /** PUT /products/:id/listings/shopee — save draft listing_data + variant prices/stock. */
+  saveShopeeListingDraft: async (
+    productId: number,
+    data: ChannelListingDraftForm
+  ) => {
+    return api.put<ChannelListingDetail>(
+      `${API_VERSION}/products/${productId}/listings/shopee`,
+      data
+    );
+  },
+
+  pushListing: async (
+    productId: number,
+    listingId: number,
+    opts: { is_dry_run?: boolean; body?: ShopeeListingPushForm } = {}
+  ) => {
+    const query = new URLSearchParams();
+    if (opts.is_dry_run) query.set('is_dry_run', 'true');
+    const qs = query.toString();
+    return api.post<ShopeeProductPushResult>(
+      `${API_VERSION}/products/${productId}/listings/${listingId}/push${qs ? `?${qs}` : ''}`,
+      opts.body ?? {}
+    );
+  },
+
+  pullListing: async (productId: number, listingId: number) => {
+    return api.post<ShopeeProductPushResult>(
+      `${API_VERSION}/products/${productId}/listings/${listingId}/pull`
+    );
+  },
+
+  publishListing: async (
+    productId: number,
+    listingId: number,
+    body: ShopeeListingVisibilityForm = {}
+  ) => {
+    return api.post<ShopeeProductPushResult>(
+      `${API_VERSION}/products/${productId}/listings/${listingId}/publish`,
+      body
+    );
+  },
+
+  unlistListing: async (
+    productId: number,
+    listingId: number,
+    body: ShopeeListingVisibilityForm = {}
+  ) => {
+    return api.post<ShopeeProductPushResult>(
+      `${API_VERSION}/products/${productId}/listings/${listingId}/unlist`,
+      body
+    );
+  },
+
+  updateListingStock: async (
+    productId: number,
+    listingId: number,
+    body: ShopeeListingStockForm,
+    opts: { is_dry_run?: boolean } = {}
+  ) => {
+    const query = new URLSearchParams();
+    if (opts.is_dry_run) query.set('is_dry_run', 'true');
+    const qs = query.toString();
+    return api.post<ShopeeProductPushResult>(
+      `${API_VERSION}/products/${productId}/listings/${listingId}/stock${qs ? `?${qs}` : ''}`,
+      body
     );
   },
 };

@@ -12,6 +12,7 @@ import type {
   ProductStatus,
   ProductVariantInput,
 } from '@/lib/types/product';
+import type { ProductCopySeed } from '@/lib/utils/productCopy';
 import { variantOptionLabels } from '@/lib/utils/productLabels';
 
 export type ProductFormSkuUpdate = { variantId: number; sku: string };
@@ -19,6 +20,9 @@ export type ProductFormSkuUpdate = { variantId: number; sku: string };
 export interface ProductFormProps {
   mode: 'create' | 'edit';
   initial?: ProductDetail | null;
+  /** FE45 — create prefill from copy (no option/variant ids; SKUs empty). */
+  copySeed?: ProductCopySeed | null;
+  copySourceName?: string;
   isSubmitting?: boolean;
   error?: string;
   cancelLabel?: string;
@@ -88,6 +92,8 @@ function fromDetail(detail: ProductDetail): {
 export function ProductForm({
   mode,
   initial,
+  copySeed = null,
+  copySourceName,
   isSubmitting = false,
   error = '',
   cancelLabel = 'Cancel',
@@ -95,7 +101,27 @@ export function ProductForm({
   onSubmit,
   onCancel,
 }: ProductFormProps) {
-  const seed = initial ? fromDetail(initial) : null;
+  const seed =
+    mode === 'create' && copySeed
+      ? {
+          product_name: copySeed.product_name,
+          product_code: copySeed.product_code,
+          description: copySeed.description,
+          brand: copySeed.brand,
+          category_id: copySeed.category_id,
+          status: copySeed.status as ProductStatus,
+          weight_kg: copySeed.weight_kg,
+          package_length_cm: copySeed.package_length_cm,
+          package_width_cm: copySeed.package_width_cm,
+          package_height_cm: copySeed.package_height_cm,
+          options: copySeed.options.map((o) => ({
+            option_name: o.option_name,
+            values: o.values.map((v) => ({ option_value: v.option_value })),
+          })),
+        }
+      : initial
+        ? fromDetail(initial)
+        : null;
   const [productName, setProductName] = useState(seed?.product_name ?? '');
   const [productCode, setProductCode] = useState(seed?.product_code ?? '');
   const [description, setDescription] = useState(seed?.description ?? '');
@@ -107,7 +133,14 @@ export function ProductForm({
   const [pkgW, setPkgW] = useState(seed?.package_width_cm ?? '');
   const [pkgH, setPkgH] = useState(seed?.package_height_cm ?? '');
   const [options, setOptions] = useState<OptionDraft[]>(seed?.options ?? []);
-  const [newVariants, setNewVariants] = useState<VariantDraft[]>([]);
+  const [newVariants, setNewVariants] = useState<VariantDraft[]>(() =>
+    mode === 'create' && copySeed
+      ? copySeed.variants.map((v) => ({
+          sku: v.sku,
+          option_values: [...v.option_values],
+        }))
+      : []
+  );
   const [skuEdits, setSkuEdits] = useState<Record<number, string>>(() => {
     const map: Record<number, string> = {};
     for (const v of initial?.variants ?? []) map[v.id] = v.sku;
@@ -246,6 +279,21 @@ export function ProductForm({
       {(error || localError) && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error || localError}
+        </div>
+      )}
+
+      {mode === 'create' && copySeed && (
+        <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+          Copying
+          {copySourceName ? (
+            <>
+              {' '}
+              from <span className="font-medium">{copySourceName}</span>
+            </>
+          ) : null}
+          . Channel listings are not copied. Images are not copied — upload
+          them on the new product after save. SKUs and product code start
+          empty so Core can generate unique values.
         </div>
       )}
 

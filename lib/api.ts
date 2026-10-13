@@ -297,4 +297,24 @@ export const masterCategoryApi = {
   delete: async (id: number) => {
     return api.delete<{ message: string }>(`${API_VERSION}/categories/${id}`);
   },
+
+  getChannelMappings: async (categoryId: number) => {
+    return api.get<Array<import('./types/product').ChannelCategoryMapping>>(
+      `${API_VERSION}/categories/${categoryId}/channel-mappings`
+    );
+  },
+
+  saveChannelMappings: async (
+    categoryId: number,
+    mappings: Array<{
+      platform: string;
+      ext_category_id: string;
+      ext_category_path?: string | null;
+    }>
+  ) => {
+    return api.put<Array<import('./types/product').ChannelCategoryMapping>>(
+      `${API_VERSION}/categories/${categoryId}/channel-mappings`,
+      { mappings }
+    );
+  },
 };

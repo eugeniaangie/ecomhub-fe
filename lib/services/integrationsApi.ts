@@ -306,6 +306,127 @@ export interface ShopeeProductsPreviewResult {
   token_refreshed: boolean;
 }
 
+/** F8n push-form read proxies — mirror Core model/shopee_product.go */
+
+export interface ShopeeLogisticsSizeOption {
+  size_id: number;
+  name?: string;
+  default?: boolean;
+}
+
+export interface ShopeeLogisticsChannel {
+  logistics_channel_id: number;
+  logistics_channel_name: string;
+  enabled: boolean;
+  fee_type?: string;
+  mask_channel_id?: number;
+  force_enable?: boolean;
+  size_list?: ShopeeLogisticsSizeOption[];
+  weight_limit?: Record<string, unknown>;
+  item_max_dimension?: Record<string, unknown>;
+}
+
+export interface ShopeeLogisticsResult {
+  shop_id: number;
+  channels: ShopeeLogisticsChannel[];
+  token_refreshed: boolean;
+}
+
+export interface ShopeeAttributeInfo {
+  input_type?: number;
+  input_validation_type?: number;
+  format_type?: number;
+  max_value_count?: number;
+  attribute_unit_list?: string[];
+  support_search_value?: boolean;
+}
+
+export interface ShopeeAttributeValue {
+  value_id: number;
+  name?: string;
+  value_unit?: string;
+  child_attribute_list?: ShopeeAttributeNode[];
+}
+
+export interface ShopeeAttributeNode {
+  attribute_id: number;
+  mandatory: boolean;
+  name?: string;
+  attribute_value_list?: ShopeeAttributeValue[];
+  attribute_info?: ShopeeAttributeInfo | null;
+}
+
+export interface ShopeeCategoryAttributesResult {
+  shop_id: number;
+  category_id: number;
+  language?: string;
+  attributes: ShopeeAttributeNode[];
+  token_refreshed: boolean;
+}
+
+export interface ShopeeBrand {
+  brand_id: number;
+  original_brand_name?: string;
+  display_brand_name?: string;
+}
+
+export interface ShopeeCategoryBrandsResult {
+  shop_id: number;
+  category_id: number;
+  brands: ShopeeBrand[];
+  has_next_page: boolean;
+  next_offset: number;
+  is_mandatory: boolean;
+  input_type?: string;
+  token_refreshed: boolean;
+}
+
+export interface ShopeeItemLimitResult {
+  shop_id: number;
+  category_id?: number;
+  limits: Record<string, unknown>;
+  token_refreshed: boolean;
+}
+
+export interface ShopeeSizeChartListItem {
+  size_chart_id: number;
+}
+
+export interface ShopeeSizeChartListResult {
+  shop_id: number;
+  category_id: number;
+  size_charts: ShopeeSizeChartListItem[];
+  total_count: number;
+  next_cursor?: string;
+  token_refreshed: boolean;
+}
+
+export interface ShopeeSizeChartMeasurementValue {
+  value?: string;
+  min_value?: string;
+  max_value?: string;
+  option?: string;
+}
+
+export interface ShopeeSizeChartColumn {
+  display_name?: string;
+  input_type?: string;
+  unit?: string;
+  measurement_value_list?: ShopeeSizeChartMeasurementValue[];
+}
+
+export interface ShopeeSizeChartDetailResult {
+  shop_id: number;
+  size_chart_id: number;
+  size_chart_name?: string;
+  columns: ShopeeSizeChartColumn[];
+  token_refreshed: boolean;
+}
+
+export interface ShopeeShopQuery {
+  shop_id?: number;
+}
+
 const MAX_ITEM_IDS = 100;
 
 function appendShopAndPaging(
@@ -533,6 +654,108 @@ export const shopeeAuthApi = {
     return api.post<ShopeeProductsImportResult>(
       `${API_VERSION}/integrations/marketplaces/shopee/products/import${qs ? `?${qs}` : ''}`,
       body.shop_id ? body : {}
+    );
+  },
+
+  /** F8n — logistics channels for push-form draft. */
+  getLogistics: async (params: ShopeeShopQuery = {}) => {
+    const query = new URLSearchParams();
+    if (params.shop_id && params.shop_id > 0) {
+      query.set('shop_id', String(params.shop_id));
+    }
+    const qs = query.toString();
+    return api.get<ShopeeLogisticsResult>(
+      `${API_VERSION}/integrations/marketplaces/shopee/logistics${qs ? `?${qs}` : ''}`
+    );
+  },
+
+  getCategoryAttributes: async (
+    categoryId: number,
+    params: ShopeeShopQuery & { language?: string } = {}
+  ) => {
+    const query = new URLSearchParams();
+    if (params.shop_id && params.shop_id > 0) {
+      query.set('shop_id', String(params.shop_id));
+    }
+    if (params.language) query.set('language', params.language);
+    const qs = query.toString();
+    return api.get<ShopeeCategoryAttributesResult>(
+      `${API_VERSION}/integrations/marketplaces/shopee/categories/${categoryId}/attributes${qs ? `?${qs}` : ''}`
+    );
+  },
+
+  getCategoryBrands: async (
+    categoryId: number,
+    params: ShopeeShopQuery & {
+      offset?: number;
+      page_size?: number;
+      status?: number;
+    } = {}
+  ) => {
+    const query = new URLSearchParams();
+    if (params.shop_id && params.shop_id > 0) {
+      query.set('shop_id', String(params.shop_id));
+    }
+    if (params.offset != null && params.offset >= 0) {
+      query.set('offset', String(params.offset));
+    }
+    if (params.page_size && params.page_size > 0) {
+      query.set('page_size', String(params.page_size));
+    }
+    if (params.status && params.status > 0) {
+      query.set('status', String(params.status));
+    }
+    const qs = query.toString();
+    return api.get<ShopeeCategoryBrandsResult>(
+      `${API_VERSION}/integrations/marketplaces/shopee/categories/${categoryId}/brands${qs ? `?${qs}` : ''}`
+    );
+  },
+
+  getItemLimit: async (
+    params: ShopeeShopQuery & { category_id?: number } = {}
+  ) => {
+    const query = new URLSearchParams();
+    if (params.shop_id && params.shop_id > 0) {
+      query.set('shop_id', String(params.shop_id));
+    }
+    if (params.category_id && params.category_id > 0) {
+      query.set('category_id', String(params.category_id));
+    }
+    const qs = query.toString();
+    return api.get<ShopeeItemLimitResult>(
+      `${API_VERSION}/integrations/marketplaces/shopee/item-limit${qs ? `?${qs}` : ''}`
+    );
+  },
+
+  getSizeChartList: async (
+    categoryId: number,
+    params: ShopeeShopQuery & { page_size?: number; cursor?: string } = {}
+  ) => {
+    const query = new URLSearchParams();
+    if (params.shop_id && params.shop_id > 0) {
+      query.set('shop_id', String(params.shop_id));
+    }
+    if (params.page_size && params.page_size > 0) {
+      query.set('page_size', String(params.page_size));
+    }
+    if (params.cursor) query.set('cursor', params.cursor);
+    const qs = query.toString();
+    return api.get<ShopeeSizeChartListResult>(
+      `${API_VERSION}/integrations/marketplaces/shopee/categories/${categoryId}/size-charts${qs ? `?${qs}` : ''}`
+    );
+  },
+
+  getSizeChartDetail: async (
+    sizeChartId: number,
+    params: ShopeeShopQuery = {}
+  ) => {
+    const query = new URLSearchParams();
+    if (params.shop_id && params.shop_id > 0) {
+      query.set('shop_id', String(params.shop_id));
+    }
+    const qs = query.toString();
+    return api.get<ShopeeSizeChartDetailResult>(
+      `${API_VERSION}/integrations/marketplaces/shopee/size-charts/${sizeChartId}${qs ? `?${qs}` : ''}`
     );
   },
 };

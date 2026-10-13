@@ -106,7 +106,7 @@ export interface ChannelMedia {
   id: number;
   tenant_id: number;
   platform: string;
-  external_image_id: string;
+  ext_image_id: string;
   source_url?: string | null;
   image_url?: string;
   created_at: string;
@@ -133,21 +133,79 @@ export interface ProductImageDetail extends ProductImage {
   channel_media?: ChannelMedia | null;
 }
 
+/** Shopee seller_stock entry — draft initial stock + stock command. */
+export interface SellerStockEntry {
+  location_id?: string;
+  stock: number;
+}
+
+export interface ListingDataLogisticInfo {
+  logistic_id: number;
+  enabled?: boolean;
+  is_free?: boolean;
+  size_id?: number;
+}
+
+export interface ListingDataBrand {
+  brand_id: number;
+  original_brand_name?: string;
+}
+
+export interface ListingDataAttributeValue {
+  value_id: number;
+  original_value_name?: string;
+}
+
+export interface ListingDataAttribute {
+  attribute_id: number;
+  attribute_value_list: ListingDataAttributeValue[];
+}
+
+export type ListingDataSizeChartMode = 'none' | 'template' | 'image' | '';
+
+export interface ListingDataSizeChart {
+  mode: ListingDataSizeChartMode;
+  size_chart_id?: number;
+  media_asset_id?: number;
+}
+
+export interface ListingDataPreOrder {
+  is_pre_order?: boolean;
+  days_to_ship?: number;
+}
+
+/** Desired channel fields stored on channel_listings.listing_data (Core §15.18.4). */
+export interface ListingData {
+  schema_version?: number;
+  logistic_info?: ListingDataLogisticInfo[];
+  brand?: ListingDataBrand;
+  attribute_list?: ListingDataAttribute[];
+  size_chart?: ListingDataSizeChart;
+  condition?: string;
+  pre_order?: ListingDataPreOrder;
+  item_dangerous?: number;
+}
+
 export interface ChannelListingVariant {
   id: number;
   tenant_id: number;
   channel_listing_id: number;
   product_variant_id: number;
-  external_variant_id?: string | null;
-  external_sku?: string | null;
-  external_status?: string | null;
-  external_price?: number | null;
+  ext_variant_id?: string | null;
+  ext_sku?: string | null;
+  ext_status?: string | null;
+  ext_price?: number | null;
   currency?: string | null;
-  external_stock?: number | null;
+  ext_stock?: number | null;
   listing_price?: number | null;
+  initial_seller_stock?: SellerStockEntry[] | null;
+  channel_data?: Record<string, unknown> | null;
+  absent_since?: string | null;
   last_synced_at?: string | null;
   created_at: string;
   updated_at: string;
+  created_by?: number | null;
+  updated_by?: number | null;
 }
 
 export interface ChannelListing {
@@ -155,22 +213,81 @@ export interface ChannelListing {
   tenant_id: number;
   product_id: number;
   marketplace_account_id: number;
-  external_product_id?: string | null;
-  external_sku?: string | null;
-  external_status?: string | null;
-  external_category_id?: string | null;
-  external_updated_at?: string | null;
+  ext_product_id?: string | null;
+  ext_sku?: string | null;
+  ext_status?: string | null;
+  ext_category_id?: string | null;
+  ext_updated_at?: string | null;
   has_variants: boolean;
   sync_status: ListingSyncStatus | string;
+  channel_data?: Record<string, unknown> | null;
+  listing_data?: ListingData | Record<string, unknown> | null;
   last_pushed_at?: string | null;
   last_push_error?: string | null;
+  push_started_at?: string | null;
   last_synced_at?: string | null;
   created_at: string;
   updated_at: string;
+  created_by?: number | null;
+  updated_by?: number | null;
 }
 
 export interface ChannelListingDetail extends ChannelListing {
   variants: ChannelListingVariant[];
+}
+
+export interface ChannelListingVariantInput {
+  product_variant_id: number;
+  listing_price?: number | null;
+  initial_seller_stock?: SellerStockEntry[] | null;
+}
+
+export interface ChannelListingDraftForm {
+  marketplace_account_id: number;
+  listing_data?: ListingData | Record<string, unknown>;
+  variants?: ChannelListingVariantInput[];
+}
+
+export interface ShopeeListingPushForm {
+  item_status?: 'UNLIST' | 'NORMAL';
+  is_live_confirmed?: boolean;
+  overwrite_conflict?: boolean;
+}
+
+export interface ShopeeListingVisibilityForm {
+  is_live_confirmed?: boolean;
+}
+
+export interface ShopeeListingStockVariantInput {
+  product_variant_id: number;
+  expected_stock: number;
+  seller_stock: SellerStockEntry[];
+}
+
+export interface ShopeeListingStockForm {
+  is_live_confirmed?: boolean;
+  variants: ShopeeListingStockVariantInput[];
+}
+
+export interface ShopeeProductPushResult {
+  listing_id: number;
+  action: string;
+  status: string;
+  is_dry_run: boolean;
+  ext_product_id?: string | null;
+  message?: string;
+  request_preview?: Record<string, unknown> | null;
+}
+
+export interface ChannelCategoryMapping {
+  id: number;
+  tenant_id: number;
+  category_id: number;
+  platform: string;
+  ext_category_id: string;
+  ext_category_path?: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ProductDetail extends Product {

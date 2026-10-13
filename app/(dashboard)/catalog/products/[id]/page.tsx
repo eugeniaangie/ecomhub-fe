@@ -2,15 +2,18 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { ChannelListingsPanel } from '@/components/catalog/ChannelListingsPanel';
 import { ProductForm } from '@/components/catalog/ProductForm';
 import { ProductImageGallery } from '@/components/catalog/ProductImageGallery';
+import { ShopeeListingDraftForm } from '@/components/catalog/ShopeeListingDraftForm';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/finance/StatusBadge';
 import { canWriteProduct } from '@/lib/authHelpers';
 import { productsApi } from '@/lib/services/productsApi';
 import type {
-  ListingSyncStatus,
   ProductDetail,
   ProductForm as ProductFormBody,
   ProductStatus,
@@ -18,8 +21,6 @@ import type {
 import {
   PRODUCT_STATUS_COLORS,
   PRODUCT_STATUS_LABELS,
-  SYNC_STATUS_COLORS,
-  SYNC_STATUS_LABELS,
   variantOptionLabels,
 } from '@/lib/utils/productLabels';
 
@@ -153,6 +154,13 @@ export default function ProductDetailPage() {
               : 'No product code'
         }
         parent={{ label: 'Products', href: '/catalog/products' }}
+        actions={
+          canWrite ? (
+            <Link href={`/catalog/products/new?copy_from=${product.id}`}>
+              <Button variant="secondary">Copy product</Button>
+            </Link>
+          ) : undefined
+        }
       />
 
       {canWrite ? (
@@ -248,103 +256,15 @@ export default function ProductDetailPage() {
         </>
       )}
 
-      <Card title="Channel listings">
-        {(product.listings ?? []).length === 0 ? (
-          <p className="text-sm text-gray-600">
-            No channel listings yet. Import from Shopee or push later (FE39).
-          </p>
-        ) : (
-          <div className="space-y-4">
-            {product.listings.map((listing) => {
-              const sync = (listing.sync_status ||
-                'not_published') as ListingSyncStatus;
-              return (
-                <div
-                  key={listing.id}
-                  className="rounded-md border border-gray-100 bg-gray-50 p-3 text-sm"
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <StatusBadge
-                      label={SYNC_STATUS_LABELS[sync] || listing.sync_status}
-                      colorClass={
-                        SYNC_STATUS_COLORS[sync] || 'bg-gray-100 text-gray-800'
-                      }
-                    />
-                    <span className="text-gray-900">
-                      Account #{listing.marketplace_account_id}
-                    </span>
-                  </div>
-                  <dl className="mt-2 grid gap-2 sm:grid-cols-2">
-                    <div>
-                      <dt className="text-gray-500">External product ID</dt>
-                      <dd className="mt-0.5 font-mono text-gray-900">
-                        {listing.external_product_id || '—'}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-gray-500">External status</dt>
-                      <dd className="mt-0.5 text-gray-900">
-                        {listing.external_status || '—'}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-gray-500">External SKU</dt>
-                      <dd className="mt-0.5 text-gray-900">
-                        {listing.external_sku || '—'}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-gray-500">Last synced</dt>
-                      <dd className="mt-0.5 text-gray-900">
-                        {listing.last_synced_at
-                          ? new Date(listing.last_synced_at).toLocaleString()
-                          : '—'}
-                      </dd>
-                    </div>
-                  </dl>
-                  {(listing.variants ?? []).length > 0 && (
-                    <div className="mt-3 overflow-x-auto">
-                      <table className="min-w-full text-xs text-gray-900">
-                        <thead>
-                          <tr className="text-left text-gray-500">
-                            <th className="py-1 pr-2">Variant</th>
-                            <th className="py-1 pr-2">Ext. SKU</th>
-                            <th className="py-1 pr-2">Price</th>
-                            <th className="py-1">Stock</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {listing.variants.map((lv) => (
-                            <tr
-                              key={lv.id}
-                              className="border-t border-gray-200"
-                            >
-                              <td className="py-1 pr-2 text-gray-900">
-                                #{lv.product_variant_id}
-                              </td>
-                              <td className="py-1 pr-2 text-gray-900">
-                                {lv.external_sku || '—'}
-                              </td>
-                              <td className="py-1 pr-2 text-gray-900">
-                                {lv.external_price != null
-                                  ? `${lv.external_price}${lv.currency ? ` ${lv.currency}` : ''}`
-                                  : '—'}
-                              </td>
-                              <td className="py-1 text-gray-900">
-                                {lv.external_stock ?? '—'}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </Card>
+      {canWrite && (
+        <ShopeeListingDraftForm product={product} onSaved={load} />
+      )}
+
+      <ChannelListingsPanel
+        product={product}
+        canWrite={canWrite}
+        onChanged={load}
+      />
     </div>
   );
 }

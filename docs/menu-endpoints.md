@@ -147,13 +147,13 @@ CRUD and workflow screens under the Finance sidebar group, after the Views secti
 
 ## Catalog
 
-### Products (`/catalog/products`) — FE41 / FE42 / FE43
+### Products (`/catalog/products`) — FE41 / FE42 / FE43 / FE39
 
 | Path | Notes |
 |------|--------|
 | `/catalog/products` | List + search/status/sync filters + Import from Shopee modal |
-| `/catalog/products/new` | Create draft (admin+) |
-| `/catalog/products/:id` | Detail = inline editable form (admin+): Save; images + zoom; listings read-only |
+| `/catalog/products/new` | Create draft (admin+); `?copy_from=:id` prefills from existing (FE45; no images/listings) |
+| `/catalog/products/:id` | Detail = inline edit + images; **Shopee listing draft** + channel actions (admin+) |
 | `/catalog/products/:id/edit` | Redirects to `/:id` (FE43) |
 
 - `GET /products` — paginated list (`search`, `status`, `sync_status`, …)
@@ -163,12 +163,21 @@ CRUD and workflow screens under the Finance sidebar group, after the Views secti
 - `PUT /products/:id/variants/:variant_id` — SKU / position (admin+)
 - `POST /products/:id/images` — multipart `file` upload (admin+)
 - `PUT /products/:id/images` — reorder / set primary (admin+)
-- `GET /integrations/marketplaces/shopee/products/preview` — Import modal list (admin+; `shop_id`, `offset`, `page_size`; each row has `is_imported` / `product_id`)
-- `POST /integrations/marketplaces/shopee/products/import` — import selection (admin+; body `{ shop_id, products }` from preview — Core F8m, no Shopee re-fetch; ≤100 per request; chunks if more selected)
-- `GET /integrations/marketplaces/shopee/connections` — shop picker for import
+- `PUT /products/:id/listings/shopee` — save Shopee listing draft (admin+)
+- `POST /products/:id/listings/:listing_id/push` — push (`?is_dry_run`, body flags) (admin+)
+- `POST /products/:id/listings/:listing_id/pull` — pull / clear conflict (admin+)
+- `POST /products/:id/listings/:listing_id/publish` · `…/unlist` — visibility (admin+)
+- `POST /products/:id/listings/:listing_id/stock` — absolute stock (`?is_dry_run`) (admin+)
+- `GET /integrations/marketplaces/shopee/products/preview` — Import modal list (admin+)
+- `POST /integrations/marketplaces/shopee/products/import` — import selection (admin+; body `{ shop_id, products }` — Core F8m)
+- `GET /integrations/marketplaces/shopee/connections` — shop picker (import + draft)
+- `GET /integrations/marketplaces/shopee/logistics` — draft logistics (admin+, F8n)
+- `GET /integrations/marketplaces/shopee/categories/:category_id/attributes` · `…/brands` · `…/size-charts` — draft form (admin+, F8n)
+- `GET /integrations/marketplaces/shopee/item-limit` · `…/size-charts/:id` — limits + template preview (admin+, F8n)
+- `GET` / `PUT /categories/:id/channel-mappings` — internal → Shopee category default (admin+)
 - `GET /categories` — category dropdown on create/edit
 
-Import UX (FE42): preview → checkboxes (Select all / pick; kit rows disabled) → import selected. Re-import allowed. No delete UI. No push / Publish / Unlist (FE39 / Core F8g).
+Import UX (FE42): preview → select → import. Listing UX (FE39): draft form (prices, logistics, attrs, brand, size chart, pre-order) + Pull / Push / Publish / Unlist / Stock + conflict overwrite. Copy (FE45): list/detail → `new?copy_from=` → `POST /products` as draft (no images/listings). No delete UI (FE44).
 
 ### Categories (`/master/categories`)
 
