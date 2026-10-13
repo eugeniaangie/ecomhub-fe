@@ -147,6 +147,38 @@ CRUD and workflow screens under the Finance sidebar group, after the Views secti
 
 ## Catalog
 
+### Products (`/catalog/products`) — FE41 / FE42 / FE43 / FE39
+
+| Path | Notes |
+|------|--------|
+| `/catalog/products` | List + search/status/sync filters + Import from Shopee modal |
+| `/catalog/products/new` | Create draft (admin+); `?copy_from=:id` prefills from existing (FE45; no images/listings) |
+| `/catalog/products/:id` | Detail = inline edit + images; **Shopee listing draft** + channel actions (admin+) |
+| `/catalog/products/:id/edit` | Redirects to `/:id` (FE43) |
+
+- `GET /products` — paginated list (`search`, `status`, `sync_status`, …)
+- `GET /products/:id` — detail with options, variants, images, listings
+- `POST /products` — create (admin+)
+- `PUT /products/:id` — update (admin+)
+- `PUT /products/:id/variants/:variant_id` — SKU / position (admin+)
+- `POST /products/:id/images` — multipart `file` upload (admin+)
+- `PUT /products/:id/images` — reorder / set primary (admin+)
+- `PUT /products/:id/listings/shopee` — save Shopee listing draft (admin+)
+- `POST /products/:id/listings/:listing_id/push` — push (`?is_dry_run`, body flags) (admin+)
+- `POST /products/:id/listings/:listing_id/pull` — pull / clear conflict (admin+)
+- `POST /products/:id/listings/:listing_id/publish` · `…/unlist` — visibility (admin+)
+- `POST /products/:id/listings/:listing_id/stock` — absolute stock (`?is_dry_run`) (admin+)
+- `GET /integrations/marketplaces/shopee/products/preview` — Import modal list (admin+)
+- `POST /integrations/marketplaces/shopee/products/import` — import selection (admin+; body `{ shop_id, products }` — Core F8m)
+- `GET /integrations/marketplaces/shopee/connections` — shop picker (import + draft)
+- `GET /integrations/marketplaces/shopee/logistics` — draft logistics (admin+, F8n)
+- `GET /integrations/marketplaces/shopee/categories/:category_id/attributes` · `…/brands` · `…/size-charts` — draft form (admin+, F8n)
+- `GET /integrations/marketplaces/shopee/item-limit` · `…/size-charts/:id` — limits + template preview (admin+, F8n)
+- `GET` / `PUT /categories/:id/channel-mappings` — internal → Shopee category default (admin+)
+- `GET /categories` — category dropdown on create/edit
+
+Import UX (FE42): preview → select → import. Listing UX (FE39): draft form (prices, logistics, attrs, brand, size chart, pre-order) + Pull / Push / Publish / Unlist / Stock + conflict overwrite. Copy (FE45): list/detail → `new?copy_from=` → `POST /products` as draft (no images/listings). No delete UI (FE44).
+
 ### Categories (`/master/categories`)
 
 - `GET /categories`
@@ -213,7 +245,7 @@ Legacy FE routes (redirect): `/integrations` → `/settings`, `/integrations/sho
 ### Shopee Returns (`/sales/shopee/returns`) — FE28 / Core F6d + FE33
 
 - `GET /integrations/marketplaces/shopee/connections` — presence check (no shop picker).
-- `GET /integrations/marketplaces/shopee/returns/preview` — live `get_return_list` (admin+). Query: optional `shop_id` omitted, `time_from`, `time_to`, `fetch_all=true`, optional `return_status`. Response: `return_count`, `total_quantity`, `total_refund_amount`, `sku_summary[]`, `returns[]`. Do **not** treat orders preview `cancel_bucket=pengembalian` as this screen.
+- `GET /integrations/marketplaces/shopee/returns/preview` — live `get_return_list` (admin+). Query: optional `shop_id` omitted, `time_from`, `time_to`, `fetch_all=true`, optional `return_status`. Response: `return_count`, `total_quantity`, `total_refund_amount`, `sku_summary[]`, `returns[]`. Do **not** treat orders preview `cancel_bucket=pengembalian` as this screen. Which screen/filter shows each return or cancel case: Core [`SHOPEE_RETURNS_AND_CANCELLATIONS.md`](../../ecomhub-core/docs/guides/SHOPEE_RETURNS_AND_CANCELLATIONS.md).
 
 ### Shopee Ads (`/sales/shopee/ads`) — FE31 / Core F6f + FE33
 

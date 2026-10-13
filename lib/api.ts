@@ -152,12 +152,18 @@ async function request<T>(
   body?: unknown,
   options?: RequestOptions
 ): Promise<T> {
+  const isFormData =
+    typeof FormData !== 'undefined' && body instanceof FormData;
+
   const buildHeaders = (): Record<string, string> => {
     const headers: Record<string, string> = {
       accept: 'application/json',
-      'Content-Type': 'application/json',
       ...(options?.headers as Record<string, string>),
     };
+    // Browser sets multipart boundary when body is FormData — do not force JSON.
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json';
+    }
     if (!options?.skipAuth) {
       const raw = auth.getToken();
       if (raw) {
@@ -180,7 +186,12 @@ async function request<T>(
       ...options,
       method,
       headers: buildHeaders(),
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body:
+        body === undefined
+          ? undefined
+          : isFormData
+            ? (body as FormData)
+            : JSON.stringify(body),
       credentials: 'include',
     });
 
@@ -285,5 +296,25 @@ export const masterCategoryApi = {
   },
   delete: async (id: number) => {
     return api.delete<{ message: string }>(`${API_VERSION}/categories/${id}`);
+  },
+
+  getChannelMappings: async (categoryId: number) => {
+    return api.get<Array<import('./types/product').ChannelCategoryMapping>>(
+      `${API_VERSION}/categories/${categoryId}/channel-mappings`
+    );
+  },
+
+  saveChannelMappings: async (
+    categoryId: number,
+    mappings: Array<{
+      platform: string;
+      ext_category_id: string;
+      ext_category_path?: string | null;
+    }>
+  ) => {
+    return api.put<Array<import('./types/product').ChannelCategoryMapping>>(
+      `${API_VERSION}/categories/${categoryId}/channel-mappings`,
+      { mappings }
+    );
   },
 };

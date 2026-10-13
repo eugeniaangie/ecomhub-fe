@@ -39,6 +39,11 @@ export const navDomains: NavDomain[] = [
     href: '/catalog',
     items: [
       {
+        label: 'Products',
+        href: '/catalog/products',
+        description: 'Product catalog, variants, images, and Shopee import.',
+      },
+      {
         label: 'Categories',
         href: '/master/categories',
         description: 'Product and expense category master data.',

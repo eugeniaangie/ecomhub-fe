@@ -28,6 +28,11 @@ const nextConfig: NextConfig = {
         destination: "/sales/shopee/ads",
         permanent: true,
       },
+      {
+        source: "/catalog/products/:id/edit",
+        destination: "/catalog/products/:id",
+        permanent: false,
+      },
     ];
   },
 };

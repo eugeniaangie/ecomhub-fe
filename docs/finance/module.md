@@ -16,7 +16,7 @@ Chrome is a **dark top bar** with domains `Dashboard · Catalog · Marketing · 
 - **Finance** `/finance` — hub cards: Overview, Accounts, Transactions, Channels, Journal Entries, Operational Expenses, Capital & Investors. Gear → `/finance/setup` (Chart of Accounts, Expense Categories, Fiscal Periods).
 - **Accounts** on the hub is **balances** (`/finance/balances`), not Chart of Accounts.
 - **Marketing** `/marketing` — hub: Ad Budgets, Ad Expenses (`/marketing/ad-*`). Old `/finance/ad-*` FE paths are gone (no redirect).
-- **Catalog** `/catalog` — hub: Categories (`/master/categories` for now).
+- **Catalog** `/catalog` — hub: Products (`/catalog/products`), Categories (`/master/categories`).
 - Legacy Shopee summary at `/finance/dashboard` remains reachable by URL but is **not** in the top nav.
 
 ---
