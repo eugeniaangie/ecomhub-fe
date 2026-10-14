@@ -909,6 +909,10 @@ Also still in FE39 (from earlier notes): listing draft / push-form fields (categ
 
 **Done (2026-10-13):** Product detail — `ShopeeListingDraftForm` (shop, category mapping, prices/initial stock, logistics, attrs, brand, size chart, pre-order) + `ChannelListingsPanel` (sync badges, last_push_error, Pull / Dry-run push / Push / Publish / Unlist / Stock with live confirm + conflict overwrite). Clients: `productsApi` listing methods + `shopeeAuthApi` F8n GETs + `masterCategoryApi` channel-mappings. List keeps sync filter; per-listing sync badge on detail (Core list has no sync field). English UI. No delete (FE44). Docs: `menu-endpoints.md`, README.
 
+**UX follow-up (2026-10-13):** Draft form — logistics collapsed + grouped (Instant / Same day / Economy / Standard via **name heuristics** + Show more); brand+attributes in 2–3 columns; channel price/stock table labelled so it is not a second variant editor.
+
+**BE note (logistics delivery class):** Core `GET …/shopee/logistics` maps `fee_type` (pricing: `SIZE_SELECTION` / …), not Instant/Reguler. FE groups by channel **name** until Core adds an explicit delivery-class field from Partner `get_channel_list` (if Shopee exposes one) or a documented mapping. Prefer Core field over FE heuristics.
+
 **Update (2026-10-09):** Core direction changed — EcomHub is the product master and **pushes to Shopee in the MVP** (Core **F8g**). FE39 scope grows to: draft create/edit (save half-done products), editable SKU + product code, per-channel sync status badges, category mapping (internal → Shopee category), push action with diff preview and a **conflict screen** (pull from Shopee vs overwrite), import. Still **no delete UI**. Depends additionally on Core F8e (image upload) and F8g.
 
 **Note (2026-10-09):** Core design docs are closed (`ecomhub-core/docs/analysis/product-domain.md` §15.11–§15.12). Planned role rule: product writes/import/push for `superadmin` + `admin`, reads for all authenticated roles — add a `can*` predicate when the Core routes exist. The §15.12 route table is a **sketch**, not the contract. No removal of variants/options/images in the MVP.
