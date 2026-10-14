@@ -71,6 +71,76 @@ function dtsLimit(limits: Record<string, unknown> | null): {
   return { min: range.min_limit, max: range.max_limit };
 }
 
+/** Delivery class for UI grouping — Core has no dedicated field; infer from channel name. */
+type LogisticsGroupKey =
+  | 'instant'
+  | 'same_day'
+  | 'economy'
+  | 'standard'
+  | 'other';
+
+const LOGISTICS_GROUP_ORDER: LogisticsGroupKey[] = [
+  'instant',
+  'same_day',
+  'economy',
+  'standard',
+  'other',
+];
+
+const LOGISTICS_GROUP_LABELS: Record<LogisticsGroupKey, string> = {
+  instant: 'Instant',
+  same_day: 'Same day',
+  economy: 'Economy / Hemat',
+  standard: 'Standard / Reguler',
+  other: 'Other',
+};
+
+const LOGISTICS_PREVIEW_PER_GROUP = 4;
+
+function logisticsGroupKey(name: string): LogisticsGroupKey {
+  const n = name.toLowerCase();
+  if (
+    /\binstant\b/.test(n) ||
+    /\bgrab\b/.test(n) ||
+    /\bgosend\b/.test(n) ||
+    /\blalamove\b/.test(n)
+  ) {
+    return 'instant';
+  }
+  if (/\bsame[\s-]?day\b/.test(n) || /\bsameday\b/.test(n)) {
+    return 'same_day';
+  }
+  if (/\bhemat\b/.test(n) || /\beconomy\b/.test(n) || /\beco\b/.test(n)) {
+    return 'economy';
+  }
+  if (
+    /\breguler\b/.test(n) ||
+    /\bregular\b/.test(n) ||
+    /\bstandard\b/.test(n) ||
+    /\bstandar\b/.test(n) ||
+    /\bexpress\b/.test(n)
+  ) {
+    return 'standard';
+  }
+  return 'other';
+}
+
+function sortLogisticsChannels(
+  channels: ShopeeLogisticsChannel[],
+  selectedIds: number[]
+): ShopeeLogisticsChannel[] {
+  const selected = new Set(selectedIds);
+  return [...channels].sort((a, b) => {
+    const aSel = selected.has(a.logistics_channel_id) ? 0 : 1;
+    const bSel = selected.has(b.logistics_channel_id) ? 0 : 1;
+    if (aSel !== bSel) return aSel - bSel;
+    const aEn = a.enabled ? 0 : 1;
+    const bEn = b.enabled ? 0 : 1;
+    if (aEn !== bEn) return aEn - bEn;
+    return a.logistics_channel_name.localeCompare(b.logistics_channel_name);
+  });
+}
+
 type VariantRow = {
   product_variant_id: number;
   listing_price: string;
@@ -113,6 +183,7 @@ export function ShopeeListingDraftForm({ product, onSaved }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [showAllLogistics, setShowAllLogistics] = useState(false);
 
   const shopId = useMemo(() => {
     const shop = shops.find((s) => s.id === marketplaceAccountId);
@@ -126,6 +197,53 @@ export function ShopeeListingDraftForm({ product, onSaved }: Props) {
 
   const chartFlags = sizeChartSupported(limits);
   const dts = dtsLimit(limits);
+
+  const logisticsGroups = useMemo(() => {
+    const preferred = channels.filter(
+      (ch) =>
+        ch.enabled ||
+        logisticIds.includes(ch.logistics_channel_id) ||
+        showAllLogistics
+    );
+    const sorted = sortLogisticsChannels(preferred, logisticIds);
+    const map = new Map<LogisticsGroupKey, ShopeeLogisticsChannel[]>();
+    for (const key of LOGISTICS_GROUP_ORDER) map.set(key, []);
+    for (const ch of sorted) {
+      const key = logisticsGroupKey(ch.logistics_channel_name);
+      map.get(key)!.push(ch);
+    }
+    return LOGISTICS_GROUP_ORDER.map((key) => {
+      const all = map.get(key) ?? [];
+      const selectedInGroup = all.filter((ch) =>
+        logisticIds.includes(ch.logistics_channel_id)
+      );
+      const rest = all.filter(
+        (ch) => !logisticIds.includes(ch.logistics_channel_id)
+      );
+      const preview = showAllLogistics
+        ? all
+        : [
+            ...selectedInGroup,
+            ...rest.slice(
+              0,
+              Math.max(0, LOGISTICS_PREVIEW_PER_GROUP - selectedInGroup.length)
+            ),
+          ];
+      const hiddenCount = Math.max(0, all.length - preview.length);
+      return { key, label: LOGISTICS_GROUP_LABELS[key], all, preview, hiddenCount };
+    }).filter((g) => g.all.length > 0);
+  }, [channels, logisticIds, showAllLogistics]);
+
+  const logisticsHiddenTotal = useMemo(() => {
+    if (showAllLogistics) return 0;
+    const visibleIds = new Set(
+      logisticsGroups.flatMap((g) =>
+        g.preview.map((ch) => ch.logistics_channel_id)
+      )
+    );
+    return channels.filter((ch) => !visibleIds.has(ch.logistics_channel_id))
+      .length;
+  }, [channels, logisticsGroups, showAllLogistics]);
 
   const hydrateFromListing = useCallback(
     (listing: ChannelListingDetail | null) => {
@@ -516,72 +634,114 @@ export function ShopeeListingDraftForm({ product, onSaved }: Props) {
         </div>
 
         <section>
-          <h4 className="mb-2 font-medium text-gray-900">
-            Variant prices{!isLive ? ' & initial stock' : ''}
+          <h4 className="mb-1 font-medium text-gray-900">
+            Shopee price{!isLive ? ' & create stock' : ''}
           </h4>
-          <div className="space-y-2">
-            {variantRows.map((row) => {
-              const variant = product.variants?.find(
-                (v) => v.id === row.product_variant_id
-              );
-              return (
-                <div
-                  key={row.product_variant_id}
-                  className="grid gap-2 rounded border border-gray-100 p-2 sm:grid-cols-3"
-                >
-                  <div className="text-xs text-gray-600">
-                    {variant
-                      ? variantOptionLabels(variant, product.options ?? [])
-                      : `#${row.product_variant_id}`}
-                    <div className="font-mono text-gray-900">
-                      {variant?.sku || '—'}
-                    </div>
-                  </div>
-                  <Input
-                    label="Listing price (IDR)"
-                    type="number"
-                    min={0}
-                    value={row.listing_price}
-                    onChange={(e) =>
-                      setVariantRows((prev) =>
-                        prev.map((r) =>
-                          r.product_variant_id === row.product_variant_id
-                            ? { ...r, listing_price: e.target.value }
-                            : r
-                        )
-                      )
-                    }
-                  />
-                  {!isLive && (
-                    <Input
-                      label="Initial stock"
-                      type="number"
-                      min={0}
-                      value={row.initial_stock}
-                      onChange={(e) =>
-                        setVariantRows((prev) =>
-                          prev.map((r) =>
-                            r.product_variant_id === row.product_variant_id
-                              ? { ...r, initial_stock: e.target.value }
-                              : r
-                          )
-                        )
-                      }
-                    />
-                  )}
-                </div>
-              );
-            })}
-            {variantRows.length === 0 && (
-              <p className="text-gray-600">No variants on this product.</p>
-            )}
-          </div>
+          <p className="mb-2 text-xs text-gray-500">
+            Not a second variant editor — options/SKUs stay in the product form
+            above. These fields are channel-only: listing price to push
+            {!isLive ? ' and initial Shopee stock on first create' : ''}.
+          </p>
+          {variantRows.length === 0 ? (
+            <p className="text-gray-600">
+              No variants on this product yet — add them in the product form
+              above, then refresh.
+            </p>
+          ) : (
+            <div className="overflow-x-auto rounded border border-gray-100">
+              <table className="min-w-full text-sm text-gray-900">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs uppercase text-gray-500">
+                    <th className="px-2 py-2">Variant (from product)</th>
+                    <th className="px-2 py-2">SKU</th>
+                    <th className="px-2 py-2">Listing price (IDR)</th>
+                    {!isLive && (
+                      <th className="px-2 py-2">Initial Shopee stock</th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {variantRows.map((row) => {
+                    const variant = product.variants?.find(
+                      (v) => v.id === row.product_variant_id
+                    );
+                    return (
+                      <tr
+                        key={row.product_variant_id}
+                        className="border-t border-gray-100"
+                      >
+                        <td className="px-2 py-2 text-xs text-gray-700">
+                          {variant
+                            ? variantOptionLabels(
+                                variant,
+                                product.options ?? []
+                              )
+                            : `#${row.product_variant_id}`}
+                        </td>
+                        <td className="px-2 py-2 font-mono text-xs">
+                          {variant?.sku || '—'}
+                        </td>
+                        <td className="px-2 py-2">
+                          <input
+                            type="number"
+                            min={0}
+                            className="w-full min-w-28 rounded border border-gray-300 bg-white px-2 py-1.5 text-gray-900"
+                            value={row.listing_price}
+                            onChange={(e) =>
+                              setVariantRows((prev) =>
+                                prev.map((r) =>
+                                  r.product_variant_id ===
+                                  row.product_variant_id
+                                    ? {
+                                        ...r,
+                                        listing_price: e.target.value,
+                                      }
+                                    : r
+                                )
+                              )
+                            }
+                          />
+                        </td>
+                        {!isLive && (
+                          <td className="px-2 py-2">
+                            <input
+                              type="number"
+                              min={0}
+                              className="w-full min-w-24 rounded border border-gray-300 bg-white px-2 py-1.5 text-gray-900"
+                              value={row.initial_stock}
+                              onChange={(e) =>
+                                setVariantRows((prev) =>
+                                  prev.map((r) =>
+                                    r.product_variant_id ===
+                                    row.product_variant_id
+                                      ? {
+                                          ...r,
+                                          initial_stock: e.target.value,
+                                        }
+                                      : r
+                                  )
+                                )
+                              }
+                            />
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
 
         <section>
           <h4 className="mb-2 font-medium text-gray-900">
             Logistics{isLive ? ' (read-only after create)' : ''}
           </h4>
+          <p className="mb-2 text-xs text-gray-500">
+            Enabled channels first; grouped Instant / Same day / Economy /
+            Standard / Other. Selected always stay visible.
+          </p>
           {channels.length === 0 ? (
             <p className="text-gray-600">
               {shopeeCategoryId
@@ -589,67 +749,118 @@ export function ShopeeListingDraftForm({ product, onSaved }: Props) {
                 : 'Resolve a Shopee category to load logistics.'}
             </p>
           ) : (
-            <div className="grid gap-2 sm:grid-cols-2">
-              {channels.map((ch) => (
-                <label
-                  key={ch.logistics_channel_id}
-                  className={`flex items-start gap-2 rounded border px-2 py-1.5 ${
-                    isLive ? 'cursor-default opacity-70' : 'cursor-pointer'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    className="mt-1"
-                    disabled={isLive}
-                    checked={logisticIds.includes(ch.logistics_channel_id)}
-                    onChange={() => toggleLogistic(ch.logistics_channel_id)}
-                  />
-                  <span>
-                    <span className="font-medium">
-                      {ch.logistics_channel_name}
+            <div className="space-y-4">
+              {logisticsGroups.map((group) => (
+                <div key={group.key}>
+                  <h5 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    {group.label}
+                    <span className="ml-1 font-normal normal-case text-gray-400">
+                      ({group.all.length})
                     </span>
-                    <span className="block text-xs text-gray-500">
-                      id {ch.logistics_channel_id}
-                      {!ch.enabled ? ' · disabled on shop' : ''}
-                    </span>
-                  </span>
-                </label>
+                  </h5>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {group.preview.map((ch) => (
+                      <label
+                        key={ch.logistics_channel_id}
+                        className={`flex items-start gap-2 rounded border px-2 py-1.5 ${
+                          isLive
+                            ? 'cursor-default opacity-70'
+                            : 'cursor-pointer'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          className="mt-1"
+                          disabled={isLive}
+                          checked={logisticIds.includes(
+                            ch.logistics_channel_id
+                          )}
+                          onChange={() =>
+                            toggleLogistic(ch.logistics_channel_id)
+                          }
+                        />
+                        <span>
+                          <span className="font-medium">
+                            {ch.logistics_channel_name}
+                          </span>
+                          <span className="block text-xs text-gray-500">
+                            id {ch.logistics_channel_id}
+                            {ch.fee_type ? ` · ${ch.fee_type}` : ''}
+                            {!ch.enabled ? ' · disabled on shop' : ''}
+                          </span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  {!showAllLogistics && group.hiddenCount > 0 && (
+                    <p className="mt-1 text-xs text-gray-500">
+                      +{group.hiddenCount} more in this group
+                    </p>
+                  )}
+                </div>
               ))}
+              {logisticsHiddenTotal > 0 && !showAllLogistics && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowAllLogistics(true)}
+                >
+                  Show more channels ({logisticsHiddenTotal})
+                </Button>
+              )}
+              {showAllLogistics && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAllLogistics(false)}
+                >
+                  Show fewer channels
+                </Button>
+              )}
             </div>
           )}
         </section>
 
         <section>
-          <h4 className="mb-2 font-medium text-gray-900">Brand</h4>
-          <select
-            className="w-full max-w-md rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900"
-            value={brandId}
-            onChange={(e) => {
-              const id = Number(e.target.value) || 0;
-              setBrandId(id);
-              const found = brands.find((b) => b.brand_id === id);
-              setBrandName(
-                found?.original_brand_name ||
-                  found?.display_brand_name ||
-                  (id === 0 ? 'NoBrand' : brandName)
-              );
-            }}
-          >
-            <option value={0}>NoBrand</option>
-            {brands.map((b) => (
-              <option key={b.brand_id} value={b.brand_id}>
-                {b.display_brand_name || b.original_brand_name || b.brand_id}
-              </option>
-            ))}
-          </select>
-        </section>
-
-        <section>
-          <h4 className="mb-2 font-medium text-gray-900">Attributes</h4>
-          {attributes.length === 0 ? (
-            <p className="text-gray-600">No attributes for this category.</p>
+          <h4 className="mb-2 font-medium text-gray-900">
+            Brand & attributes
+          </h4>
+          {attributes.length === 0 && brands.length === 0 ? (
+            <p className="text-gray-600">
+              No brand/attribute options for this category.
+            </p>
           ) : (
-            <div className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Brand
+                </label>
+                <select
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900"
+                  value={brandId}
+                  onChange={(e) => {
+                    const id = Number(e.target.value) || 0;
+                    setBrandId(id);
+                    const found = brands.find((b) => b.brand_id === id);
+                    setBrandName(
+                      found?.original_brand_name ||
+                        found?.display_brand_name ||
+                        (id === 0 ? 'NoBrand' : brandName)
+                    );
+                  }}
+                >
+                  <option value={0}>NoBrand</option>
+                  {brands.map((b) => (
+                    <option key={b.brand_id} value={b.brand_id}>
+                      {b.display_brand_name ||
+                        b.original_brand_name ||
+                        b.brand_id}
+                    </option>
+                  ))}
+                </select>
+              </div>
               {attributes.map((node) => {
                 const values = node.attribute_value_list ?? [];
                 const current = attrValues[node.attribute_id] ?? '';
@@ -661,7 +872,7 @@ export function ShopeeListingDraftForm({ product, onSaved }: Props) {
                     </label>
                     {values.length > 0 ? (
                       <select
-                        className="w-full max-w-md rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900"
+                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900"
                         value={current}
                         onChange={(e) =>
                           setAttrValues((prev) => ({
@@ -672,7 +883,10 @@ export function ShopeeListingDraftForm({ product, onSaved }: Props) {
                       >
                         <option value="">—</option>
                         {values.map((v) => (
-                          <option key={v.value_id} value={String(v.value_id)}>
+                          <option
+                            key={v.value_id}
+                            value={String(v.value_id)}
+                          >
                             {v.name || v.value_id}
                           </option>
                         ))}
