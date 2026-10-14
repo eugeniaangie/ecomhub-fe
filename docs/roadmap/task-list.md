@@ -67,6 +67,7 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE43 | FEATURE | Product detail = inline editable form (retire /edit); image zoom | UX / FE41 follow-up |
 | [ ] | FE44 | FEATURE | **Deferred** — Product delete / remove option·value·variant·image UI | Core F8f / product deletion |
 | [x] | FE45 | FEATURE | Catalog › Products — **Copy product** (new draft from existing; no channel listing / Shopee ids) | FE41 create API |
+| [x] | FE46 | FEATURE | Sales — show catalog-linked SKUs / product links from Core F8h on Orders + Returns | Core **F8h** Done |
 
 
 **P0 left:** none (FE1 Done).
@@ -907,6 +908,8 @@ Also still in FE39 (from earlier notes): listing draft / push-form fields (categ
 
 **Update (2026-10-13) — Core F8n Done.** GET proxies shipped (`…/logistics`, `…/categories/:id/attributes|brands|size-charts`, `…/item-limit`, `…/size-charts/:id`). Wire FE clients after user runs Core `make swagger`. Actions + dropdowns both unblocked here; remaining Core product work: **F8h**.
 
+**Update (2026-10-14) — Core F8h Done.** Sales order/return lines link by `item_id`/`model_id` → catalog. FE work for that surface is **FE46** (Sales menu), not this Catalog umbrella.
+
 **Done (2026-10-13):** Product detail — `ShopeeListingDraftForm` (shop, category mapping, prices/initial stock, logistics, attrs, brand, size chart, pre-order) + `ChannelListingsPanel` (sync badges, last_push_error, Pull / Dry-run push / Push / Publish / Unlist / Stock with live confirm + conflict overwrite). Clients: `productsApi` listing methods + `shopeeAuthApi` F8n GETs + `masterCategoryApi` channel-mappings. List keeps sync filter; per-listing sync badge on detail (Core list has no sync field). English UI. No delete (FE44). Docs: `menu-endpoints.md`, README.
 
 **UX follow-up (2026-10-13):** Draft form — logistics collapsed + grouped (Instant / Same day / Economy / Standard via **name heuristics** + Show more); brand+attributes in 2–3 columns; channel price/stock table labelled so it is not a second variant editor.
@@ -1040,6 +1043,29 @@ Also still in FE39 (from earlier notes): listing draft / push-form fields (categ
 **Affected area.** Catalog products list + detail, `ProductForm` create path, `lib/services/productsApi.ts`, English UI copy (“Copy product”), `docs/menu-endpoints.md` if routes/query params change.
 
 **Next action.** ~~Confirm copy scope + open questions above; then implement FE-only compose.~~ **Done.**
+
+---
+
+### FE46 — Sales: catalog-linked SKUs after Core F8h
+
+**Category:** FEATURE · **Status:** Done (2026-10-14) · **Noted:** 2026-10-14 · **Depends on:** Core **F8h** (Done) · **Related:** FE25, FE28, FE30 · **Menu:** Sales → Shopee Orders / Returns (existing pages; no new top-level menu)
+
+**Problem.** Core F8h now enriches orders/returns preview and order detail so lines and `sku_summary` can resolve to catalog variants (`product_id`, `variant_id`, `listing_id`, `item_id`, `model_id`). When linked, `sku` is the **master** SKU (stable across push/rename). FE still types and renders SKU-only rows (`sku`, `quantity`, `order_count`) with no product link.
+
+**Why it matters.** Operators should see one rollup row per variant (not split before/after push) and jump to Catalog › Products from Sales.
+
+**Scope (proposed — do not invent shapes; read Core Swagger after `make swagger`).**
+
+1. Extend `lib/services/integrationsApi.ts` (and any shared types) for optional F8h fields on `sku_summary`, return `items`, and order detail `items`.
+2. **Sales → Shopee Orders** (`/sales/shopee/orders`): SKU summary table — show master SKU; when `product_id` present, link to `/catalog/products/:id` (optional small “linked” hint). Same for order detail modal item lines (FE30).
+3. **Sales → Shopee Returns** (`/sales/shopee/returns`): same for SKU summary + return item lines.
+4. Update `docs/menu-endpoints.md` Sales sections for the enriched fields.
+
+**Out of scope.** New Sales submenu page; client-side re-aggregation; F6g unified returns (FE40); Catalog changes.
+
+**Done (2026-10-14):** Types extended for F8h optional ids. `CatalogSkuCell` links to `/catalog/products/:id` + “Catalog” badge when `product_id` set. Wired on Orders SKU summary + order-detail items, Returns SKU summary + per-return `items[]` (falls back to `item_skus` string). No client re-aggregation. Docs: `menu-endpoints.md`.
+
+**Next action.** ~~After Core user runs `make swagger`…~~ **Done.**
 
 ---
 
