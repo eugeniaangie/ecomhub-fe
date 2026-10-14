@@ -8,6 +8,7 @@ import {
   shopeeAuthApi,
   type ShopeeReturnsPreview,
 } from '@/lib/services/integrationsApi';
+import { CatalogSkuCell } from '@/components/sales/CatalogSkuCell';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { DatePicker } from '@/components/ui/DatePicker';
@@ -325,9 +326,18 @@ export default function SalesShopeeReturnsPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {preview.sku_summary.map((row) => (
-                          <tr key={row.sku} className="text-gray-900">
-                            <td className="px-3 py-2 font-mono">{row.sku || '—'}</td>
+                        {preview.sku_summary.map((row, idx) => (
+                          <tr
+                            key={
+                              row.variant_id != null
+                                ? `v-${row.variant_id}`
+                                : `${row.sku}-${row.item_id ?? 0}-${row.model_id ?? 0}-${idx}`
+                            }
+                            className="text-gray-900"
+                          >
+                            <td className="px-3 py-2">
+                              <CatalogSkuCell row={row} />
+                            </td>
                             <td className="px-3 py-2 text-right tabular-nums">{row.quantity}</td>
                             <td className="px-3 py-2 text-right tabular-nums">{row.order_count}</td>
                           </tr>
@@ -390,8 +400,32 @@ export default function SalesShopeeReturnsPage() {
                             <td className="whitespace-nowrap px-3 py-2 text-gray-600">
                               {formatUnixLocal(r.create_time ?? 0)}
                             </td>
-                            <td className="px-3 py-2 font-mono text-xs text-gray-600">
-                              {(r.item_skus ?? []).join(', ') || '—'}
+                            <td className="px-3 py-2 text-xs text-gray-600">
+                              {(r.items ?? []).length > 0 ? (
+                                <ul className="space-y-1">
+                                  {r.items!.map((it, idx) => (
+                                    <li
+                                      key={
+                                        it.variant_id != null
+                                          ? `v-${it.variant_id}-${idx}`
+                                          : `${it.sku}-${idx}`
+                                      }
+                                    >
+                                      <CatalogSkuCell
+                                        row={it}
+                                        className="text-xs"
+                                      />
+                                      <span className="ml-1 tabular-nums text-gray-500">
+                                        ×{it.quantity}
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <span className="font-mono">
+                                  {(r.item_skus ?? []).join(', ') || '—'}
+                                </span>
+                              )}
                             </td>
                           </tr>
                         ))}

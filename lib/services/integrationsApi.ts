@@ -21,6 +21,14 @@ export interface ShopeeSkuSummaryItem {
   sku: string;
   quantity: number;
   order_count: number;
+  /** F8h — Shopee item_id when known. */
+  item_id?: number;
+  /** F8h — Shopee model_id; 0 = no-model / unknown. */
+  model_id?: number;
+  /** F8h — catalog product when linked. */
+  product_id?: number | null;
+  variant_id?: number | null;
+  listing_id?: number | null;
 }
 
 export interface ShopeeMoneyLine {
@@ -90,6 +98,11 @@ export interface ShopeeReturnItemLine {
   name?: string;
   quantity: number;
   item_price?: number;
+  item_id?: number;
+  model_id?: number;
+  product_id?: number | null;
+  variant_id?: number | null;
+  listing_id?: number | null;
 }
 
 export interface ShopeeReturnPreviewItem {
@@ -207,6 +220,11 @@ export interface ShopeeOrderDetailItemLine {
   quantity: number;
   original_price?: number;
   discounted_price?: number;
+  item_id?: number;
+  model_id?: number;
+  product_id?: number | null;
+  variant_id?: number | null;
+  listing_id?: number | null;
 }
 
 export interface ShopeeOrderDetail {
