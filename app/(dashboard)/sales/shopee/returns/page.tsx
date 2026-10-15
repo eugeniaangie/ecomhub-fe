@@ -23,6 +23,23 @@ import {
 
 const MAX_RANGE_DAYS = 31;
 
+type OriginTab = 'all' | 'buyer' | 'pembatalan' | 'system';
+
+const ORIGIN_TABS: { id: OriginTab; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'buyer', label: 'Returns' },
+  { id: 'pembatalan', label: 'Cancellations' },
+  { id: 'system', label: 'Failed delivery' },
+];
+
+const SYSTEM_SUB_TYPES = [
+  { value: '', label: 'All sub-types' },
+  { value: 'failed_delivery', label: 'Failed delivery' },
+  { value: 'lost', label: 'Lost' },
+  { value: 'cod_rejected', label: 'COD rejected' },
+  { value: 'other', label: 'Other' },
+];
+
 function startOfDayUnix(ymd: string): number {
   return Math.floor(new Date(`${ymd}T00:00:00`).getTime() / 1000);
 }
@@ -49,15 +66,68 @@ function formatReturnSolution(solution: number | undefined): string {
   return '—';
 }
 
+function formatOrigin(origin: string | undefined): string {
+  switch (origin) {
+    case 'buyer':
+      return 'Return';
+    case 'system':
+      return 'Failed delivery';
+    case 'pembatalan':
+      return 'Cancellation';
+    default:
+      return origin || '—';
+  }
+}
+
+function formatGoodsReturned(v: string | undefined): string {
+  switch (v) {
+    case 'yes':
+      return 'Yes';
+    case 'no':
+      return 'No';
+    case 'unknown':
+      return 'Unknown';
+    default:
+      return '—';
+  }
+}
+
+function originTabCount(preview: ShopeeReturnsPreview | null, tab: OriginTab): number | null {
+  if (!preview) return null;
+  switch (tab) {
+    case 'buyer':
+      return preview.buyer_count ?? null;
+    case 'system':
+      return preview.system_count ?? null;
+    case 'pembatalan':
+      return preview.pembatalan_count ?? null;
+    case 'all': {
+      if (
+        preview.buyer_count == null &&
+        preview.system_count == null &&
+        preview.pembatalan_count == null
+      ) {
+        return null;
+      }
+      return (preview.buyer_count ?? 0) + (preview.system_count ?? 0) + (preview.pembatalan_count ?? 0);
+    }
+    default:
+      return null;
+  }
+}
+
 export default function SalesShopeeReturnsPage() {
   const canAccess = canConnectShopeeShop();
-  const { ready: tenantReady, activeTenant } = useTenant();
+  const { ready: tenantReady } = useTenant();
   const [hasConnection, setHasConnection] = useState(false);
   const [connectionLoading, setConnectionLoading] = useState(true);
   const [connectionError, setConnectionError] = useState('');
   const [startDate, setStartDate] = useState(getFirstDayOfCurrentMonth());
   const [endDate, setEndDate] = useState(getTodayFormatted());
+  const [origin, setOrigin] = useState<OriginTab>('all');
   const [returnStatus, setReturnStatus] = useState('');
+  const [subType, setSubType] = useState('');
+  const [goodsReturned, setGoodsReturned] = useState('');
   const [preview, setPreview] = useState<ShopeeReturnsPreview | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -141,7 +211,10 @@ export default function SalesShopeeReturnsPage() {
         time_from: startOfDayUnix(startDate),
         time_to: endOfDayUnix(endDate),
         fetch_all: true,
+        origin,
         return_status: returnStatus || undefined,
+        sub_type: subType || undefined,
+        goods_returned: goodsReturned || undefined,
       });
       setPreview(data);
     } catch (err) {
@@ -156,6 +229,9 @@ export default function SalesShopeeReturnsPage() {
       setIsLoading(false);
     }
   };
+
+  const showReturnStatus = origin === 'all' || origin === 'buyer';
+  const showSystemSubType = origin === 'all' || origin === 'system';
 
   return (
     <div className="space-y-6">
@@ -178,28 +254,58 @@ export default function SalesShopeeReturnsPage() {
               </p>
             ) : !hasConnection ? (
               <p className="text-sm text-gray-600">
-                No active Shopee shop for this tenant
-                {activeTenant?.name ? ` (${activeTenant.name})` : ''}. Connect one under{' '}
+                No active Shopee shop for this tenant.{' '}
                 <Link href="/settings/integration/shopee" className="text-blue-600 hover:underline">
-                  Settings → Shopee Integration
+                  Connect in Settings
                 </Link>
                 .
               </p>
             ) : (
               <div className="space-y-4">
-                <p className="text-sm text-gray-600">
-                  Tenant:{' '}
-                  <span className="font-medium text-gray-900">
-                    {activeTenant?.name ?? '—'}
-                  </span>
-                  {activeTenant?.shopee_shop_id ? (
-                    <>
-                      {' '}
-                      · Shopee shop{' '}
-                      <span className="font-mono">{activeTenant.shopee_shop_id}</span>
-                    </>
-                  ) : null}
-                </p>
+                <div
+                  className="flex flex-wrap gap-1 border-b border-gray-200 pb-px"
+                  role="tablist"
+                  aria-label="Return origin"
+                >
+                  {ORIGIN_TABS.map((tab) => {
+                    const count = originTabCount(preview, tab.id);
+                    const active = origin === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={active}
+                        onClick={() => {
+                          setOrigin(tab.id);
+                          if (tab.id !== 'system' && tab.id !== 'all') {
+                            setSubType('');
+                          }
+                          if (tab.id === 'system' || tab.id === 'pembatalan') {
+                            setReturnStatus('');
+                          }
+                        }}
+                        className={`rounded-t-md px-3 py-2 text-sm font-medium transition-colors ${
+                          active
+                            ? 'border border-b-white border-gray-200 bg-white text-blue-700'
+                            : 'border border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        }`}
+                      >
+                        {tab.label}
+                        {count != null ? (
+                          <span
+                            className={`ml-1.5 tabular-nums ${
+                              active ? 'text-blue-600' : 'text-gray-400'
+                            }`}
+                          >
+                            ({count})
+                          </span>
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
+
                 <div className="flex flex-wrap items-end gap-4">
                   <div className="min-w-40">
                     <label className="mb-2 block text-sm font-medium text-gray-700">
@@ -233,24 +339,59 @@ export default function SalesShopeeReturnsPage() {
                       max={getTodayFormatted()}
                     />
                   </div>
-                  <div className="min-w-44">
+                  {showReturnStatus ? (
+                    <div className="min-w-44">
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        Return status
+                      </label>
+                      <select
+                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={returnStatus}
+                        onChange={(e) => setReturnStatus(e.target.value)}
+                      >
+                        <option value="">All statuses</option>
+                        <option value="REQUESTED">REQUESTED</option>
+                        <option value="ACCEPTED">ACCEPTED</option>
+                        <option value="CANCELLED">CANCELLED</option>
+                        <option value="JUDGING">JUDGING</option>
+                        <option value="REFUND_PAID">REFUND_PAID</option>
+                        <option value="CLOSED">CLOSED</option>
+                        <option value="PROCESSING">PROCESSING</option>
+                        <option value="SELLER_DISPUTE">SELLER_DISPUTE</option>
+                      </select>
+                    </div>
+                  ) : null}
+                  {showSystemSubType ? (
+                    <div className="min-w-44">
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        System sub-type
+                      </label>
+                      <select
+                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={subType}
+                        onChange={(e) => setSubType(e.target.value)}
+                      >
+                        {SYSTEM_SUB_TYPES.map((opt) => (
+                          <option key={opt.value || 'all'} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : null}
+                  <div className="min-w-40">
                     <label className="mb-2 block text-sm font-medium text-gray-700">
-                      Return status
+                      Goods returned
                     </label>
                     <select
                       className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      value={returnStatus}
-                      onChange={(e) => setReturnStatus(e.target.value)}
+                      value={goodsReturned}
+                      onChange={(e) => setGoodsReturned(e.target.value)}
                     >
-                      <option value="">All statuses</option>
-                      <option value="REQUESTED">REQUESTED</option>
-                      <option value="ACCEPTED">ACCEPTED</option>
-                      <option value="CANCELLED">CANCELLED</option>
-                      <option value="JUDGING">JUDGING</option>
-                      <option value="REFUND_PAID">REFUND_PAID</option>
-                      <option value="CLOSED">CLOSED</option>
-                      <option value="PROCESSING">PROCESSING</option>
-                      <option value="SELLER_DISPUTE">SELLER_DISPUTE</option>
+                      <option value="">All</option>
+                      <option value="yes">Yes</option>
+                      <option value="no">No</option>
+                      <option value="unknown">Unknown</option>
                     </select>
                   </div>
                 </div>
@@ -271,9 +412,10 @@ export default function SalesShopeeReturnsPage() {
                 </div>
 
                 <p className="text-xs text-gray-500">
-                  Scoped by active tenant. Real Seller Centre returns via{' '}
-                  <code className="font-mono">get_return_list</code> (not the Orders cancel-bucket
-                  approx). Date filter = return create time. Max {MAX_RANGE_DAYS} days with{' '}
+                  Buyer rows from <code className="font-mono">get_return_list</code>; cancellations
+                  and failed delivery from CANCELLED orders (dedup: buyer{' '}
+                  <code className="font-mono">order_sn</code> wins). Date = create time per origin —
+                  not Seller Centre open-queue counts. Max {MAX_RANGE_DAYS} days with{' '}
                   <code className="font-mono">fetch_all=true</code>.
                 </p>
               </div>
@@ -289,26 +431,27 @@ export default function SalesShopeeReturnsPage() {
           {preview ? (
             <>
               <div className="grid gap-4 sm:grid-cols-3">
-                <Card title="Returns">
+                <Card title="Rows">
                   <p className="text-2xl font-semibold tabular-nums text-gray-900">
                     {preview.return_count}
                   </p>
                   <p className="mt-1 text-xs text-gray-500">
                     shop {preview.shop_id}
                     {preview.token_refreshed ? ' · token refreshed' : ''}
+                    {preview.origin ? ` · origin=${preview.origin}` : ''}
                   </p>
                 </Card>
                 <Card title="Total pcs">
                   <p className="text-2xl font-semibold tabular-nums text-gray-900">
                     {preview.total_quantity ?? 0}
                   </p>
-                  <p className="mt-1 text-xs text-gray-500">Item units across returns</p>
+                  <p className="mt-1 text-xs text-gray-500">Item units in filtered rows</p>
                 </Card>
                 <Card title="Total refund">
                   <p className="text-2xl font-semibold tabular-nums text-gray-900">
                     {formatCurrency(preview.total_refund_amount)}
                   </p>
-                  <p className="mt-1 text-xs text-gray-500">Refund nominal (from API)</p>
+                  <p className="mt-1 text-xs text-gray-500">Buyer-return refunds only</p>
                 </Card>
               </div>
 
@@ -348,17 +491,19 @@ export default function SalesShopeeReturnsPage() {
                 )}
               </Card>
 
-              <Card title="Returns">
+              <Card title="Rows">
                 {(preview.returns ?? []).length === 0 ? (
-                  <p className="text-sm text-gray-500">No returns in this range.</p>
+                  <p className="text-sm text-gray-500">No rows in this range.</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200 text-sm">
                       <thead>
                         <tr className="text-left text-gray-500">
-                          <th className="px-3 py-2 font-medium">Return SN</th>
-                          <th className="px-3 py-2 font-medium">Order SN</th>
+                          <th className="px-3 py-2 font-medium">Origin</th>
+                          <th className="px-3 py-2 font-medium">Return / Order</th>
                           <th className="px-3 py-2 font-medium">Status</th>
+                          <th className="px-3 py-2 font-medium">Sub-type</th>
+                          <th className="px-3 py-2 font-medium">Goods</th>
                           <th className="px-3 py-2 font-medium text-right">Refund</th>
                           <th className="px-3 py-2 font-medium text-right">Qty</th>
                           <th className="px-3 py-2 font-medium">Reason</th>
@@ -368,34 +513,68 @@ export default function SalesShopeeReturnsPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {preview.returns.map((r) => (
-                          <tr key={r.return_sn} className="text-gray-900">
-                            <td className="px-3 py-2 font-mono">{r.return_sn}</td>
-                            <td className="px-3 py-2 font-mono">{r.order_sn || '—'}</td>
+                        {preview.returns.map((r, idx) => (
+                          <tr
+                            key={
+                              r.return_sn
+                                ? r.return_sn
+                                : `${r.origin ?? 'x'}-${r.order_sn ?? 'x'}-${idx}`
+                            }
+                            className="text-gray-900"
+                          >
+                            <td className="whitespace-nowrap px-3 py-2 text-xs font-medium text-gray-700">
+                              {formatOrigin(r.origin)}
+                            </td>
+                            <td className="px-3 py-2 font-mono text-xs">
+                              {r.return_sn ? (
+                                <div>{r.return_sn}</div>
+                              ) : (
+                                <div className="text-gray-400">—</div>
+                              )}
+                              <div className="text-gray-600">{r.order_sn || '—'}</div>
+                            </td>
                             <td className="px-3 py-2">{r.status || '—'}</td>
+                            <td className="px-3 py-2 text-xs text-gray-600">
+                              {r.sub_type || '—'}
+                            </td>
+                            <td className="px-3 py-2 text-xs text-gray-600">
+                              {formatGoodsReturned(r.goods_returned)}
+                            </td>
                             <td className="px-3 py-2 text-right tabular-nums">
                               {formatCurrency(r.refund_amount ?? 0)}
                             </td>
                             <td className="px-3 py-2 text-right tabular-nums">{r.quantity}</td>
                             <td className="max-w-56 px-3 py-2 text-xs text-gray-600">
-                              <div>{r.reason || '—'}</div>
-                              {r.text_reason ? (
-                                <div className="mt-0.5 text-gray-500">{r.text_reason}</div>
-                              ) : null}
-                              {r.reassessed_request_reason ? (
-                                <div className="mt-0.5 text-gray-500">
-                                  Reassessed: {r.reassessed_request_reason}
-                                </div>
-                              ) : null}
+                              {r.origin === 'buyer' ? (
+                                <>
+                                  <div>{r.reason || '—'}</div>
+                                  {r.text_reason ? (
+                                    <div className="mt-0.5 text-gray-500">{r.text_reason}</div>
+                                  ) : null}
+                                  {r.reassessed_request_reason ? (
+                                    <div className="mt-0.5 text-gray-500">
+                                      Reassessed: {r.reassessed_request_reason}
+                                    </div>
+                                  ) : null}
+                                </>
+                              ) : (
+                                <div>{r.cancel_reason || r.reason || '—'}</div>
+                              )}
                             </td>
                             <td className="px-3 py-2 text-xs text-gray-600">
-                              <div>{formatReturnSolution(r.return_solution)}</div>
-                              {r.needs_logistics ? (
-                                <div className="mt-0.5 text-amber-700">Needs logistics</div>
-                              ) : null}
-                              {r.due_date ? (
-                                <div className="mt-0.5">Due {formatUnixLocal(r.due_date)}</div>
-                              ) : null}
+                              {r.origin === 'buyer' ? (
+                                <>
+                                  <div>{formatReturnSolution(r.return_solution)}</div>
+                                  {r.needs_logistics ? (
+                                    <div className="mt-0.5 text-amber-700">Needs logistics</div>
+                                  ) : null}
+                                  {r.due_date ? (
+                                    <div className="mt-0.5">Due {formatUnixLocal(r.due_date)}</div>
+                                  ) : null}
+                                </>
+                              ) : (
+                                <span className="text-gray-400">—</span>
+                              )}
                             </td>
                             <td className="whitespace-nowrap px-3 py-2 text-gray-600">
                               {formatUnixLocal(r.create_time ?? 0)}
@@ -403,18 +582,15 @@ export default function SalesShopeeReturnsPage() {
                             <td className="px-3 py-2 text-xs text-gray-600">
                               {(r.items ?? []).length > 0 ? (
                                 <ul className="space-y-1">
-                                  {r.items!.map((it, idx) => (
+                                  {r.items!.map((it, itemIdx) => (
                                     <li
                                       key={
                                         it.variant_id != null
-                                          ? `v-${it.variant_id}-${idx}`
-                                          : `${it.sku}-${idx}`
+                                          ? `v-${it.variant_id}-${itemIdx}`
+                                          : `${it.sku}-${itemIdx}`
                                       }
                                     >
-                                      <CatalogSkuCell
-                                        row={it}
-                                        className="text-xs"
-                                      />
+                                      <CatalogSkuCell row={it} className="text-xs" />
                                       <span className="ml-1 tabular-nums text-gray-500">
                                         ×{it.quantity}
                                       </span>

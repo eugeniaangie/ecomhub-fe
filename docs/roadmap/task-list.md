@@ -61,7 +61,7 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE37 | FEATURE | Move Shopee Connect under Settings › Shopee Integration | IA |
 | [x] | FE38 | FEATURE | Nest Sales Shopee routes under `/sales/shopee/…` | IA |
 | [x] | FE39 | FEATURE | Catalog › Products (umbrella) — push actions + form dropdowns (Core **F8g** + **F8n** Done) | Core F8g / F8n Done |
-| [ ] | FE40 | FEATURE | **Important** — Unified Shopee returns view (buyer + system/logistics), filter by origin, total qty + SKU list — blocked on Core F6g analysis | Core F6g |
+| [x] | FE40 | FEATURE | **Important** — Unified Shopee returns view (cover SC Pengembalian/Pembatalan tabs), filter by origin, total qty + SKU | Core F6g |
 | [x] | FE41 | FEATURE | Catalog › Products list/detail/create-edit + Shopee import (no push UI) — Core F8b/F8d/F8e Done | Core F8b / F8d / F8e |
 | [x] | FE42 | FEATURE | Shopee import: preview → select all / pick items + is_imported badges | Core **F8l** Done (`item_ids` + `is_imported`) |
 | [x] | FE43 | FEATURE | Product detail = inline editable form (retire /edit); image zoom | UX / FE41 follow-up |
@@ -1071,13 +1071,30 @@ Also still in FE39 (from earlier notes): listing draft / push-form fields (categ
 
 ### FE40 — Unified Shopee returns view (buyer + system/logistics)
 
-**Category:** FEATURE · **Status:** Open — **blocked on Core F6g analysis** · **Noted:** 2026-10-10 · **Important** (developer) · **Backend:** Core **F6g** · **Related:** FE28, FE25
+**Category:** FEATURE · **Status:** Done (2026-10-15) · **Noted:** 2026-10-10 · **Important** (developer) · **Backend:** Core **F6g** Done · **Related:** FE28, FE25, FE46 · **Analysis:** Core [`f6g-unified-returns.md`](../../../ecomhub-core/docs/analysis/f6g-unified-returns.md) (D1–D8 locked)
 
-**Problem.** Returns are split across two screens. Buyer-initiated returns (wrong size, damaged…) are on Sales → Shopee Returns (`get_return_list`). System/logistics returns (parcel lost, failed delivery, COD refused) only appear on Sales → Shopee Orders as `CANCELLED` + cancel bucket "Returns (approx)", mixed together, distinguishable only by the `Cancel reason` text. The Orders page does not expose the `cancel_reason` filter even though `previewOrders` and Core already support it. Current mapping: Core [`SHOPEE_RETURNS_AND_CANCELLATIONS.md`](../../../ecomhub-core/docs/guides/SHOPEE_RETURNS_AND_CANCELLATIONS.md).
+**Problem.** Returns are split across two screens. Buyer-initiated returns (wrong size, damaged…) are on Sales → Shopee Returns (`get_return_list`). System/logistics returns (parcel lost, failed delivery, COD refused) only appear on Sales → Shopee Orders as `CANCELLED` + cancel bucket "Returns (approx)", mixed together, distinguishable only by the `Cancel reason` text. Seller Centre **Pengembalian/Pembatalan** has first-class tabs **Semua / Pengembalian Barang·Dana / Pembatalan / Pengiriman Gagal** — EcomHub must cover that page (D1).
 
-**Why it matters.** Operator needs one place for **total returned qty + SKU list** per period, split by buyer vs system and by "goods back vs lost", for stock reconciliation. Two screens with different date fields and a possible double count (`TO_RETURN` + return request) make that a manual guess.
+**Why it matters.** Operator needs one place for **total returned qty + SKU list** per period, split by origin and by "goods back vs lost", for stock reconciliation — without double-counting.
 
-**Affected area.** `app/(dashboard)/sales/shopee/returns/page.tsx` (or a new menu — undecided in F6g), possibly `app/(dashboard)/sales/shopee/orders/page.tsx`, `lib/services/integrationsApi.ts`, `docs/menu-endpoints.md`.
+**Scope (when implementing).**
+1. **Extend** Sales → Shopee Returns (`/sales/shopee/returns`) — **no new menu** (D2).
+2. Top tabs mapped to Core `origin`: **All** → `all` · **Returns** → `buyer` · **Cancellations** → `pembatalan` · **Failed delivery** → `system` (English UI labels OK).
+3. Wire `previewReturns` with `origin` (+ optional `sub_type`, `goods_returned`); use Core `buyer_count` / `system_count` / `pembatalan_count` for tab badges; cards = row count · total qty · refund (buyer only).
+4. Table: show `origin` / `cancel_reason` / `goods_returned` where relevant; cancel rows have empty `return_sn`. Keep FE46 catalog links on SKU lines/`sku_summary`.
+5. Update `lib/services/integrationsApi.ts` types + `docs/menu-endpoints.md`.
 
-**Next action.** Wait for Core F6g analysis + contract (read the handler/Swagger — do not infer shapes). Do not merge or dedupe the two existing endpoints client-side to fake a unified total.
+**Core contract (read handler/Swagger — do not infer).**
+```http
+GET …/returns/preview?fetch_all=true&origin=all|buyer|system|pembatalan
+  &sub_type=&goods_returned=all|yes|no|unknown
+```
+- Omitted `origin` = `buyer` (current FE28 behaviour).
+- Dedup is **server-side** (buyer `order_sn` wins) — do **not** client-merge Orders + Returns endpoints.
+
+**Out of scope.** Seller Centre status/prioritas/aksi chips; stock writes; Orders-page cancel_reason filter (optional later); client-side fake totals.
+
+**Affected area.** `app/(dashboard)/sales/shopee/returns/page.tsx`, `lib/services/integrationsApi.ts`, `lib/types/` (if any), `docs/menu-endpoints.md`, `docs/finance/` or sales notes if present.
+
+**Done (2026-10-15):** Extended `/sales/shopee/returns` with origin tabs (All / Returns / Cancellations / Failed delivery) → `origin=all|buyer|pembatalan|system`. Filters: `sub_type` (system), `goods_returned`, buyer `return_status`. Tab badges from `buyer_count` / `system_count` / `pembatalan_count`. Table: origin, sub_type, goods_returned, cancel_reason; empty `return_sn` for cancel rows. FE46 CatalogSkuCell kept. No client merge. Types + `menu-endpoints.md` updated.
 
