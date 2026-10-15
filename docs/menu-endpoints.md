@@ -243,10 +243,10 @@ Legacy FE routes (redirect): `/integrations` → `/settings`, `/integrations/sho
 - `GET /integrations/marketplaces/shopee/orders/detail` — one `order_sn` drill-down (admin+). Query: `order_sn`; optional `shop_id` omitted under tenant scope. Response: `buyer_amount`, `original_price`, `escrow_amount`, `deductions[]`, `items[]`. Row click on orders table opens modal.
 - `GET /integrations/marketplaces/shopee/ads/spend/preview` — live Partner CPC ads **expense** sum (admin+, FE29). Same optional `shop_id` / `time_from` / `time_to`. Response: `total_ads_spend`, `day_count`, `used_hourly_api`. Not wallet balance; not Marketing JE ad-expenses.
 
-### Shopee Returns (`/sales/shopee/returns`) — FE28 / Core F6d + FE33
+### Shopee Returns (`/sales/shopee/returns`) — FE28 / FE40 / Core F6d+F6g + FE33
 
 - `GET /integrations/marketplaces/shopee/connections` — presence check (no shop picker).
-- `GET /integrations/marketplaces/shopee/returns/preview` — live `get_return_list` (admin+). Query: optional `shop_id` omitted, `time_from`, `time_to`, `fetch_all=true`, optional `return_status`. Response: `return_count`, `total_quantity`, `total_refund_amount`, `sku_summary[]` + `returns[].items[]` (F8h catalog link fields). FE46: SKU summary + return item lines link to Catalog when `product_id` set. Do **not** treat orders preview `cancel_bucket=pengembalian` as this screen. Which screen/filter shows each return or cancel case: Core [`SHOPEE_RETURNS_AND_CANCELLATIONS.md`](../../ecomhub-core/docs/guides/SHOPEE_RETURNS_AND_CANCELLATIONS.md).
+- `GET /integrations/marketplaces/shopee/returns/preview` — unified returns preview (admin+, Core F6g). Query: optional `shop_id` omitted, `time_from`, `time_to`, `fetch_all=true`, `origin=all|buyer|system|pembatalan` (FE default `all`; omit/`buyer` = get_return_list only), optional `return_status` (buyer), `sub_type`, `goods_returned=yes|no|unknown`. Response: `return_count`, `buyer_count` / `system_count` / `pembatalan_count` (tab badges), `total_quantity`, `total_refund_amount` (buyer only), `sku_summary[]` + `returns[]` with `origin` / `sub_type` / `goods_returned` / `cancel_reason` (F8h catalog link fields). FE46: SKU summary + return item lines link to Catalog when `product_id` set. Do **not** client-merge Orders cancel rows. Which screen/filter shows each return or cancel case: Core [`SHOPEE_RETURNS_AND_CANCELLATIONS.md`](../../ecomhub-core/docs/guides/SHOPEE_RETURNS_AND_CANCELLATIONS.md).
 
 ### Shopee Ads (`/sales/shopee/ads`) — FE31 / Core F6f + FE33
 

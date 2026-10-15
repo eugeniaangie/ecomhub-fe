@@ -106,12 +106,21 @@ export interface ShopeeReturnItemLine {
 }
 
 export interface ShopeeReturnPreviewItem {
-  return_sn: string;
+  /** buyer | system | pembatalan (F6g) */
+  origin?: string;
+  /** system: failed_delivery|lost|cod_rejected|other; buyer: return reason */
+  sub_type?: string;
+  /** yes | no | unknown */
+  goods_returned?: string;
+  /** Empty for cancel/system rows */
+  return_sn?: string;
   order_sn?: string;
   status?: string;
   reason?: string;
   text_reason?: string;
   reassessed_request_reason?: string;
+  cancel_reason?: string;
+  cancel_bucket?: string;
   refund_amount?: number;
   currency?: string;
   create_time?: number;
@@ -119,7 +128,7 @@ export interface ShopeeReturnPreviewItem {
   due_date?: number;
   return_seller_due_date?: number;
   needs_logistics?: boolean;
-  /** 0 = return+refund, 1 = refund only */
+  /** 0 = return+refund, 1 = refund only; 0 for cancel rows */
   return_solution?: number;
   return_refund_type?: string;
   item_skus?: string[];
@@ -135,9 +144,18 @@ export interface ShopeeReturnsPreview {
   next_page_no?: number;
   fetch_all: boolean;
   return_status?: string;
+  time_field?: string;
+  origin?: string;
+  sub_type?: string;
+  goods_returned?: string;
   token_refreshed: boolean;
   return_count: number;
+  /** Pre sub_type/goods filters — for tab badges (F6g) */
+  buyer_count?: number;
+  system_count?: number;
+  pembatalan_count?: number;
   total_quantity: number;
+  /** Buyer-leg refund sum only */
   total_refund_amount: number;
   sku_summary: ShopeeSkuSummaryItem[];
   returns: ShopeeReturnPreviewItem[];
@@ -151,6 +169,11 @@ export interface PreviewShopeeReturnsParams {
   page_no?: number;
   fetch_all?: boolean;
   return_status?: string;
+  /** all | buyer (API default) | system | pembatalan */
+  origin?: string;
+  sub_type?: string;
+  /** all | yes | no | unknown */
+  goods_returned?: string;
 }
 
 export interface ShopeeAdsSpendPreview {
@@ -555,6 +578,9 @@ export const shopeeAuthApi = {
     }
     if (params.fetch_all) query.set('fetch_all', 'true');
     if (params.return_status) query.set('return_status', params.return_status);
+    if (params.origin) query.set('origin', params.origin);
+    if (params.sub_type) query.set('sub_type', params.sub_type);
+    if (params.goods_returned) query.set('goods_returned', params.goods_returned);
 
     const qs = query.toString();
     return api.get<ShopeeReturnsPreview>(
