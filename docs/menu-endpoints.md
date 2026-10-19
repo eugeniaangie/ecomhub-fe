@@ -179,14 +179,14 @@ CRUD and workflow screens under the Finance sidebar group, after the Views secti
 
 Import UX (FE42): preview → select → import. Listing UX (FE39): draft form (prices, logistics, attrs, brand, size chart, pre-order) + Pull / Push / Publish / Unlist / Stock + conflict overwrite. Copy (FE45): list/detail → `new?copy_from=` → `POST /products` as draft (no images/listings). No delete UI (FE44).
 
-### Categories (`/master/categories`)
+### Categories (`/master/categories`) — FE47
 
-- `GET /categories`
-- `POST /categories`
+- `GET /categories` — paginated list; also `page=1&limit=100` for parent-path lookup
+- `POST /categories` — create root or child (`parent_id`)
 - `PUT /categories/:id`
 - `DELETE /categories/:id`
 
-Route still lives under `/master/*`; only the sidebar group changed (decision **D6**).
+UI: parent picker shows full path (`A › B › C`); per-row **Add child** locks parent and keeps the modal open after create so siblings can be added quickly. Sibling names must be unique under the same parent (Core). Route still under `/master/*` (decision **D6**).
 
 ---
 

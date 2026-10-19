@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { masterCategoryApi } from '@/lib/api';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -15,39 +15,63 @@ import {
 import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/lib/utils/pagination';
 import type { MasterCategory } from '@/lib/types';
 
+function buildCategoryById(list: MasterCategory[]): Map<number, MasterCategory> {
+  return new Map(list.map((c) => [c.id, c]));
+}
+
+/** Full path for disambiguation — same child name can exist under different parents. */
+function getCategoryPath(
+  categoryId: number | null | undefined,
+  byId: Map<number, MasterCategory>
+): string {
+  if (!categoryId) return '';
+  const parts: string[] = [];
+  const visited = new Set<number>();
+  let current = byId.get(categoryId);
+  while (current && !visited.has(current.id)) {
+    visited.add(current.id);
+    parts.unshift(current.category_name);
+    current = current.parent_id ? byId.get(current.parent_id) : undefined;
+  }
+  return parts.join(' › ');
+}
+
 export default function MasterDataPage() {
-  // Set document title
   useEffect(() => {
     document.title = 'Master Category';
   }, []);
 
-  // Permission checks
   const canCreate = canCreateCategory();
   const canUpdate = canUpdateCategory();
   const canDelete = canDeleteCategory();
 
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(''); // For page-level errors (loading data)
-  const [formError, setFormError] = useState(''); // For form submission errors
+  const [error, setError] = useState('');
+  const [formError, setFormError] = useState('');
+  const [formSuccess, setFormSuccess] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MasterCategory | null>(null);
+  /** When set (and not editing), parent is locked — Add child / create-another flow. */
+  const [lockedParentId, setLockedParentId] = useState<number | null>(null);
 
-  // Pagination
   const [currentPage, setCurrentPage] = useState(DEFAULT_PAGE);
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
-  // Data states
   const [categories, setCategories] = useState<MasterCategory[]>([]);
-  const [allCategories, setAllCategories] = useState<MasterCategory[]>([]); // For parent lookup
+  const [allCategories, setAllCategories] = useState<MasterCategory[]>([]);
 
-  // Form states
-  const [categoryForm, setCategoryForm] = useState({ 
-    category_name: '', 
-    description: '', 
-    parent_id: null as number | null 
+  const [categoryForm, setCategoryForm] = useState({
+    category_name: '',
+    description: '',
+    parent_id: null as number | null,
   });
+
+  const categoryById = useMemo(
+    () => buildCategoryById(allCategories.length > 0 ? allCategories : categories),
+    [allCategories, categories]
+  );
 
   useEffect(() => {
     loadData();
@@ -57,17 +81,12 @@ export default function MasterDataPage() {
 
   const loadAllCategories = async () => {
     try {
-      // Load all categories for parent lookup (reasonable limit)
-      // Load first page with reasonable limit, or use current page data
       const response = await masterCategoryApi.getAll(1, 100);
       if (response && response.results) {
         setAllCategories(response.results);
-        // If there are more pages, we'll use what we have
-        // For better UX, we could load more pages if needed, but 100 should be enough for most cases
       }
     } catch (err) {
       console.error('Error loading all categories:', err);
-      // Don't show error, just use empty array
       setAllCategories([]);
     }
   };
@@ -98,51 +117,71 @@ export default function MasterDataPage() {
     }
   };
 
-  const handleCreate = () => {
-    console.log('handleCreate called');
+  const closeModal = () => {
+    setIsModalOpen(false);
     setEditingItem(null);
+    setLockedParentId(null);
     setCategoryForm({ category_name: '', description: '', parent_id: null });
-    setFormError(''); // Clear form errors
+    setFormError('');
+    setFormSuccess('');
+  };
+
+  const handleCreateRoot = () => {
+    setEditingItem(null);
+    setLockedParentId(null);
+    setCategoryForm({ category_name: '', description: '', parent_id: null });
+    setFormError('');
+    setFormSuccess('');
     setIsModalOpen(true);
-    console.log('Modal should be open now, isModalOpen:', true);
+  };
+
+  const handleAddChild = (parent: MasterCategory) => {
+    setEditingItem(null);
+    setLockedParentId(parent.id);
+    setCategoryForm({
+      category_name: '',
+      description: '',
+      parent_id: parent.id,
+    });
+    setFormError('');
+    setFormSuccess('');
+    setIsModalOpen(true);
   };
 
   const handleEdit = (item: MasterCategory) => {
     setEditingItem(item);
-    setCategoryForm({ 
-      category_name: item.category_name, 
-      description: item.description || '', 
-      parent_id: item.parent_id || null
+    setLockedParentId(null);
+    setCategoryForm({
+      category_name: item.category_name,
+      description: item.description || '',
+      parent_id: item.parent_id || null,
     });
-    setFormError(''); // Clear form errors
+    setFormError('');
+    setFormSuccess('');
     setIsModalOpen(true);
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this item?')) return;
-    
+
     try {
       await masterCategoryApi.delete(id);
-      loadData();
+      await Promise.all([loadData(), loadAllCategories()]);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete item';
       setError(errorMessage);
     }
   };
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    if (e) {
-      e.preventDefault();
-    }
-    
-    // Validation
+  const handleSubmit = async () => {
     if (!categoryForm.category_name.trim()) {
       setFormError('Category name is required');
       return;
     }
 
     try {
-      setFormError(''); // Clear previous form errors
+      setFormError('');
+      setFormSuccess('');
       const payload = {
         category_name: categoryForm.category_name.trim(),
         description: categoryForm.description?.trim() || undefined,
@@ -151,74 +190,93 @@ export default function MasterDataPage() {
 
       if (editingItem) {
         await masterCategoryApi.update(editingItem.id, payload);
-      } else {
-        await masterCategoryApi.create(payload);
+        closeModal();
+        await Promise.all([loadData(), loadAllCategories()]);
+        return;
       }
-      setIsModalOpen(false);
-      setCategoryForm({ category_name: '', description: '', parent_id: null });
-      await loadData();
+
+      await masterCategoryApi.create(payload);
+      await Promise.all([loadData(), loadAllCategories()]);
+
+      // Keep form open under the same parent so operators can add several children quickly.
+      if (payload.parent_id != null) {
+        setLockedParentId(payload.parent_id);
+        setCategoryForm({
+          category_name: '',
+          description: '',
+          parent_id: payload.parent_id,
+        });
+        setFormSuccess(`Created “${payload.category_name}”. Add another child under the same parent, or close.`);
+        return;
+      }
+
+      closeModal();
     } catch (err: unknown) {
       console.error('Error saving category:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to save item';
-      setFormError(errorMessage); // Set form error, not page error
+      setFormError(errorMessage);
     }
   };
 
-  // Helper function to get parent category name
-  // First check current page categories, then allCategories
-  const getParentCategoryName = (parentId: number | null | undefined): string => {
-    if (!parentId) return '-';
-    // First check in current page categories (most common case)
-    const parentInPage = categories.find(cat => cat.id === parentId);
-    if (parentInPage) return parentInPage.category_name;
-    // Then check in allCategories (for parent lookup)
-    const parent = allCategories.find(cat => cat.id === parentId);
-    return parent ? parent.category_name : `ID: ${parentId}`;
+  const getParentLabel = (parentId: number | null | undefined): string => {
+    if (!parentId) return '—';
+    const path = getCategoryPath(parentId, categoryById);
+    return path || `ID: ${parentId}`;
   };
 
-  // Sort categories: parent followed by all its children (depth-first)
   const sortedCategories = (() => {
     const sorted: MasterCategory[] = [];
     const processed = new Set<number>();
-    
-    // Helper to get all descendants of a category
+
     const getDescendants = (parentId: number): MasterCategory[] => {
-      return categories.filter(cat => cat.parent_id === parentId);
+      return categories.filter((cat) => cat.parent_id === parentId);
     };
-    
-    // Helper to add category and all its descendants recursively
+
     const addWithDescendants = (category: MasterCategory) => {
       if (processed.has(category.id)) return;
-      
+
       sorted.push(category);
       processed.add(category.id);
-      
-      // Add all direct children, sorted by category_name
-      const children = getDescendants(category.id).sort((a, b) => 
+
+      const children = getDescendants(category.id).sort((a, b) =>
         a.category_name.localeCompare(b.category_name)
       );
-      
-      // Recursively add each child and its descendants
-      children.forEach(child => addWithDescendants(child));
+      children.forEach((child) => addWithDescendants(child));
     };
-    
-    // Start with root categories (no parent), sorted by category_name
+
     const rootCategories = categories
-      .filter(cat => !cat.parent_id)
+      .filter((cat) => !cat.parent_id)
       .sort((a, b) => a.category_name.localeCompare(b.category_name));
-    
-    // Add each root and all its descendants
-    rootCategories.forEach(root => addWithDescendants(root));
-    
-    // Add any remaining categories (orphaned, shouldn't happen but just in case)
-    categories.forEach(cat => {
+
+    rootCategories.forEach((root) => addWithDescendants(root));
+
+    categories.forEach((cat) => {
       if (!processed.has(cat.id)) {
         sorted.push(cat);
       }
     });
-    
+
     return sorted;
   })();
+
+  const availableParents = useMemo(() => {
+    const source = allCategories.length > 0 ? allCategories : categories;
+    return source
+      .filter((cat) => (editingItem ? cat.id !== editingItem.id : true))
+      .slice()
+      .sort((a, b) =>
+        getCategoryPath(a.id, categoryById).localeCompare(getCategoryPath(b.id, categoryById))
+      );
+  }, [allCategories, categories, editingItem, categoryById]);
+
+  const lockedParentPath =
+    lockedParentId != null ? getCategoryPath(lockedParentId, categoryById) : '';
+
+  const getModalTitle = () => {
+    if (editingItem) return 'Edit Category';
+    if (lockedParentId != null) return 'Add Child Category';
+    return 'Add Category';
+  };
 
   const renderCategories = () => (
     <Card>
@@ -230,7 +288,7 @@ export default function MasterDataPage() {
                 Category Name
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Parent Category
+                Parent path
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Description
@@ -249,65 +307,76 @@ export default function MasterDataPage() {
               </tr>
             ) : (
               sortedCategories.map((cat) => {
-                // Calculate indent level based on parent hierarchy (recursive)
-                const getIndentLevel = (category: MasterCategory, visited = new Set<number>()): number => {
-                  // Prevent infinite loop
+                const getIndentLevel = (
+                  category: MasterCategory,
+                  visited = new Set<number>()
+                ): number => {
                   if (visited.has(category.id)) return 0;
                   visited.add(category.id);
-                  
+
                   if (!category.parent_id) return 0;
-                  const parent = categories.find(c => c.id === category.parent_id);
+                  const parent = categories.find((c) => c.id === category.parent_id);
                   if (!parent) return 1;
                   return getIndentLevel(parent, visited) + 1;
                 };
-                
+
                 const indentLevel = getIndentLevel(cat);
-                // Apply indent: level 0 = no indent, level 1 = pl-8, level 2 = pl-16, level 3 = pl-24, etc.
-                const indentClass = 
-                  indentLevel === 0 ? '' :
-                  indentLevel === 1 ? 'pl-8' :
-                  indentLevel === 2 ? 'pl-16' :
-                  indentLevel === 3 ? 'pl-24' :
-                  indentLevel === 4 ? 'pl-32' :
-                  'pl-40'; // Max 5 levels
-                
+                const indentClass =
+                  indentLevel === 0
+                    ? ''
+                    : indentLevel === 1
+                      ? 'pl-8'
+                      : indentLevel === 2
+                        ? 'pl-16'
+                        : indentLevel === 3
+                          ? 'pl-24'
+                          : indentLevel === 4
+                            ? 'pl-32'
+                            : 'pl-40';
+
                 return (
-                <tr key={cat.id} className="hover:bg-gray-50">
+                  <tr key={cat.id} className="hover:bg-gray-50">
                     <td className={`px-6 py-4 text-sm font-medium text-gray-900 ${indentClass}`}>
-                      {cat.parent_id && (
-                        <span className="text-gray-400 mr-2">└─</span>
-                      )}
+                      {cat.parent_id ? <span className="mr-2 text-gray-400">└─</span> : null}
                       {cat.category_name}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
-                      {getParentCategoryName(cat.parent_id)}
+                      {getParentLabel(cat.parent_id)}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {cat.description || '-'}
+                    <td className="px-6 py-4 text-sm text-gray-500">{cat.description || '—'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleAddChild(cat)}
+                          disabled={!canCreate}
+                          className={!canCreate ? 'opacity-50 cursor-not-allowed' : ''}
+                          title="Add a child under this category"
+                        >
+                          Add child
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(cat)}
+                          disabled={!canUpdate}
+                          className={!canUpdate ? 'opacity-50 cursor-not-allowed' : ''}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => handleDelete(cat.id)}
+                          disabled={!canDelete}
+                          className={!canDelete ? 'opacity-50 cursor-not-allowed' : ''}
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex justify-end gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => handleEdit(cat)}
-                        disabled={!canUpdate}
-                        className={!canUpdate ? 'opacity-50 cursor-not-allowed' : ''}
-                      >
-                        Edit
-                      </Button>
-                      <Button 
-                        variant="danger" 
-                        size="sm" 
-                        onClick={() => handleDelete(cat.id)}
-                        disabled={!canDelete}
-                        className={!canDelete ? 'opacity-50 cursor-not-allowed' : ''}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
+                  </tr>
                 );
               })
             )}
@@ -315,7 +384,6 @@ export default function MasterDataPage() {
         </table>
       </div>
 
-      {/* Pagination */}
       <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
@@ -331,69 +399,98 @@ export default function MasterDataPage() {
   );
 
   const renderModalContent = () => {
-    console.log('renderModalContent called');
-    // Get available parent categories (exclude current category if editing)
-    const availableParents = categories.filter(cat => 
-      editingItem ? cat.id !== editingItem.id : true
-    );
+    const parentLocked = lockedParentId != null && !editingItem;
 
     return (
       <div className="space-y-4">
-        {/* Form Error Message */}
-        {formError && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        {formError ? (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
             {formError}
           </div>
-        )}
+        ) : null}
+
+        {formSuccess ? (
+          <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+            {formSuccess}
+          </div>
+        ) : null}
+
+        {parentLocked ? (
+          <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+            <div className="font-medium">Parent (locked)</div>
+            <div className="mt-0.5 font-mono text-xs sm:text-sm">
+              {lockedParentPath || `ID: ${lockedParentId}`}
+            </div>
+            <p className="mt-2 text-xs text-blue-700">
+              Same name is allowed under a different parent. Names must be unique among siblings.
+            </p>
+          </div>
+        ) : null}
 
         <div>
-          <label htmlFor="category-name" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="category-name" className="mb-1 block text-sm font-medium text-gray-700">
             Category Name <span className="text-red-500">*</span>
           </label>
           <input
             id="category-name"
             type="text"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={categoryForm.category_name || ''}
-            onChange={(e) => setCategoryForm({ ...categoryForm, category_name: e.target.value })}
+            onChange={(e) => {
+              setFormSuccess('');
+              setCategoryForm({ ...categoryForm, category_name: e.target.value });
+            }}
             required
             maxLength={50}
             placeholder="Enter category name"
+            autoFocus
           />
         </div>
-        
+
+        {!parentLocked ? (
+          <div>
+            <label
+              htmlFor="parent-category"
+              className="mb-1 block text-sm font-medium text-gray-700"
+            >
+              Parent Category
+            </label>
+            <select
+              id="parent-category"
+              className="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={categoryForm.parent_id || ''}
+              onChange={(e) =>
+                setCategoryForm({
+                  ...categoryForm,
+                  parent_id: e.target.value ? parseInt(e.target.value, 10) : null,
+                })
+              }
+            >
+              <option value="">Root (no parent)</option>
+              {availableParents.map((cat) => {
+                const path = getCategoryPath(cat.id, categoryById);
+                return (
+                  <option key={cat.id} value={cat.id}>
+                    {path || cat.category_name}
+                  </option>
+                );
+              })}
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              Shown as full path so identical names under different parents stay clear. Leave as Root
+              for a top-level category — or use <span className="font-medium">Add child</span> on a
+              row to skip picking.
+            </p>
+          </div>
+        ) : null}
+
         <div>
-          <label htmlFor="parent-category" className="block text-sm font-medium text-gray-700 mb-1">
-            Parent Category
-          </label>
-          <select
-            id="parent-category"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-            value={categoryForm.parent_id || ''}
-            onChange={(e) => setCategoryForm({ 
-              ...categoryForm, 
-              parent_id: e.target.value ? parseInt(e.target.value) : null 
-            })}
-          >
-            <option value="">Root Category (No Parent)</option>
-            {availableParents.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.category_name} (ID: {cat.id})
-              </option>
-            ))}
-          </select>
-          <p className="mt-1 text-xs text-gray-500">
-            Select a parent category or leave as &quot;Root Category&quot; to create a top-level category
-          </p>
-        </div>
-        
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="description" className="mb-1 block text-sm font-medium text-gray-700">
             Description
           </label>
           <textarea
             id="description"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={categoryForm.description || ''}
             onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
             rows={3}
@@ -404,13 +501,9 @@ export default function MasterDataPage() {
     );
   };
 
-  const getModalTitle = () => {
-    return editingItem ? 'Edit Category' : 'Create Category';
-  };
-
   if (isLoading && categories.length === 0 && !error) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex h-64 items-center justify-center">
         <div className="text-gray-500">Loading categories...</div>
       </div>
     );
@@ -423,7 +516,7 @@ export default function MasterDataPage() {
         title="Categories"
         actions={
           <Button
-            onClick={handleCreate}
+            onClick={handleCreateRoot}
             variant="primary"
             disabled={!canCreate}
             className={!canCreate ? 'opacity-50 cursor-not-allowed' : ''}
@@ -433,37 +526,25 @@ export default function MasterDataPage() {
         }
       />
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+      {error ? (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
           {error}
         </div>
-      )}
+      ) : null}
 
-      {/* Content */}
       {renderCategories()}
 
-      {/* Modal */}
       <Modal
         isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingItem(null);
-          setCategoryForm({ category_name: '', description: '', parent_id: null });
-          setFormError(''); // Clear form errors
-        }}
+        onClose={closeModal}
         title={getModalTitle()}
         footer={
           <>
-            <Button variant="secondary" onClick={() => {
-              setIsModalOpen(false);
-              setEditingItem(null);
-              setCategoryForm({ category_name: '', description: '', parent_id: null });
-              setFormError(''); // Clear form errors
-            }}>
-              Cancel
+            <Button variant="secondary" onClick={closeModal}>
+              {formSuccess ? 'Done' : 'Cancel'}
             </Button>
-            <Button variant="primary" onClick={() => handleSubmit()}>
-              {editingItem ? 'Update' : 'Create'}
+            <Button variant="primary" onClick={() => void handleSubmit()}>
+              {editingItem ? 'Update' : lockedParentId != null ? 'Create child' : 'Create'}
             </Button>
           </>
         }
@@ -473,4 +554,3 @@ export default function MasterDataPage() {
     </div>
   );
 }
-
