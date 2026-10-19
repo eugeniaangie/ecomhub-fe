@@ -68,6 +68,7 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [ ] | FE44 | FEATURE | **Deferred** — Product delete / remove option·value·variant·image UI | Core F8f / product deletion |
 | [x] | FE45 | FEATURE | Catalog › Products — **Copy product** (new draft from existing; no channel listing / Shopee ids) | FE41 create API |
 | [x] | FE46 | FEATURE | Sales — show catalog-linked SKUs / product links from Core F8h on Orders + Returns | Core **F8h** Done |
+| [x] | FE47 | FEATURE | Categories create UX — path parent picker + Add child (same-name under different parents) | UX |
 
 
 **P0 left:** none (FE1 Done).
@@ -1097,4 +1098,16 @@ GET …/returns/preview?fetch_all=true&origin=all|buyer|system|pembatalan
 **Affected area.** `app/(dashboard)/sales/shopee/returns/page.tsx`, `lib/services/integrationsApi.ts`, `lib/types/` (if any), `docs/menu-endpoints.md`, `docs/finance/` or sales notes if present.
 
 **Done (2026-10-15):** Extended `/sales/shopee/returns` with origin tabs (All / Returns / Cancellations / Failed delivery) → `origin=all|buyer|pembatalan|system`. Filters: `sub_type` (system), `goods_returned`, buyer `return_status`. Tab badges from `buyer_count` / `system_count` / `pembatalan_count`. Table: origin, sub_type, goods_returned, cancel_reason; empty `return_sn` for cancel rows. FE46 CatalogSkuCell kept. No client merge. Types + `menu-endpoints.md` updated.
+
+---
+
+### FE47 — Categories create UX (path parent + Add child)
+
+**Category:** FEATURE · **Status:** Done (2026-10-19) · **Noted:** 2026-10-19 · **Menu:** Catalog → Categories (`/master/categories`)
+
+**Problem.** Create/edit parent dropdown showed `Name (ID: n)`, which is ambiguous when the same child name exists under different parents (Core allows sibling uniqueness only). Operators also had no way to add a child directly from a row — they always picked a parent by id.
+
+**Why it matters.** Wrong parent = wrong catalog tree; duplicate names across branches are intentional and must stay distinguishable in the UI.
+
+**Done (2026-10-19):** Parent picker lists full paths (`A › B › C`). Table Parent column uses the same path. Per-row **Add child** opens create with parent locked + banner. After a successful child create, modal stays open under the same parent for the next sibling. Docs: `menu-endpoints.md`.
 
