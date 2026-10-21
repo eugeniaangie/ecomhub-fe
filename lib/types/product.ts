@@ -226,10 +226,67 @@ export interface ChannelListing {
   last_push_error?: string | null;
   push_started_at?: string | null;
   last_synced_at?: string | null;
+  /** F8o — set when listing no longer on Shopee; cleared when seen again */
+  absent_since?: string | null;
   created_at: string;
   updated_at: string;
   created_by?: number | null;
   updated_by?: number | null;
+}
+
+/** Observed Shopee model with no local listing-variant match (channel_data.unmatched_models). */
+export interface UnmatchedShopeeModel {
+  model_id?: number | string;
+  model_sku?: string;
+  model_status?: string;
+  original_price?: number;
+  stock?: number;
+  tier_index?: number[];
+}
+
+/** F8o — POST …/shopee/products/reconcile */
+export interface ShopeeListingReconcileItem {
+  listing_id: number;
+  product_id: number;
+  ext_product_id: string;
+  outcome: string;
+  ext_status?: string;
+  message?: string;
+}
+
+export interface ShopeeListingsReconcileResult {
+  shop_id: number;
+  checked: number;
+  present: number;
+  marked_gone: number;
+  skipped_error: number;
+  failed: number;
+  items: ShopeeListingReconcileItem[];
+  token_refreshed: boolean;
+}
+
+export interface ShopeeRelinkSuggestion {
+  listing_variant_id: number;
+  product_variant_id: number;
+  master_sku: string;
+  ext_variant_id: string;
+  model_sku: string;
+  reason: string;
+}
+
+export interface ShopeeRelinkSuggestResult {
+  listing_id: number;
+  suggestions: ShopeeRelinkSuggestion[];
+}
+
+export interface ShopeeRelinkVariantLink {
+  listing_variant_id: number;
+  ext_variant_id: string;
+}
+
+export interface ShopeeRelinkVariantsResult {
+  listing_id: number;
+  relinked: number;
 }
 
 export interface ChannelListingDetail extends ChannelListing {

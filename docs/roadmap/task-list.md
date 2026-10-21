@@ -69,6 +69,7 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE45 | FEATURE | Catalog › Products — **Copy product** (new draft from existing; no channel listing / Shopee ids) | FE41 create API |
 | [x] | FE46 | FEATURE | Sales — show catalog-linked SKUs / product links from Core F8h on Orders + Returns | Core **F8h** Done |
 | [x] | FE47 | FEATURE | Categories create UX — path parent picker + Add child (same-name under different parents) | UX |
+| [x] | FE48 | FEATURE | Catalog — “gone from Shopee” badges + Check Shopee / re-link UI (Core **F8o** Done) | Core **F8o** Done |
 
 
 **P0 left:** none (FE1 Done).
@@ -1110,4 +1111,26 @@ GET …/returns/preview?fetch_all=true&origin=all|buyer|system|pembatalan
 **Why it matters.** Wrong parent = wrong catalog tree; duplicate names across branches are intentional and must stay distinguishable in the UI.
 
 **Done (2026-10-19):** Parent picker lists full paths (`A › B › C`). Table Parent column uses the same path. Per-row **Add child** opens create with parent locked + banner. After a successful child create, modal stays open under the same parent for the next sibling. Docs: `menu-endpoints.md`.
+
+---
+
+### FE48 — Catalog: gone-from-Shopee badges + Check Shopee / re-link (Core F8o)
+
+**Category:** FEATURE · **Status:** Done (2026-10-20) · **Noted:** 2026-10-20 · **Depends on:** Core **F8o** Done · **Related:** FE39, FE41 · **Menu:** Catalog → Products (list/detail + Shopee listing panel)
+
+**Problem.** Core F8o now marks listings/variants with `absent_since`, stores `channel_data.unmatched_models`, rejects push while gone/unmatched, and exposes reconcile + re-link APIs. FE still has no badge, filter, Check Shopee button, or re-link confirm UI — operators cannot see or act on the signal.
+
+**Why it matters.** Without UI, gone listings look healthy until a push fails; unmatched models stay invisible.
+
+**Scope (proposed — read Core Swagger after `make swagger`; do not invent shapes).**
+
+1. Show listing/variant **absent** badges from `absent_since`; optional list filter.
+2. **Check Shopee** → `POST /api/v1/integrations/marketplaces/shopee/products/reconcile`.
+3. When `unmatched_models` present: show panel; wire `GET …/relink-suggestions` + confirm via `POST …/relink-variants`.
+4. Surface push/guards errors (listing gone / unmatched) clearly.
+5. Update `docs/menu-endpoints.md`.
+
+**Out of scope.** Product/listing delete (FE44 / Core T21); auto-scheduler; full “add as variant” from unmatched (Core deferred — create variant via existing edit then re-link); PQ40 re-bind new `item_id`.
+
+**Done (2026-10-20):** Products list **Check Shopee** → reconcile + result modal. Detail `ChannelListingsPanel`: Gone / unmatched badges; variant Gone column; unmatched panel + Suggest re-links / Confirm; push/publish/unlist/stock disabled when listing/variant absent or unmatched (Core guard messages still shown on API error). No list-level gone filter (Core list has no `absent` query). Docs: `menu-endpoints.md`.
 

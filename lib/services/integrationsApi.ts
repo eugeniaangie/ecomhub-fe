@@ -1,6 +1,7 @@
 // Marketplace integrations API (Shopee OAuth + F6b0 preview)
 
 import { api } from '../api';
+import type { ShopeeListingsReconcileResult } from '../types/product';
 
 const API_VERSION = '/api/v1';
 
@@ -800,6 +801,22 @@ export const shopeeAuthApi = {
     const qs = query.toString();
     return api.get<ShopeeSizeChartDetailResult>(
       `${API_VERSION}/integrations/marketplaces/shopee/size-charts/${sizeChartId}${qs ? `?${qs}` : ''}`
+    );
+  },
+
+  /**
+   * F8o — Check Shopee (manual reconcile). Probes local listings via get_item_base_info;
+   * marks absent_since when deleted/not returned. Omit shop_id for tenant default.
+   */
+  reconcileListings: async (params: { shop_id?: number } = {}) => {
+    const query = new URLSearchParams();
+    if (params.shop_id && params.shop_id > 0) {
+      query.set('shop_id', String(params.shop_id));
+    }
+    const qs = query.toString();
+    return api.post<ShopeeListingsReconcileResult>(
+      `${API_VERSION}/integrations/marketplaces/shopee/products/reconcile${qs ? `?${qs}` : ''}`,
+      {}
     );
   },
 };

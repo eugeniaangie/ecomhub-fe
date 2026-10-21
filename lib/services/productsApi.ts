@@ -17,6 +17,9 @@ import type {
   ShopeeListingStockForm,
   ShopeeListingVisibilityForm,
   ShopeeProductPushResult,
+  ShopeeRelinkSuggestResult,
+  ShopeeRelinkVariantLink,
+  ShopeeRelinkVariantsResult,
 } from '../types/product';
 
 const API_VERSION = '/api/v1';
@@ -144,6 +147,25 @@ export const productsApi = {
     return api.post<ShopeeProductPushResult>(
       `${API_VERSION}/products/${productId}/listings/${listingId}/stock${qs ? `?${qs}` : ''}`,
       body
+    );
+  },
+
+  /** F8o A3 — suggested absent listing-variant ↔ unmatched model pairs (not applied). */
+  getRelinkSuggestions: async (productId: number, listingId: number) => {
+    return api.get<ShopeeRelinkSuggestResult>(
+      `${API_VERSION}/products/${productId}/listings/${listingId}/relink-suggestions`
+    );
+  },
+
+  /** F8o A3 — operator-confirmed re-link of absent variants to Shopee model_ids. */
+  relinkVariants: async (
+    productId: number,
+    listingId: number,
+    links: ShopeeRelinkVariantLink[]
+  ) => {
+    return api.post<ShopeeRelinkVariantsResult>(
+      `${API_VERSION}/products/${productId}/listings/${listingId}/relink-variants`,
+      { links }
     );
   },
 };

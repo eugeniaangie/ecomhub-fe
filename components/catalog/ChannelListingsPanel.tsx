@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  useCallback,
   useMemo,
   useState,
   type Dispatch,
@@ -17,6 +18,8 @@ import type {
   ListingSyncStatus,
   ProductDetail,
   ShopeeProductPushResult,
+  ShopeeRelinkSuggestion,
+  UnmatchedShopeeModel,
 } from '@/lib/types/product';
 import {
   SYNC_STATUS_COLORS,
@@ -34,6 +37,39 @@ function isLeaseBusy(listing: ChannelListingDetail): boolean {
 
 function isLiveStatus(extStatus?: string | null): boolean {
   return (extStatus || '').toUpperCase() === 'NORMAL';
+}
+
+function formatAbsentSince(iso?: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString();
+}
+
+function parseUnmatchedModels(
+  channelData?: Record<string, unknown> | null
+): UnmatchedShopeeModel[] {
+  if (!channelData) return [];
+  const raw = channelData.unmatched_models;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (row): row is UnmatchedShopeeModel =>
+      row != null && typeof row === 'object' && !Array.isArray(row)
+  );
+}
+
+function listingBlockedReason(listing: ChannelListingDetail): string | null {
+  if (listing.absent_since) {
+    return `Listing is no longer on Shopee (since ${formatAbsentSince(listing.absent_since)}). Run Check Shopee / Pull to re-check.`;
+  }
+  const absentVariants = (listing.variants ?? []).filter((v) => v.absent_since);
+  if (absentVariants.length > 0) {
+    return `${absentVariants.length} variant(s) gone from Shopee — re-link or Pull before push.`;
+  }
+  if (parseUnmatchedModels(listing.channel_data).length > 0) {
+    return 'Listing has unmatched Shopee models — re-link before push.';
+  }
+  return null;
 }
 
 type Props = {
@@ -61,6 +97,17 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
   );
   const [stockConfirmLive, setStockConfirmLive] = useState(false);
 
+  const [relinkListingId, setRelinkListingId] = useState<number | null>(null);
+  const [relinkSuggestions, setRelinkSuggestions] = useState<
+    ShopeeRelinkSuggestion[]
+  >([]);
+  const [selectedRelinks, setSelectedRelinks] = useState<
+    Record<number, boolean>
+  >({});
+  const [relinkBusy, setRelinkBusy] = useState(false);
+  const [relinkError, setRelinkError] = useState('');
+  const [relinkMessage, setRelinkMessage] = useState('');
+
   const listings = product.listings ?? [];
 
   const runAction = async (
@@ -83,6 +130,7 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
   const openStockModal = (listing: ChannelListingDetail) => {
     const initial: Record<number, { expected: string; next: string }> = {};
     for (const lv of listing.variants ?? []) {
+      if (lv.absent_since) continue;
       const stock = lv.ext_stock ?? 0;
       initial[lv.product_variant_id] = {
         expected: String(stock),
@@ -103,17 +151,19 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
       setActionError('Confirm live listing write before updating stock.');
       return;
     }
-    const variants = (listing.variants ?? []).map((lv) => {
-      const row = stockInputs[lv.product_variant_id] || {
-        expected: '0',
-        next: '0',
-      };
-      return {
-        product_variant_id: lv.product_variant_id,
-        expected_stock: Number(row.expected) || 0,
-        seller_stock: [{ stock: Number(row.next) || 0 }],
-      };
-    });
+    const variants = (listing.variants ?? [])
+      .filter((lv) => !lv.absent_since)
+      .map((lv) => {
+        const row = stockInputs[lv.product_variant_id] || {
+          expected: '0',
+          next: '0',
+        };
+        return {
+          product_variant_id: lv.product_variant_id,
+          expected_stock: Number(row.expected) || 0,
+          seller_stock: [{ stock: Number(row.next) || 0 }],
+        };
+      });
     if (variants.length === 0) {
       setActionError('No listing variants to update.');
       return;
@@ -129,11 +179,77 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
     if (!dryRun) setStockModalListing(null);
   };
 
+  const loadRelinkSuggestions = useCallback(
+    async (listingId: number) => {
+      setRelinkListingId(listingId);
+      setRelinkError('');
+      setRelinkMessage('');
+      setRelinkBusy(true);
+      try {
+        const data = await productsApi.getRelinkSuggestions(
+          product.id,
+          listingId
+        );
+        const suggestions = data?.suggestions ?? [];
+        setRelinkSuggestions(suggestions);
+        const selected: Record<number, boolean> = {};
+        for (const s of suggestions) {
+          selected[s.listing_variant_id] = true;
+        }
+        setSelectedRelinks(selected);
+      } catch (err: unknown) {
+        setRelinkSuggestions([]);
+        setRelinkError(
+          err instanceof Error ? err.message : 'Failed to load re-link suggestions'
+        );
+      } finally {
+        setRelinkBusy(false);
+      }
+    },
+    [product.id]
+  );
+
+  const confirmRelinks = async () => {
+    if (relinkListingId == null) return;
+    const links = relinkSuggestions
+      .filter((s) => selectedRelinks[s.listing_variant_id])
+      .map((s) => ({
+        listing_variant_id: s.listing_variant_id,
+        ext_variant_id: s.ext_variant_id,
+      }));
+    if (links.length === 0) {
+      setRelinkError('Select at least one suggested pair to confirm.');
+      return;
+    }
+    setRelinkBusy(true);
+    setRelinkError('');
+    try {
+      const result = await productsApi.relinkVariants(
+        product.id,
+        relinkListingId,
+        links
+      );
+      setRelinkMessage(`Re-linked ${result.relinked} variant(s).`);
+      setRelinkSuggestions([]);
+      setRelinkListingId(null);
+      await onChanged();
+    } catch (err: unknown) {
+      setRelinkError(err instanceof Error ? err.message : 'Re-link failed');
+    } finally {
+      setRelinkBusy(false);
+    }
+  };
+
   return (
     <Card title="Channel listings">
       {actionError && (
         <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {actionError}
+        </div>
+      )}
+      {relinkMessage && (
+        <div className="mb-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
+          {relinkMessage}
         </div>
       )}
 
@@ -154,11 +270,19 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
             const prefix = `listing-${listing.id}`;
             const confirmLive = Boolean(confirmLiveById[listing.id]);
             const overwriteConflict = Boolean(overwriteById[listing.id]);
+            const blocked = listingBlockedReason(listing);
+            const unmatched = parseUnmatchedModels(listing.channel_data);
+            const listingGone = Boolean(listing.absent_since);
+            const actionsBlocked = Boolean(blocked) || leaseBusy || Boolean(busyKey);
 
             return (
               <div
                 key={listing.id}
-                className="rounded-md border border-gray-100 bg-gray-50 p-3 text-sm"
+                className={`rounded-md border p-3 text-sm ${
+                  listingGone
+                    ? 'border-amber-200 bg-amber-50/60'
+                    : 'border-gray-100 bg-gray-50'
+                }`}
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <StatusBadge
@@ -167,6 +291,18 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
                       SYNC_STATUS_COLORS[sync] || 'bg-gray-100 text-gray-800'
                     }
                   />
+                  {listingGone && (
+                    <StatusBadge
+                      label="Gone from Shopee"
+                      colorClass="bg-amber-100 text-amber-900"
+                    />
+                  )}
+                  {unmatched.length > 0 && (
+                    <StatusBadge
+                      label={`${unmatched.length} unmatched model(s)`}
+                      colorClass="bg-orange-100 text-orange-900"
+                    />
+                  )}
                   <span className="text-gray-900">
                     Account #{listing.marketplace_account_id}
                   </span>
@@ -176,6 +312,20 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
                     </span>
                   )}
                 </div>
+
+                {listingGone && (
+                  <p className="mt-2 text-xs text-amber-900">
+                    Absent since {formatAbsentSince(listing.absent_since)}. Push /
+                    publish / unlist / stock are blocked until this listing is
+                    present again (Pull or Check Shopee).
+                  </p>
+                )}
+
+                {blocked && !listingGone && (
+                  <p className="mt-2 rounded border border-orange-200 bg-orange-50 px-2 py-1 text-xs text-orange-900">
+                    {blocked}
+                  </p>
+                )}
 
                 <dl className="mt-2 grid gap-2 sm:grid-cols-2">
                   <div>
@@ -235,7 +385,8 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
                           <th className="py-1 pr-2">Ext. SKU</th>
                           <th className="py-1 pr-2">Listing price</th>
                           <th className="py-1 pr-2">Ext. price</th>
-                          <th className="py-1">Ext. stock</th>
+                          <th className="py-1 pr-2">Ext. stock</th>
+                          <th className="py-1">Status</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -255,11 +406,114 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
                                 ? `${lv.ext_price}${lv.currency ? ` ${lv.currency}` : ''}`
                                 : '—'}
                             </td>
-                            <td className="py-1">{lv.ext_stock ?? '—'}</td>
+                            <td className="py-1 pr-2">{lv.ext_stock ?? '—'}</td>
+                            <td className="py-1">
+                              {lv.absent_since ? (
+                                <span
+                                  className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900"
+                                  title={`Absent since ${formatAbsentSince(lv.absent_since)}`}
+                                >
+                                  Gone
+                                </span>
+                              ) : (
+                                <span className="text-gray-400">—</span>
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                )}
+
+                {unmatched.length > 0 && (
+                  <div className="mt-3 rounded border border-orange-200 bg-white p-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs font-medium text-orange-900">
+                        Unmatched Shopee models ({unmatched.length})
+                      </p>
+                      {canWrite && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          disabled={relinkBusy || Boolean(busyKey)}
+                          isLoading={
+                            relinkBusy && relinkListingId === listing.id
+                          }
+                          onClick={() => void loadRelinkSuggestions(listing.id)}
+                        >
+                          Suggest re-links
+                        </Button>
+                      )}
+                    </div>
+                    <ul className="mt-2 space-y-1 text-xs text-gray-700">
+                      {unmatched.map((m, idx) => (
+                        <li key={`${m.model_id ?? 'x'}-${idx}`} className="font-mono">
+                          model_id={m.model_id ?? '—'} · sku={m.model_sku || '—'}
+                          {m.stock != null ? ` · stock=${m.stock}` : ''}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-2 text-xs text-gray-500">
+                      No auto “add as variant” yet — create the variant in the
+                      product form if needed, then confirm a re-link.
+                    </p>
+
+                    {relinkListingId === listing.id && (
+                      <div className="mt-3 border-t border-orange-100 pt-2">
+                        {relinkError && (
+                          <p className="mb-2 text-xs text-red-700">{relinkError}</p>
+                        )}
+                        {relinkSuggestions.length === 0 && !relinkBusy ? (
+                          <p className="text-xs text-gray-600">
+                            No SKU matches suggested. Check master SKUs vs Shopee
+                            model_sku, or create the missing variant first.
+                          </p>
+                        ) : (
+                          <div className="space-y-2">
+                            {relinkSuggestions.map((s) => (
+                              <label
+                                key={s.listing_variant_id}
+                                className="flex items-start gap-2 text-xs text-gray-800"
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="mt-0.5"
+                                  checked={Boolean(
+                                    selectedRelinks[s.listing_variant_id]
+                                  )}
+                                  onChange={(e) =>
+                                    setSelectedRelinks((prev) => ({
+                                      ...prev,
+                                      [s.listing_variant_id]: e.target.checked,
+                                    }))
+                                  }
+                                />
+                                <span>
+                                  Absent variant #{s.product_variant_id} (
+                                  <span className="font-mono">{s.master_sku}</span>
+                                  ) → Shopee model{' '}
+                                  <span className="font-mono">{s.ext_variant_id}</span>{' '}
+                                  / {s.model_sku || '—'}
+                                  <span className="text-gray-500">
+                                    {' '}
+                                    · {s.reason}
+                                  </span>
+                                </span>
+                              </label>
+                            ))}
+                            <Button
+                              size="sm"
+                              disabled={relinkBusy}
+                              isLoading={relinkBusy}
+                              onClick={() => void confirmRelinks()}
+                            >
+                              Confirm re-link
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -283,8 +537,9 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
                     <Button
                       size="sm"
                       variant="secondary"
-                      disabled={leaseBusy || Boolean(busyKey)}
+                      disabled={actionsBlocked || (conflict && !overwriteConflict)}
                       isLoading={busyKey === `${prefix}-dry`}
+                      title={blocked || undefined}
                       onClick={() =>
                         runAction(`${prefix}-dry`, () =>
                           productsApi.pushListing(product.id, listing.id, {
@@ -302,11 +557,10 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
                     <Button
                       size="sm"
                       disabled={
-                        leaseBusy ||
-                        Boolean(busyKey) ||
-                        (conflict && !overwriteConflict)
+                        actionsBlocked || (conflict && !overwriteConflict)
                       }
                       isLoading={busyKey === `${prefix}-push`}
+                      title={blocked || undefined}
                       onClick={() => {
                         if (live && !confirmLive) {
                           setActionError(
@@ -332,10 +586,9 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
                         <Button
                           size="sm"
                           variant="secondary"
-                          disabled={
-                            leaseBusy || Boolean(busyKey) || conflict
-                          }
+                          disabled={actionsBlocked || conflict}
                           isLoading={busyKey === `${prefix}-publish`}
+                          title={blocked || undefined}
                           onClick={() =>
                             runAction(`${prefix}-publish`, () =>
                               productsApi.publishListing(
@@ -351,10 +604,9 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
                         <Button
                           size="sm"
                           variant="secondary"
-                          disabled={
-                            leaseBusy || Boolean(busyKey) || conflict
-                          }
+                          disabled={actionsBlocked || conflict}
                           isLoading={busyKey === `${prefix}-unlist`}
+                          title={blocked || undefined}
                           onClick={() =>
                             runAction(`${prefix}-unlist`, () =>
                               productsApi.unlistListing(
@@ -370,9 +622,8 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
                         <Button
                           size="sm"
                           variant="secondary"
-                          disabled={
-                            leaseBusy || Boolean(busyKey) || conflict
-                          }
+                          disabled={actionsBlocked || conflict}
+                          title={blocked || undefined}
                           onClick={() => openStockModal(listing)}
                         >
                           Update stock
@@ -382,7 +633,7 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
                   </div>
                 )}
 
-                {canWrite && (live || conflict) && (
+                {canWrite && (live || conflict) && !listingGone && (
                   <div className="mt-2 flex flex-wrap gap-4 text-xs text-gray-800">
                     {live && (
                       <label className="flex items-center gap-2">
@@ -532,13 +783,16 @@ function StockFormBody({
   setConfirmLive: (v: boolean) => void;
   live: boolean;
 }) {
-  const rows = useMemo(() => listing.variants ?? [], [listing.variants]);
+  const rows = useMemo(
+    () => (listing.variants ?? []).filter((lv) => !lv.absent_since),
+    [listing.variants]
+  );
 
   return (
     <div className="space-y-3 text-sm text-gray-900">
       <p className="text-gray-600">
         Absolute stock only. Expected stock must match the current Shopee value
-        (race guard). Pull first if unsure.
+        (race guard). Pull first if unsure. Gone variants are excluded.
       </p>
       {live && (
         <label className="flex items-center gap-2 text-xs">

@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
 import { StatusBadge } from '@/components/finance/StatusBadge';
 import { useTenant } from '@/components/layout/TenantProvider';
@@ -14,8 +15,13 @@ import {
   canImportShopeeProducts,
   canWriteProduct,
 } from '@/lib/authHelpers';
+import { shopeeAuthApi } from '@/lib/services/integrationsApi';
 import { productsApi } from '@/lib/services/productsApi';
-import type { Product, ProductStatus } from '@/lib/types/product';
+import type {
+  Product,
+  ProductStatus,
+  ShopeeListingsReconcileResult,
+} from '@/lib/types/product';
 import {
   PRODUCT_STATUS_COLORS,
   PRODUCT_STATUS_LABELS,
@@ -43,6 +49,10 @@ export default function CatalogProductsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [syncFilter, setSyncFilter] = useState('');
   const [importOpen, setImportOpen] = useState(false);
+  const [reconcileBusy, setReconcileBusy] = useState(false);
+  const [reconcileError, setReconcileError] = useState('');
+  const [reconcileResult, setReconcileResult] =
+    useState<ShopeeListingsReconcileResult | null>(null);
 
   useEffect(() => {
     document.title = 'Products · Catalog · EcomHub';
@@ -75,6 +85,22 @@ export default function CatalogProductsPage() {
     loadData();
   }, [tenantReady, loadData]);
 
+  const handleCheckShopee = async () => {
+    setReconcileBusy(true);
+    setReconcileError('');
+    try {
+      const result = await shopeeAuthApi.reconcileListings();
+      setReconcileResult(result);
+      await loadData();
+    } catch (err: unknown) {
+      setReconcileError(
+        err instanceof Error ? err.message : 'Check Shopee failed'
+      );
+    } finally {
+      setReconcileBusy(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -82,6 +108,17 @@ export default function CatalogProductsPage() {
         description="EcomHub product master — create drafts, edit SKUs, import from Shopee, and push listings from product detail."
         actions={
           <>
+            {canWrite && (
+              <Button
+                variant="secondary"
+                isLoading={reconcileBusy}
+                disabled={reconcileBusy}
+                onClick={() => void handleCheckShopee()}
+                title="Probe local Shopee listings and mark gone items (F8o)"
+              >
+                Check Shopee
+              </Button>
+            )}
             {canImport && (
               <Button variant="secondary" onClick={() => setImportOpen(true)}>
                 Import from Shopee
@@ -95,6 +132,12 @@ export default function CatalogProductsPage() {
           </>
         }
       />
+
+      {reconcileError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {reconcileError}
+        </div>
+      )}
 
       <Card>
         <div className="mb-4 flex flex-wrap items-end gap-3">
@@ -259,6 +302,80 @@ export default function CatalogProductsPage() {
           onImported={loadData}
         />
       )}
+
+      <Modal
+        isOpen={Boolean(reconcileResult)}
+        onClose={() => setReconcileResult(null)}
+        title="Check Shopee result"
+        size="lg"
+        footer={
+          <Button onClick={() => setReconcileResult(null)}>Close</Button>
+        }
+      >
+        {reconcileResult && (
+          <div className="space-y-3 text-sm text-gray-900">
+            <p>
+              Shop {reconcileResult.shop_id}: checked{' '}
+              <span className="tabular-nums">{reconcileResult.checked}</span>
+              {' · '}present{' '}
+              <span className="tabular-nums">{reconcileResult.present}</span>
+              {' · '}marked gone{' '}
+              <span className="tabular-nums font-medium text-amber-800">
+                {reconcileResult.marked_gone}
+              </span>
+              {' · '}skipped error{' '}
+              <span className="tabular-nums">{reconcileResult.skipped_error}</span>
+              {' · '}failed{' '}
+              <span className="tabular-nums">{reconcileResult.failed}</span>
+              {reconcileResult.token_refreshed ? ' · token refreshed' : ''}
+            </p>
+            <p className="text-xs text-gray-500">
+              Open a product detail to see Gone / unmatched badges and re-link
+              suggestions. Push stays blocked while a listing or variant is
+              absent or unmatched.
+            </p>
+            {(reconcileResult.items ?? []).length > 0 && (
+              <div className="max-h-80 overflow-auto">
+                <table className="min-w-full divide-y divide-gray-200 text-xs">
+                  <thead>
+                    <tr className="text-left text-gray-500">
+                      <th className="px-2 py-1">Product</th>
+                      <th className="px-2 py-1">Listing</th>
+                      <th className="px-2 py-1">Ext ID</th>
+                      <th className="px-2 py-1">Outcome</th>
+                      <th className="px-2 py-1">Message</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {reconcileResult.items.map((item) => (
+                      <tr key={`${item.listing_id}-${item.outcome}`}>
+                        <td className="px-2 py-1">
+                          <Link
+                            href={`/catalog/products/${item.product_id}`}
+                            className="text-blue-600 hover:underline"
+                          >
+                            #{item.product_id}
+                          </Link>
+                        </td>
+                        <td className="px-2 py-1 tabular-nums">
+                          {item.listing_id}
+                        </td>
+                        <td className="px-2 py-1 font-mono">
+                          {item.ext_product_id || '—'}
+                        </td>
+                        <td className="px-2 py-1">{item.outcome}</td>
+                        <td className="px-2 py-1 text-gray-600">
+                          {item.message || '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
