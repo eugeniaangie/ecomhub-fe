@@ -8,11 +8,13 @@ import type {
 export const PRODUCT_STATUS_LABELS: Record<ProductStatus, string> = {
   draft: 'Draft',
   active: 'Active',
+  archived: 'Archived',
 };
 
 export const PRODUCT_STATUS_COLORS: Record<ProductStatus, string> = {
   draft: 'bg-gray-100 text-gray-800',
   active: 'bg-green-100 text-green-800',
+  archived: 'bg-slate-200 text-slate-800',
 };
 
 export const SYNC_STATUS_LABELS: Record<ListingSyncStatus, string> = {

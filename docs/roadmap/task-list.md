@@ -65,7 +65,7 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE41 | FEATURE | Catalog › Products list/detail/create-edit + Shopee import (no push UI) — Core F8b/F8d/F8e Done | Core F8b / F8d / F8e |
 | [x] | FE42 | FEATURE | Shopee import: preview → select all / pick items + is_imported badges | Core **F8l** Done (`item_ids` + `is_imported`) |
 | [x] | FE43 | FEATURE | Product detail = inline editable form (retire /edit); image zoom | UX / FE41 follow-up |
-| [ ] | FE44 | FEATURE | **Deferred** — Product delete / remove option·value·variant·image UI | Core F8f / product deletion |
+| [x] | FE44 | FEATURE | Product archive / unlink / remove UI — Core **F8p** Done | Core **F8p** Done |
 | [x] | FE45 | FEATURE | Catalog › Products — **Copy product** (new draft from existing; no channel listing / Shopee ids) | FE41 create API |
 | [x] | FE46 | FEATURE | Sales — show catalog-linked SKUs / product links from Core F8h on Orders + Returns | Core **F8h** Done |
 | [x] | FE47 | FEATURE | Categories create UX — path parent picker + Add child (same-name under different parents) | UX |
@@ -999,13 +999,17 @@ Also still in FE39 (from earlier notes): listing draft / push-form fields (categ
 
 ---
 
-### FE44 — Deferred: product delete / remove option·value·variant·image UI
+### FE44 — Product archive / unlink / remove UI (Core F8p)
 
-**Category:** FEATURE · **Status:** Open — **Deferred** · **Noted:** 2026-10-11 · **Depends on:** Core product deletion / remove APIs (F8f / product-domain §11; not in MVP)
+**Category:** FEATURE · **Status:** Done (2026-10-21) · **Noted:** 2026-10-11 · **Depends on:** Core **F8p** Done
 
-**Problem.** Operators will eventually need to remove options, values, variants, or images. Core MVP has **no** delete/remove routes (add-only + RESTRICT).
+**Problem.** Operators will eventually need to archive products, unlink dead listings, and remove options/values/variants/images. Core MVP has **no** delete/archive routes (add-only + RESTRICT).
 
-**Next action.** When Core ships delete/remove (or soft-archive) contracts, add FE controls on the inline detail editor. Do not invent FE delete against missing APIs.
+**Core decisions locked (2026-10-21, product-domain §15.23 / F8p):** product = **archive** (not hard delete); SKU never reused; unlink listing first; block if sales refs; admin+; no Shopee `delete_*`; image objects deleted. Unlink/re-bind shapes also locked (F8r separate).
+
+**Core shipped (2026-10-21):** `POST /products/:id/archive`, `DELETE /products/:id/listings/:listing_id`, `DELETE /products/:id/images/:image_id`. Unlink rejects still-live listings; archive requires unlink first. List hides archived unless `status=archived`.
+
+**Done (2026-10-21):** Detail **Archive** (requires listings unlinked); listing panel **Unlink** (allowed when never pushed or gone); gallery **Remove** image. Archived products read-only; list Status filter includes Archived. No option/variant remove (not in F8p). Docs: `menu-endpoints.md`.
 
 ---
 

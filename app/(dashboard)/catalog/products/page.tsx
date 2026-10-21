@@ -167,9 +167,10 @@ export default function CatalogProductsPage() {
                 setStatusFilter(e.target.value);
               }}
             >
-              <option value="">All</option>
+              <option value="">All (hides archived)</option>
               <option value="draft">Draft</option>
               <option value="active">Active</option>
+              <option value="archived">Archived</option>
             </select>
           </div>
           <div>

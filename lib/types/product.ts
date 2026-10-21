@@ -1,6 +1,6 @@
 // Product domain types — mirror ecomhub-core model/validation (F8b / F8d / F8e).
 
-export type ProductStatus = 'draft' | 'active';
+export type ProductStatus = 'draft' | 'active' | 'archived';
 
 export type SKUSource =
   | 'adopted'

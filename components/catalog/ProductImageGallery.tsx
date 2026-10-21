@@ -8,18 +8,22 @@ export interface ProductImageGalleryProps {
   images: ProductImageDetail[];
   canWrite: boolean;
   uploading?: boolean;
+  deletingId?: number | null;
   error?: string;
   onUpload: (file: File | null) => void;
   onSetPrimary: (imageId: number) => void;
+  onDelete?: (imageId: number) => void;
 }
 
 export function ProductImageGallery({
   images,
   canWrite,
   uploading = false,
+  deletingId = null,
   error = '',
   onUpload,
   onSetPrimary,
+  onDelete,
 }: ProductImageGalleryProps) {
   const [zoomUrl, setZoomUrl] = useState<string | null>(null);
 
@@ -41,7 +45,8 @@ export function ProductImageGallery({
       <div>
         <h2 className="text-sm font-semibold text-gray-900">Images</h2>
         <p className="text-xs text-gray-600">
-          Click an image to zoom. Removal is not available yet (Core deferred).
+          Click an image to zoom
+          {canWrite && onDelete ? '. Remove deletes the gallery row and storage object.' : '.'}
         </p>
       </div>
 
@@ -104,6 +109,24 @@ export function ProductImageGallery({
                   <p className="mt-1 text-center text-xs text-gray-600">
                     Primary
                   </p>
+                ) : null}
+                {canWrite && onDelete ? (
+                  <button
+                    type="button"
+                    className="mt-1 block w-full cursor-pointer text-center text-xs text-red-600 hover:underline disabled:opacity-50"
+                    disabled={deletingId === img.id || uploading}
+                    onClick={() => {
+                      if (
+                        confirm(
+                          'Delete this image? The file is removed from storage if nothing else uses it.'
+                        )
+                      ) {
+                        onDelete(img.id);
+                      }
+                    }}
+                  >
+                    {deletingId === img.id ? 'Deleting…' : 'Remove'}
+                  </button>
                 ) : null}
               </div>
             );

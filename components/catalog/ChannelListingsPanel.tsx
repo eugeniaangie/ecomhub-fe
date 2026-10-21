@@ -72,6 +72,14 @@ function listingBlockedReason(listing: ChannelListingDetail): string | null {
   return null;
 }
 
+/** F8p — unlink allowed when never pushed, or marked gone (not while still live). */
+function canUnlinkListing(listing: ChannelListingDetail): boolean {
+  if (isLeaseBusy(listing)) return false;
+  const ext = (listing.ext_product_id || '').trim();
+  if (!ext) return true;
+  return Boolean(listing.absent_since);
+}
+
 type Props = {
   product: ProductDetail;
   canWrite: boolean;
@@ -107,8 +115,35 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
   const [relinkBusy, setRelinkBusy] = useState(false);
   const [relinkError, setRelinkError] = useState('');
   const [relinkMessage, setRelinkMessage] = useState('');
+  const [unlinkBusyId, setUnlinkBusyId] = useState<number | null>(null);
 
   const listings = product.listings ?? [];
+
+  const handleUnlink = async (listing: ChannelListingDetail) => {
+    if (!canUnlinkListing(listing)) {
+      setActionError(
+        'Cannot unlink while the listing still looks live on Shopee. Run Check Shopee / Pull until it is marked gone.'
+      );
+      return;
+    }
+    if (
+      !confirm(
+        'Unlink this channel listing from the product? This does not delete the item on Shopee — only the local link. Required before archiving.'
+      )
+    ) {
+      return;
+    }
+    setUnlinkBusyId(listing.id);
+    setActionError('');
+    try {
+      await productsApi.unlinkListing(product.id, listing.id);
+      await onChanged();
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : 'Unlink failed');
+    } finally {
+      setUnlinkBusyId(null);
+    }
+  };
 
   const runAction = async (
     key: string,
@@ -630,6 +665,24 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
                         </Button>
                       </>
                     )}
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      disabled={
+                        !canUnlinkListing(listing) ||
+                        unlinkBusyId === listing.id ||
+                        Boolean(busyKey)
+                      }
+                      isLoading={unlinkBusyId === listing.id}
+                      title={
+                        canUnlinkListing(listing)
+                          ? 'Remove local listing link (not Shopee delete)'
+                          : 'Listing still live on Shopee — Check Shopee / Pull first'
+                      }
+                      onClick={() => void handleUnlink(listing)}
+                    >
+                      Unlink
+                    </Button>
                   </div>
                 )}
 

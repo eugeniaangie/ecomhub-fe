@@ -160,9 +160,12 @@ CRUD and workflow screens under the Finance sidebar group, after the Views secti
 - `GET /products/:id` — detail with options, variants, images, listings
 - `POST /products` — create (admin+)
 - `PUT /products/:id` — update (admin+)
+- `POST /products/:id/archive` — soft-retire (F8p; admin+; unlink listings first)
 - `PUT /products/:id/variants/:variant_id` — SKU / position (admin+)
 - `POST /products/:id/images` — multipart `file` upload (admin+)
 - `PUT /products/:id/images` — reorder / set primary (admin+)
+- `DELETE /products/:id/images/:image_id` — remove gallery image + GC (F8p; admin+)
+- `DELETE /products/:id/listings/:listing_id` — unlink local listing (F8p; admin+; rejects still-live)
 - `PUT /products/:id/listings/shopee` — save Shopee listing draft (admin+)
 - `POST /products/:id/listings/:listing_id/push` — push (`?is_dry_run`, body flags) (admin+)
 - `POST /products/:id/listings/:listing_id/pull` — pull / clear conflict (admin+)
@@ -180,7 +183,7 @@ CRUD and workflow screens under the Finance sidebar group, after the Views secti
 - `GET` / `PUT /categories/:id/channel-mappings` — internal → Shopee category default (admin+)
 - `GET /categories` — category dropdown on create/edit
 
-Import UX (FE42): preview → select → import. Listing UX (FE39): draft form (prices, logistics, attrs, brand, size chart, pre-order) + Pull / Push / Publish / Unlist / Stock + conflict overwrite. Copy (FE45): list/detail → `new?copy_from=` → `POST /products` as draft (no images/listings). F8o / FE48: list **Check Shopee**; detail listing panel shows Gone / unmatched badges, Suggest re-links + confirm; push/publish/unlist/stock disabled while listing/variant absent or unmatched. No delete UI (FE44).
+Import UX (FE42): preview → select → import. Listing UX (FE39): draft form (prices, logistics, attrs, brand, size chart, pre-order) + Pull / Push / Publish / Unlist / Stock + conflict overwrite. Copy (FE45): list/detail → `new?copy_from=` → `POST /products` as draft (no images/listings). F8o / FE48: list **Check Shopee**; detail listing panel shows Gone / unmatched badges, Suggest re-links + confirm; push/publish/unlist/stock disabled while listing/variant absent or unmatched. F8p / FE44: detail **Archive**, listing **Unlink**, image **Remove**; list filter `status=archived`; no option/variant remove.
 
 ### Categories (`/master/categories`) — FE47
 

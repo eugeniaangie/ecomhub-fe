@@ -82,6 +82,25 @@ export const productsApi = {
     );
   },
 
+  /** F8p — soft-retire product (status=archived). Listings must be unlinked first. */
+  archive: async (productId: number) => {
+    return api.post<ProductDetail>(`${API_VERSION}/products/${productId}/archive`);
+  },
+
+  /** F8p — remove local listing (never Shopee delete_*). Rejects still-live listings. */
+  unlinkListing: async (productId: number, listingId: number) => {
+    return api.delete<{ message?: string }>(
+      `${API_VERSION}/products/${productId}/listings/${listingId}`
+    );
+  },
+
+  /** F8p — delete gallery image + GC orphaned storage object. */
+  deleteImage: async (productId: number, imageId: number) => {
+    return api.delete<{ message?: string }>(
+      `${API_VERSION}/products/${productId}/images/${imageId}`
+    );
+  },
+
   /** PUT /products/:id/listings/shopee — save draft listing_data + variant prices/stock. */
   saveShopeeListingDraft: async (
     productId: number,
