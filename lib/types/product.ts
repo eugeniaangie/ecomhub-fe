@@ -244,6 +244,20 @@ export interface UnmatchedShopeeModel {
   tier_index?: number[];
 }
 
+/** F8q — POST …/variants/from-unmatched */
+export interface UnmatchedOptionValueInput {
+  option_name: string;
+  option_value: string;
+}
+
+export interface AddVariantFromUnmatchedForm {
+  ext_variant_id: string;
+  sku?: string;
+  option_values?: UnmatchedOptionValueInput[];
+  listing_price?: number | null;
+  ext_stock?: number | null;
+}
+
 /** F8o — POST …/shopee/products/reconcile */
 export interface ShopeeListingReconcileItem {
   listing_id: number;

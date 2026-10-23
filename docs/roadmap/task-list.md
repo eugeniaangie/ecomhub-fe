@@ -70,7 +70,7 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE46 | FEATURE | Sales — show catalog-linked SKUs / product links from Core F8h on Orders + Returns | Core **F8h** Done |
 | [x] | FE47 | FEATURE | Categories create UX — path parent picker + Add child (same-name under different parents) | UX |
 | [x] | FE48 | FEATURE | Catalog — “gone from Shopee” badges + Check Shopee / re-link UI (Core **F8o** Done) | Core **F8o** Done |
-| [ ] | FE49 | FEATURE | Catalog — **add as variant** from `unmatched_models` UI (Core **F8q** Done) | Core **F8q** Done |
+| [x] | FE49 | FEATURE | Catalog — **add as variant** from `unmatched_models` UI (Core **F8q** Done) | Core **F8q** Done |
 | [ ] | FE50 | FEATURE | Inventory UI umbrella (warehouses + stock + opname) — **not urgent**; IA after Core **F9a** | Core **F9** |
 | [x] | FE54 | FEATURE | Catalog — **re-bind** listing to new Shopee `item_id` UI (Core **F8r** Done) | Core **F8r** Done |
 | [ ] | FE51 | FEATURE | Warehouses list/create/edit UI | Core **F9c** |
@@ -1148,7 +1148,7 @@ GET …/returns/preview?fetch_all=true&origin=all|buyer|system|pembatalan
 
 ### FE49 — Catalog: add as variant from unmatched_models (Core F8q)
 
-**Category:** FEATURE · **Status:** Open · **Noted:** 2026-10-21 · **Depends on:** Core **F8q** Done · **Related:** FE48 · **Menu:** Catalog → Products (detail / Shopee listing panel)
+**Category:** FEATURE · **Status:** Done (2026-10-23) · **Noted:** 2026-10-21 · **Depends on:** Core **F8q** Done · **Related:** FE48 · **Menu:** Catalog → Products (detail / Shopee listing panel)
 
 **Problem.** Core F8q exposes `POST /products/{id}/listings/{listing_id}/variants/from-unmatched` to create a master variant (+ link) from a Shopee model in `channel_data.unmatched_models`. FE48 only supports re-link of absent local variants; operators still cannot add a brand-new Shopee model as a variant from the unmatched panel.
 
@@ -1162,6 +1162,8 @@ GET …/returns/preview?fetch_all=true&origin=all|buyer|system|pembatalan
 4. Update `docs/menu-endpoints.md`.
 
 **Out of scope.** Re-bind to a new Shopee `item_id` → **FE54** (Core **F8r**); inventing option axes when the product has no options (Core rejects — surface the error).
+
+**Done (2026-10-23):** Unmatched panel **Add as variant** → modal (SKU / price / stock / option values prefilled from snapshot + `tier_index`); `POST …/variants/from-unmatched`; surfaces Core “no options” rejection; refresh detail. Docs: `menu-endpoints.md`.
 
 ---
 

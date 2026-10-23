@@ -3,6 +3,7 @@
 import { api } from '../api';
 import type { PaginatedResponse } from '../types';
 import type {
+  AddVariantFromUnmatchedForm,
   ChannelListingDetail,
   ChannelListingDraftForm,
   Product,
@@ -206,6 +207,18 @@ export const productsApi = {
     return api.post<ShopeeRebindResult>(
       `${API_VERSION}/products/${productId}/listings/${listingId}/rebind`,
       { ext_product_id: extProductId }
+    );
+  },
+
+  /** F8q — create master variant + link from unmatched Shopee model. */
+  addVariantFromUnmatched: async (
+    productId: number,
+    listingId: number,
+    body: AddVariantFromUnmatchedForm
+  ) => {
+    return api.post<ProductDetail>(
+      `${API_VERSION}/products/${productId}/listings/${listingId}/variants/from-unmatched`,
+      body
     );
   },
 };

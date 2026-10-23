@@ -21,6 +21,7 @@ import type {
   ShopeeRebindResult,
   ShopeeRebindSuggestion,
   ShopeeRelinkSuggestion,
+  UnmatchedOptionValueInput,
   UnmatchedShopeeModel,
 } from '@/lib/types/product';
 import {
@@ -29,6 +30,13 @@ import {
 } from '@/lib/utils/productLabels';
 
 const PUSH_LEASE_MS = 10 * 60 * 1000;
+
+type AddFromUnmatchedTarget = {
+  listing: ChannelListingDetail;
+  model: UnmatchedShopeeModel;
+};
+
+type ShopeeOptionAxis = { name: string; values: string[] };
 
 function isLeaseBusy(listing: ChannelListingDetail): boolean {
   if (!listing.push_started_at) return false;
@@ -69,9 +77,84 @@ function listingBlockedReason(listing: ChannelListingDetail): string | null {
     return `${absentVariants.length} variant(s) gone from Shopee — re-link or Pull before push.`;
   }
   if (parseUnmatchedModels(listing.channel_data).length > 0) {
-    return 'Listing has unmatched Shopee models — re-link before push.';
+    return 'Listing has unmatched Shopee models — re-link or add as variant before push.';
   }
   return null;
+}
+
+function unmatchedExtVariantId(model: UnmatchedShopeeModel): string {
+  if (model.model_id == null || model.model_id === '') return '';
+  return String(model.model_id);
+}
+
+function parseShopeeOptionsFromChannelData(
+  channelData?: Record<string, unknown> | null
+): ShopeeOptionAxis[] {
+  if (!channelData) return [];
+  const raw = channelData.options;
+  if (!Array.isArray(raw)) return [];
+  const rows: { pos: number; hasPos: boolean; axis: ShopeeOptionAxis }[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
+    const obj = item as Record<string, unknown>;
+    const name = typeof obj.name === 'string' ? obj.name.trim() : '';
+    const valsRaw = Array.isArray(obj.values) ? obj.values : [];
+    const vrows: { pos: number; hasPos: boolean; val: string }[] = [];
+    for (const v of valsRaw) {
+      if (!v || typeof v !== 'object' || Array.isArray(v)) continue;
+      const vo = v as Record<string, unknown>;
+      const val = typeof vo.value === 'string' ? vo.value.trim() : '';
+      if (!val) continue;
+      vrows.push({
+        pos: typeof vo.position === 'number' ? vo.position : 0,
+        hasPos: vo.position != null,
+        val,
+      });
+    }
+    vrows.sort((a, b) => {
+      if (a.hasPos && b.hasPos) return a.pos - b.pos;
+      return 0;
+    });
+    rows.push({
+      pos: typeof obj.position === 'number' ? obj.position : 0,
+      hasPos: obj.position != null,
+      axis: { name, values: vrows.map((r) => r.val) },
+    });
+  }
+  rows.sort((a, b) => {
+    if (a.hasPos && b.hasPos) return a.pos - b.pos;
+    return 0;
+  });
+  return rows.map((r) => r.axis);
+}
+
+/** Prefill option rows for the add-from-unmatched modal (mirrors Core tier_index resolve). */
+function prefillOptionValues(
+  product: ProductDetail,
+  listing: ChannelListingDetail,
+  model: UnmatchedShopeeModel
+): UnmatchedOptionValueInput[] {
+  const options = [...(product.options ?? [])].sort(
+    (a, b) => a.position - b.position
+  );
+  if (options.length === 0) return [];
+  const tier = Array.isArray(model.tier_index) ? model.tier_index : [];
+  const shopeeOpts = parseShopeeOptionsFromChannelData(listing.channel_data);
+  return options.map((opt, i) => {
+    let option_value = '';
+    const idx = tier[i];
+    if (typeof idx === 'number' && idx >= 0) {
+      if (shopeeOpts.length === options.length && idx < shopeeOpts[i].values.length) {
+        option_value = shopeeOpts[i].values[idx];
+      } else {
+        const vals = [...(opt.values ?? [])].sort(
+          (a, b) => a.position - b.position
+        );
+        if (idx < vals.length) option_value = vals[idx].option_value;
+      }
+    }
+    return { option_name: opt.option_name, option_value };
+  });
 }
 
 /** F8p / F8r — unlink or re-bind when never pushed, or marked gone (not while still live). */
@@ -132,7 +215,126 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
     null
   );
 
+  const [addUnmatchedTarget, setAddUnmatchedTarget] =
+    useState<AddFromUnmatchedTarget | null>(null);
+  const [addUnmatchedSku, setAddUnmatchedSku] = useState('');
+  const [addUnmatchedPrice, setAddUnmatchedPrice] = useState('');
+  const [addUnmatchedStock, setAddUnmatchedStock] = useState('');
+  const [addUnmatchedOptions, setAddUnmatchedOptions] = useState<
+    UnmatchedOptionValueInput[]
+  >([]);
+  const [addUnmatchedBusy, setAddUnmatchedBusy] = useState(false);
+  const [addUnmatchedError, setAddUnmatchedError] = useState('');
+
   const listings = product.listings ?? [];
+  const productHasOptions = (product.options ?? []).length > 0;
+
+  const openAddFromUnmatched = (
+    listing: ChannelListingDetail,
+    model: UnmatchedShopeeModel
+  ) => {
+    const extId = unmatchedExtVariantId(model);
+    if (!extId) {
+      setActionError('Unmatched model is missing model_id.');
+      return;
+    }
+    setAddUnmatchedTarget({ listing, model });
+    setAddUnmatchedSku(model.model_sku?.trim() || '');
+    setAddUnmatchedPrice(
+      model.original_price != null && !Number.isNaN(model.original_price)
+        ? String(model.original_price)
+        : ''
+    );
+    setAddUnmatchedStock(
+      model.stock != null && !Number.isNaN(model.stock) ? String(model.stock) : ''
+    );
+    setAddUnmatchedOptions(prefillOptionValues(product, listing, model));
+    setAddUnmatchedError('');
+  };
+
+  const closeAddFromUnmatched = () => {
+    if (addUnmatchedBusy) return;
+    setAddUnmatchedTarget(null);
+    setAddUnmatchedError('');
+  };
+
+  const confirmAddFromUnmatched = async () => {
+    if (!addUnmatchedTarget) return;
+    const extId = unmatchedExtVariantId(addUnmatchedTarget.model);
+    if (!extId) {
+      setAddUnmatchedError('Unmatched model is missing model_id.');
+      return;
+    }
+    if (!productHasOptions) {
+      setAddUnmatchedError(
+        'Cannot add a variant: product has no options. Re-link an absent variant, or edit the product structure first.'
+      );
+      return;
+    }
+
+    const optionRows = addUnmatchedOptions.map((o) => ({
+      option_name: o.option_name.trim(),
+      option_value: o.option_value.trim(),
+    }));
+    const allFilled =
+      optionRows.length > 0 &&
+      optionRows.every((o) => o.option_name && o.option_value);
+    const anyFilled = optionRows.some((o) => o.option_value);
+    if (anyFilled && !allFilled) {
+      setAddUnmatchedError(
+        'Fill every option value, or clear them all to use Shopee tier_index.'
+      );
+      return;
+    }
+
+    let listing_price: number | undefined;
+    const priceRaw = addUnmatchedPrice.trim();
+    if (priceRaw) {
+      const n = Number(priceRaw);
+      if (Number.isNaN(n)) {
+        setAddUnmatchedError('Listing price must be a number.');
+        return;
+      }
+      listing_price = n;
+    }
+
+    let ext_stock: number | undefined;
+    const stockRaw = addUnmatchedStock.trim();
+    if (stockRaw) {
+      const n = Number(stockRaw);
+      if (!Number.isInteger(n)) {
+        setAddUnmatchedError('Stock must be a whole number.');
+        return;
+      }
+      ext_stock = n;
+    }
+
+    setAddUnmatchedBusy(true);
+    setAddUnmatchedError('');
+    try {
+      await productsApi.addVariantFromUnmatched(
+        product.id,
+        addUnmatchedTarget.listing.id,
+        {
+          ext_variant_id: extId,
+          ...(addUnmatchedSku.trim()
+            ? { sku: addUnmatchedSku.trim() }
+            : {}),
+          ...(allFilled ? { option_values: optionRows } : {}),
+          ...(listing_price != null ? { listing_price } : {}),
+          ...(ext_stock != null ? { ext_stock } : {}),
+        }
+      );
+      setAddUnmatchedTarget(null);
+      await onChanged();
+    } catch (err: unknown) {
+      setAddUnmatchedError(
+        err instanceof Error ? err.message : 'Add as variant failed'
+      );
+    } finally {
+      setAddUnmatchedBusy(false);
+    }
+  };
 
   const handleUnlink = async (listing: ChannelListingDetail) => {
     if (!canUnlinkOrRebindListing(listing)) {
@@ -561,18 +763,45 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
                         </Button>
                       )}
                     </div>
-                    <ul className="mt-2 space-y-1 text-xs text-gray-700">
+                    <ul className="mt-2 space-y-2 text-xs text-gray-700">
                       {unmatched.map((m, idx) => (
-                        <li key={`${m.model_id ?? 'x'}-${idx}`} className="font-mono">
-                          model_id={m.model_id ?? '—'} · sku={m.model_sku || '—'}
-                          {m.stock != null ? ` · stock=${m.stock}` : ''}
+                        <li
+                          key={`${m.model_id ?? 'x'}-${idx}`}
+                          className="flex flex-wrap items-center justify-between gap-2"
+                        >
+                          <span className="font-mono">
+                            model_id={m.model_id ?? '—'} · sku=
+                            {m.model_sku || '—'}
+                            {m.stock != null ? ` · stock=${m.stock}` : ''}
+                            {m.original_price != null
+                              ? ` · price=${m.original_price}`
+                              : ''}
+                          </span>
+                          {canWrite && (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              disabled={
+                                Boolean(busyKey) ||
+                                addUnmatchedBusy ||
+                                !unmatchedExtVariantId(m) ||
+                                isLeaseBusy(listing)
+                              }
+                              onClick={() => openAddFromUnmatched(listing, m)}
+                            >
+                              Add as variant
+                            </Button>
+                          )}
                         </li>
                       ))}
                     </ul>
-                    <p className="mt-2 text-xs text-gray-500">
-                      No auto “add as variant” yet — create the variant in the
-                      product form if needed, then confirm a re-link.
-                    </p>
+                    {!productHasOptions && canWrite && (
+                      <p className="mt-2 text-xs text-amber-800">
+                        Product has no options — Core cannot create a new
+                        variant here. Re-link an absent variant, or edit the
+                        product structure first.
+                      </p>
+                    )}
 
                     {relinkListingId === listing.id && (
                       <div className="mt-3 border-t border-orange-100 pt-2">
@@ -999,6 +1228,121 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
                   ) : null}
                 </div>
               </>
+            )}
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        isOpen={Boolean(addUnmatchedTarget)}
+        onClose={closeAddFromUnmatched}
+        title="Add as variant"
+        size="lg"
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              disabled={addUnmatchedBusy}
+              onClick={closeAddFromUnmatched}
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={
+                addUnmatchedBusy ||
+                !productHasOptions ||
+                !addUnmatchedTarget ||
+                !unmatchedExtVariantId(addUnmatchedTarget.model)
+              }
+              isLoading={addUnmatchedBusy}
+              onClick={() => void confirmAddFromUnmatched()}
+            >
+              Create variant
+            </Button>
+          </>
+        }
+      >
+        {addUnmatchedTarget && (
+          <div className="space-y-3 text-sm text-gray-900">
+            <p className="text-gray-600">
+              Create a master variant and link it to this unmatched Shopee
+              model. Prefill comes from the Shopee snapshot; edit before
+              submit. Leave option values empty to use Shopee{' '}
+              <span className="font-mono">tier_index</span>.
+            </p>
+            <p className="text-xs text-gray-500">
+              Shopee model_id:{' '}
+              <span className="font-mono">
+                {unmatchedExtVariantId(addUnmatchedTarget.model) || '—'}
+              </span>
+              {addUnmatchedTarget.model.model_status
+                ? ` · status=${addUnmatchedTarget.model.model_status}`
+                : ''}
+            </p>
+
+            {addUnmatchedError && (
+              <p className="rounded border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-700">
+                {addUnmatchedError}
+              </p>
+            )}
+
+            {!productHasOptions && (
+              <p className="rounded border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-900">
+                Product has no options — cannot create a new variant. Re-link
+                an absent variant, or edit the product structure first.
+              </p>
+            )}
+
+            <Input
+              label="SKU (optional override)"
+              value={addUnmatchedSku}
+              onChange={(e) => setAddUnmatchedSku(e.target.value)}
+              placeholder="Defaults to model_sku / generated"
+              disabled={addUnmatchedBusy}
+            />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Input
+                label="Listing price (optional)"
+                type="number"
+                value={addUnmatchedPrice}
+                onChange={(e) => setAddUnmatchedPrice(e.target.value)}
+                placeholder="From original_price"
+                disabled={addUnmatchedBusy}
+              />
+              <Input
+                label="Stock (optional)"
+                type="number"
+                value={addUnmatchedStock}
+                onChange={(e) => setAddUnmatchedStock(e.target.value)}
+                placeholder="From Shopee stock"
+                disabled={addUnmatchedBusy}
+              />
+            </div>
+
+            {addUnmatchedOptions.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-gray-700">
+                  Option values
+                </p>
+                {addUnmatchedOptions.map((row, i) => (
+                  <Input
+                    key={`${row.option_name}-${i}`}
+                    label={row.option_name}
+                    value={row.option_value}
+                    onChange={(e) =>
+                      setAddUnmatchedOptions((prev) =>
+                        prev.map((p, j) =>
+                          j === i
+                            ? { ...p, option_value: e.target.value }
+                            : p
+                        )
+                      )
+                    }
+                    placeholder="Leave blank to use tier_index"
+                    disabled={addUnmatchedBusy}
+                  />
+                ))}
+              </div>
             )}
           </div>
         )}
