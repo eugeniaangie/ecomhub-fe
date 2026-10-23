@@ -174,6 +174,8 @@ CRUD and workflow screens under the Finance sidebar group, after the Views secti
 - `POST /integrations/marketplaces/shopee/products/reconcile` — Check Shopee (F8o; admin+; optional `shop_id`)
 - `GET /products/:id/listings/:listing_id/relink-suggestions` — F8o unmatched → absent variant pairs (admin+)
 - `POST /products/:id/listings/:listing_id/relink-variants` — confirm re-link `{ links[] }` (admin+)
+- `GET /products/:id/listings/:listing_id/rebind-suggestions` — F8r candidate Shopee items (admin+)
+- `POST /products/:id/listings/:listing_id/rebind` — F8r `{ ext_product_id }` for gone/draft listing (admin+)
 - `GET /integrations/marketplaces/shopee/products/preview` — Import modal list (admin+)
 - `POST /integrations/marketplaces/shopee/products/import` — import selection (admin+; body `{ shop_id, products }` — Core F8m)
 - `GET /integrations/marketplaces/shopee/connections` — shop picker (import + draft)
@@ -183,7 +185,7 @@ CRUD and workflow screens under the Finance sidebar group, after the Views secti
 - `GET` / `PUT /categories/:id/channel-mappings` — internal → Shopee category default (admin+)
 - `GET /categories` — category dropdown on create/edit
 
-Import UX (FE42): preview → select → import. Listing UX (FE39): draft form (prices, logistics, attrs, brand, size chart, pre-order) + Pull / Push / Publish / Unlist / Stock + conflict overwrite. Copy (FE45): list/detail → `new?copy_from=` → `POST /products` as draft (no images/listings). F8o / FE48: list **Check Shopee**; detail listing panel shows Gone / unmatched badges, Suggest re-links + confirm; push/publish/unlist/stock disabled while listing/variant absent or unmatched. F8p / FE44: detail **Archive**, listing **Unlink**, image **Remove**; list filter `status=archived`; no option/variant remove.
+Import UX (FE42): preview → select → import. Listing UX (FE39): draft form (prices, logistics, attrs, brand, size chart, pre-order) + Pull / Push / Publish / Unlist / Stock + conflict overwrite. Copy (FE45): list/detail → `new?copy_from=` → `POST /products` as draft (no images/listings). F8o / FE48: list **Check Shopee**; detail listing panel shows Gone / unmatched badges, Suggest re-links + confirm; push/publish/unlist/stock disabled while listing/variant absent or unmatched. F8p / FE44: detail **Archive**, listing **Unlink**, image **Remove**; list filter `status=archived`; no option/variant remove. F8r / FE54: listing **Re-bind** (gone/draft) → suggestions + paste `ext_product_id`.
 
 ### Categories (`/master/categories`) — FE47
 

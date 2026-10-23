@@ -18,6 +18,8 @@ import type {
   ListingSyncStatus,
   ProductDetail,
   ShopeeProductPushResult,
+  ShopeeRebindResult,
+  ShopeeRebindSuggestion,
   ShopeeRelinkSuggestion,
   UnmatchedShopeeModel,
 } from '@/lib/types/product';
@@ -72,8 +74,8 @@ function listingBlockedReason(listing: ChannelListingDetail): string | null {
   return null;
 }
 
-/** F8p — unlink allowed when never pushed, or marked gone (not while still live). */
-function canUnlinkListing(listing: ChannelListingDetail): boolean {
+/** F8p / F8r — unlink or re-bind when never pushed, or marked gone (not while still live). */
+function canUnlinkOrRebindListing(listing: ChannelListingDetail): boolean {
   if (isLeaseBusy(listing)) return false;
   const ext = (listing.ext_product_id || '').trim();
   if (!ext) return true;
@@ -117,10 +119,23 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
   const [relinkMessage, setRelinkMessage] = useState('');
   const [unlinkBusyId, setUnlinkBusyId] = useState<number | null>(null);
 
+  const [rebindListing, setRebindListing] =
+    useState<ChannelListingDetail | null>(null);
+  const [rebindSuggestions, setRebindSuggestions] = useState<
+    ShopeeRebindSuggestion[]
+  >([]);
+  const [rebindHasNextPage, setRebindHasNextPage] = useState(false);
+  const [rebindExtId, setRebindExtId] = useState('');
+  const [rebindBusy, setRebindBusy] = useState(false);
+  const [rebindError, setRebindError] = useState('');
+  const [rebindResult, setRebindResult] = useState<ShopeeRebindResult | null>(
+    null
+  );
+
   const listings = product.listings ?? [];
 
   const handleUnlink = async (listing: ChannelListingDetail) => {
-    if (!canUnlinkListing(listing)) {
+    if (!canUnlinkOrRebindListing(listing)) {
       setActionError(
         'Cannot unlink while the listing still looks live on Shopee. Run Check Shopee / Pull until it is marked gone.'
       );
@@ -142,6 +157,71 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
       setActionError(err instanceof Error ? err.message : 'Unlink failed');
     } finally {
       setUnlinkBusyId(null);
+    }
+  };
+
+  const openRebindModal = async (listing: ChannelListingDetail) => {
+    if (!canUnlinkOrRebindListing(listing)) {
+      setActionError(
+        'Cannot re-bind while the listing still looks live on Shopee. Run Check Shopee / Pull until it is marked gone.'
+      );
+      return;
+    }
+    setRebindListing(listing);
+    setRebindExtId('');
+    setRebindError('');
+    setRebindResult(null);
+    setRebindSuggestions([]);
+    setRebindHasNextPage(false);
+    setRebindBusy(true);
+    try {
+      const data = await productsApi.getRebindSuggestions(
+        product.id,
+        listing.id
+      );
+      setRebindSuggestions(data?.suggestions ?? []);
+      setRebindHasNextPage(Boolean(data?.has_next_page));
+      const first = data?.suggestions?.[0];
+      if (first?.ext_product_id) {
+        setRebindExtId(first.ext_product_id);
+      }
+    } catch (err: unknown) {
+      setRebindError(
+        err instanceof Error ? err.message : 'Failed to load re-bind suggestions'
+      );
+    } finally {
+      setRebindBusy(false);
+    }
+  };
+
+  const confirmRebind = async () => {
+    if (!rebindListing) return;
+    const ext = rebindExtId.trim();
+    if (!ext) {
+      setRebindError('Enter or select a Shopee item_id (ext_product_id).');
+      return;
+    }
+    if (
+      !confirm(
+        `Re-bind this listing to Shopee item ${ext}? Variants rematch by SKU; unmatched models may appear.`
+      )
+    ) {
+      return;
+    }
+    setRebindBusy(true);
+    setRebindError('');
+    try {
+      const result = await productsApi.rebindListing(
+        product.id,
+        rebindListing.id,
+        ext
+      );
+      setRebindResult(result);
+      await onChanged();
+    } catch (err: unknown) {
+      setRebindError(err instanceof Error ? err.message : 'Re-bind failed');
+    } finally {
+      setRebindBusy(false);
     }
   };
 
@@ -667,15 +747,32 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
                     )}
                     <Button
                       size="sm"
+                      variant="secondary"
+                      disabled={
+                        !canUnlinkOrRebindListing(listing) ||
+                        rebindBusy ||
+                        Boolean(busyKey)
+                      }
+                      title={
+                        canUnlinkOrRebindListing(listing)
+                          ? 'Point this listing at a new Shopee item_id (same shop)'
+                          : 'Listing still live on Shopee — Check Shopee / Pull first'
+                      }
+                      onClick={() => void openRebindModal(listing)}
+                    >
+                      Re-bind
+                    </Button>
+                    <Button
+                      size="sm"
                       variant="danger"
                       disabled={
-                        !canUnlinkListing(listing) ||
+                        !canUnlinkOrRebindListing(listing) ||
                         unlinkBusyId === listing.id ||
                         Boolean(busyKey)
                       }
                       isLoading={unlinkBusyId === listing.id}
                       title={
-                        canUnlinkListing(listing)
+                        canUnlinkOrRebindListing(listing)
                           ? 'Remove local listing link (not Shopee delete)'
                           : 'Listing still live on Shopee — Check Shopee / Pull first'
                       }
@@ -762,6 +859,146 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
               <pre className="max-h-80 overflow-auto rounded bg-gray-50 p-2 text-xs">
                 {JSON.stringify(resultModal.request_preview, null, 2)}
               </pre>
+            )}
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        isOpen={Boolean(rebindListing)}
+        onClose={() => {
+          if (rebindBusy) return;
+          setRebindListing(null);
+          setRebindResult(null);
+          setRebindError('');
+        }}
+        title="Re-bind Shopee item"
+        size="lg"
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              disabled={rebindBusy}
+              onClick={() => {
+                setRebindListing(null);
+                setRebindResult(null);
+                setRebindError('');
+              }}
+            >
+              {rebindResult ? 'Close' : 'Cancel'}
+            </Button>
+            {!rebindResult && (
+              <Button
+                disabled={rebindBusy || !rebindExtId.trim()}
+                isLoading={rebindBusy}
+                onClick={() => void confirmRebind()}
+              >
+                Confirm re-bind
+              </Button>
+            )}
+          </>
+        }
+      >
+        {rebindListing && (
+          <div className="space-y-3 text-sm text-gray-900">
+            <p className="text-gray-600">
+              Point this listing at a recreated Shopee item on the same shop.
+              Eligible when the listing is gone or never pushed. Does not call
+              Shopee delete.
+            </p>
+            {rebindListing.ext_product_id ? (
+              <p className="text-xs text-gray-500">
+                Current ext_product_id:{' '}
+                <span className="font-mono">{rebindListing.ext_product_id}</span>
+                {rebindListing.absent_since
+                  ? ` · gone since ${formatAbsentSince(rebindListing.absent_since)}`
+                  : ''}
+              </p>
+            ) : (
+              <p className="text-xs text-gray-500">Draft listing (no ext_product_id yet).</p>
+            )}
+
+            {rebindError && (
+              <p className="rounded border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-700">
+                {rebindError}
+              </p>
+            )}
+
+            {rebindResult ? (
+              <div className="rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-900">
+                <p>
+                  Bound to{' '}
+                  <span className="font-mono">{rebindResult.ext_product_id}</span>
+                  {rebindResult.previous_ext_product_id
+                    ? ` (was ${rebindResult.previous_ext_product_id})`
+                    : ''}
+                  .
+                </p>
+                <p className="mt-1 text-xs">
+                  Variants rematched: {rebindResult.variants_rematched} ·
+                  unmatched models: {rebindResult.unmatched_models}
+                </p>
+              </div>
+            ) : (
+              <>
+                <Input
+                  label="Shopee item_id (ext_product_id)"
+                  value={rebindExtId}
+                  onChange={(e) => setRebindExtId(e.target.value)}
+                  placeholder="Paste item_id or pick a suggestion"
+                  disabled={rebindBusy}
+                />
+
+                <div>
+                  <p className="mb-1 text-xs font-medium text-gray-700">
+                    Suggestions (exact item_sku ↔ product_code / listing SKU)
+                  </p>
+                  {rebindBusy && rebindSuggestions.length === 0 ? (
+                    <p className="text-xs text-gray-500">Loading…</p>
+                  ) : rebindSuggestions.length === 0 ? (
+                    <p className="text-xs text-gray-500">
+                      No SKU matches on the first shop page. Paste the new
+                      item_id manually if you know it.
+                    </p>
+                  ) : (
+                    <ul className="max-h-48 space-y-1 overflow-auto rounded border border-gray-100 p-2">
+                      {rebindSuggestions.map((s) => (
+                        <li key={s.ext_product_id}>
+                          <label className="flex cursor-pointer items-start gap-2 text-xs">
+                            <input
+                              type="radio"
+                              name="rebind-suggestion"
+                              className="mt-0.5"
+                              checked={rebindExtId === s.ext_product_id}
+                              onChange={() => setRebindExtId(s.ext_product_id)}
+                            />
+                            <span>
+                              <span className="font-mono">{s.ext_product_id}</span>
+                              {s.item_sku ? ` · ${s.item_sku}` : ''}
+                              {s.item_name ? (
+                                <span className="text-gray-600">
+                                  {' '}
+                                  — {s.item_name}
+                                </span>
+                              ) : null}
+                              <span className="block text-gray-500">
+                                {s.reason}
+                                {s.item_status ? ` · ${s.item_status}` : ''}
+                              </span>
+                            </span>
+                          </label>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {rebindHasNextPage ? (
+                    <p className="mt-1 text-xs text-amber-800">
+                      Shop has more items beyond the first page — paste
+                      item_id if the match is not listed.
+                    </p>
+                  ) : null}
+                </div>
+              </>
             )}
           </div>
         )}

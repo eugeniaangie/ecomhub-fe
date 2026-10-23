@@ -17,6 +17,8 @@ import type {
   ShopeeListingStockForm,
   ShopeeListingVisibilityForm,
   ShopeeProductPushResult,
+  ShopeeRebindResult,
+  ShopeeRebindSuggestResult,
   ShopeeRelinkSuggestResult,
   ShopeeRelinkVariantLink,
   ShopeeRelinkVariantsResult,
@@ -185,6 +187,25 @@ export const productsApi = {
     return api.post<ShopeeRelinkVariantsResult>(
       `${API_VERSION}/products/${productId}/listings/${listingId}/relink-variants`,
       { links }
+    );
+  },
+
+  /** F8r — candidate Shopee items (not imported) for listing re-bind. */
+  getRebindSuggestions: async (productId: number, listingId: number) => {
+    return api.get<ShopeeRebindSuggestResult>(
+      `${API_VERSION}/products/${productId}/listings/${listingId}/rebind-suggestions`
+    );
+  },
+
+  /** F8r — point gone/draft listing at a new Shopee item_id (same shop). */
+  rebindListing: async (
+    productId: number,
+    listingId: number,
+    extProductId: string
+  ) => {
+    return api.post<ShopeeRebindResult>(
+      `${API_VERSION}/products/${productId}/listings/${listingId}/rebind`,
+      { ext_product_id: extProductId }
     );
   },
 };

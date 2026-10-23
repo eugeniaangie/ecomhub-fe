@@ -289,6 +289,31 @@ export interface ShopeeRelinkVariantsResult {
   relinked: number;
 }
 
+/** F8r — GET …/rebind-suggestions */
+export interface ShopeeRebindSuggestion {
+  ext_product_id: string;
+  item_sku?: string;
+  item_name?: string;
+  item_status?: string;
+  reason: string;
+}
+
+export interface ShopeeRebindSuggestResult {
+  listing_id: number;
+  shop_id: number;
+  has_next_page: boolean;
+  suggestions: ShopeeRebindSuggestion[];
+}
+
+/** F8r — POST …/rebind */
+export interface ShopeeRebindResult {
+  listing_id: number;
+  previous_ext_product_id?: string | null;
+  ext_product_id: string;
+  variants_rematched: number;
+  unmatched_models: number;
+}
+
 export interface ChannelListingDetail extends ChannelListing {
   variants: ChannelListingVariant[];
 }

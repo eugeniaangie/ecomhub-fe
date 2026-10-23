@@ -70,6 +70,12 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE46 | FEATURE | Sales — show catalog-linked SKUs / product links from Core F8h on Orders + Returns | Core **F8h** Done |
 | [x] | FE47 | FEATURE | Categories create UX — path parent picker + Add child (same-name under different parents) | UX |
 | [x] | FE48 | FEATURE | Catalog — “gone from Shopee” badges + Check Shopee / re-link UI (Core **F8o** Done) | Core **F8o** Done |
+| [ ] | FE49 | FEATURE | Catalog — **add as variant** from `unmatched_models` UI (Core **F8q** Done) | Core **F8q** Done |
+| [ ] | FE50 | FEATURE | Inventory UI umbrella (warehouses + stock + opname) — **not urgent**; IA after Core **F9a** | Core **F9** |
+| [x] | FE54 | FEATURE | Catalog — **re-bind** listing to new Shopee `item_id` UI (Core **F8r** Done) | Core **F8r** Done |
+| [ ] | FE51 | FEATURE | Warehouses list/create/edit UI | Core **F9c** |
+| [ ] | FE52 | FEATURE | Stock balances + movements UI | Core **F9d** |
+| [ ] | FE53 | FEATURE | Stock opname UI — only if Core **F9a** puts opname in MVP | Core **F9e** |
 
 
 **P0 left:** none (FE1 Done).
@@ -1134,7 +1140,98 @@ GET …/returns/preview?fetch_all=true&origin=all|buyer|system|pembatalan
 4. Surface push/guards errors (listing gone / unmatched) clearly.
 5. Update `docs/menu-endpoints.md`.
 
-**Out of scope.** Product/listing delete (FE44 / Core T21); auto-scheduler; full “add as variant” from unmatched (Core deferred — create variant via existing edit then re-link); PQ40 re-bind new `item_id`.
+**Out of scope.** Product/listing delete (FE44 / Core T21); auto-scheduler; full “add as variant” from unmatched → **FE49** (Core **F8q**); PQ40 re-bind new `item_id` → **FE54** (Core **F8r**).
 
 **Done (2026-10-20):** Products list **Check Shopee** → reconcile + result modal. Detail `ChannelListingsPanel`: Gone / unmatched badges; variant Gone column; unmatched panel + Suggest re-links / Confirm; push/publish/unlist/stock disabled when listing/variant absent or unmatched (Core guard messages still shown on API error). No list-level gone filter (Core list has no `absent` query). Docs: `menu-endpoints.md`.
+
+---
+
+### FE49 — Catalog: add as variant from unmatched_models (Core F8q)
+
+**Category:** FEATURE · **Status:** Open · **Noted:** 2026-10-21 · **Depends on:** Core **F8q** Done · **Related:** FE48 · **Menu:** Catalog → Products (detail / Shopee listing panel)
+
+**Problem.** Core F8q exposes `POST /products/{id}/listings/{listing_id}/variants/from-unmatched` to create a master variant (+ link) from a Shopee model in `channel_data.unmatched_models`. FE48 only supports re-link of absent local variants; operators still cannot add a brand-new Shopee model as a variant from the unmatched panel.
+
+**Why it matters.** Without UI, unmatched models that need a new variant stay blocked (push guards) until someone invents the variant elsewhere and re-links.
+
+**Scope (proposed — read Core Swagger after `make swagger`; do not invent shapes).**
+
+1. On unmatched-models panel: **Add as variant** action per model (or selected model).
+2. Prefill form from Shopee snapshot (SKU / tier → option values / price / stock); allow operator edits before submit.
+3. Call `POST …/variants/from-unmatched` with `ext_variant_id` + optional overrides; refresh product detail on success (unmatched list should shrink).
+4. Update `docs/menu-endpoints.md`.
+
+**Out of scope.** Re-bind to a new Shopee `item_id` → **FE54** (Core **F8r**); inventing option axes when the product has no options (Core rejects — surface the error).
+
+---
+
+### FE54 — Catalog: re-bind listing to new Shopee item_id (Core F8r)
+
+**Category:** FEATURE · **Status:** Done (2026-10-23) · **Noted:** 2026-10-23 · **Depends on:** Core **F8r** Done · **Related:** FE48, FE49 · **Menu:** Catalog → Products (detail / Shopee listing panel)
+
+**Problem.** Core F8r exposes `GET …/rebind-suggestions` + `POST …/rebind` so a gone/draft listing can point at a recreated Shopee `item_id` without importing a duplicate product. FE has no re-bind UI yet.
+
+**Why it matters.** After Shopee recreate, operators otherwise import a second master or stay stuck with `absent_since`.
+
+**Scope (proposed — read Core Swagger after `make swagger`; do not invent shapes).**
+
+1. On a gone/draft listing: **Re-bind** entry point.
+2. Load suggestions (`GET …/rebind-suggestions`); allow paste/confirm of `ext_product_id`.
+3. `POST …/rebind`; refresh product detail (variants rematched / unmatched panel updated).
+4. Update `docs/menu-endpoints.md`.
+
+**Out of scope.** Cross-shop re-bind; inventing inventory UI (FE50–FE53).
+
+**Done (2026-10-23):** Channel listings panel **Re-bind** (gone/draft only) → suggestions modal + paste `ext_product_id` → confirm; shows rematched / unmatched counts. Docs: `menu-endpoints.md`.
+
+---
+
+### FE50 — Inventory UI umbrella (warehouses + stock + opname)
+
+**Category:** FEATURE · **Status:** Open · **Noted:** 2026-10-23 · **Priority note:** **not urgent** · **Depends on:** Core **F9a** decisions (then F9c–F9e) · **Related:** FE18 (IA: Catalog vs own Inventory group) · **Backend:** Core **F9**
+
+**Problem.** There is no Inventory nav or screens. Physical stock (warehouse ledger) is a separate domain from Catalog › Products listing stock (Shopee `update_stock` on FE39).
+
+**Why it matters.** Operators cannot manage EcomHub warehouse stock until Core F9 ships; FE must not invent balances client-side or treat listing stock as inventory.
+
+**Scope (after Core F9a — do not invent shapes).**
+
+1. Decide IA with developer: stay under **Catalog** vs graduate to top-level **Inventory** (FE18 follow-up).
+2. Slice UI into **FE51** (warehouses), **FE52** (balances/movements), **FE53** (opname if MVP).
+3. Keep Shopee listing Stock action on product detail (FE39) — that is channel stock, not this domain.
+4. Update `docs/menu-endpoints.md` + README when screens land.
+
+**Out of scope.** Building before Core F9a; auto JE/COGS; Habitat warehouse hierarchy; calling Shopee `update_stock` from inventory screens unless Core **F9f** exists and is wired on purpose.
+
+**Next action.** Wait for Core **F9a**; then FE51 after F9c.
+
+---
+
+### FE51 — Warehouses UI (Core F9c)
+
+**Category:** FEATURE · **Status:** Open · **Noted:** 2026-10-23 · **Parent:** FE50 · **Depends on:** Core **F9c** Done · **Menu:** TBD (FE50 IA)
+
+**Goal.** List/create/edit/(deactivate) warehouses per tenant. No delete when Core rejects referenced warehouses. English UI copy. Wire via `lib/services/*` + Swagger — do not invent field names.
+
+**Out of scope.** Stock qty editing (FE52); opname (FE53).
+
+---
+
+### FE52 — Stock balances + movements UI (Core F9d)
+
+**Category:** FEATURE · **Status:** Open · **Noted:** 2026-10-23 · **Parent:** FE50 · **Depends on:** Core **F9d** Done, FE51 · **Menu:** TBD (FE50 IA)
+
+**Goal.** Show balances by variant/warehouse; record manual movements (types from Core F9a). Render API figures only — no client-side re-derive of available stock.
+
+**Out of scope.** Opname posting (FE53); auto from Sales orders/returns; finance JE.
+
+---
+
+### FE53 — Stock opname UI (Core F9e)
+
+**Category:** FEATURE · **Status:** Open · **Noted:** 2026-10-23 · **Parent:** FE50 · **Depends on:** Core **F9a** includes opname in MVP + **F9e** Done · **Related:** FE52
+
+**Goal.** Create/complete opname (system vs physical lines) if Core ships F9e. If F9a defers opname, leave this Open/blocked and do not build a fake UI.
+
+**Next action.** Only after Core F9a + F9e.
 
