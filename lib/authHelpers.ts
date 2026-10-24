@@ -526,6 +526,15 @@ export const canWriteWarehouse = (): boolean => {
 };
 
 /**
+ * Post stock movements / transfers (Core F9d / FE52).
+ * Allowed: superadmin, admin. Reads are open to any authenticated role.
+ */
+export const canWriteStock = (): boolean => {
+  if (!canMutateTenantData()) return false;
+  return hasAnyRole(['superadmin', 'admin']);
+};
+
+/**
  * Import Shopee products into the catalog (Core F8d).
  * Allowed: superadmin, admin — same gate as products/import.
  */

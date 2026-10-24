@@ -208,13 +208,51 @@ UI: parent picker shows full path (`A › B › C`); per-row **Add child** locks
 | `/finance/setup` | Finance setup hub (cards only) |
 | `/marketing` | Marketing domain hub |
 | `/catalog` | Catalog domain hub |
-| `/stock` | Stock domain hub — placeholder (FE57; screens FE52/53) |
+| `/stock` | Stock domain hub (FE52) |
 | `/sales` | Sales domain hub |
 | `/settings` | Settings hub via Account menu (admin+: Shopee Integration; superadmin: Tenants/Users) |
 | `/shopee-auth-callback` | Shopee OAuth return — POSTs `code` + `shop_id` to Core `…/shopee/token` (F6a3) |
 | `/master` | Older standalone categories CRUD — unlinked, retire separately |
 
 Legacy FE routes (redirect): `/integrations` → `/settings`, `/integrations/shopee` → `/settings/integration/shopee`, `/sales/shopee` → `/sales/shopee/orders`, `/sales/returns` → `/sales/shopee/returns`, `/sales/ads` → `/sales/shopee/ads`.
+
+---
+
+## Stock — FE52 (Core F9d)
+
+### Hub (`/stock`)
+
+Cards: Balances · Movements · Transfers · Opname.
+
+### Balances (`/stock/balances`)
+
+- `GET /stock/balances` — paginated (`page`, `limit`, `search` SKU, `warehouse_id`, `include_archived`)
+
+On-hand `quantity` from API; `channel_ext_stock` shown as channel snapshot (not on-hand).
+
+### Movements (`/stock/movements`)
+
+- `GET /stock/movements` — ledger (`search`, `warehouse_id`, `movement_type`)
+- `POST /stock/movements` — `{ movement_type, product_variant_id, warehouse_id, quantity_delta, movement_date?, notes?, reverses_movement_id? }` (admin+; types: opening_balance|receipt|adjustment|reversal)
+
+### Transfers (`/stock/transfers`)
+
+- `GET /stock/transfers` · `GET /stock/transfers/:id`
+- `POST /stock/transfers` — `{ from_warehouse_id, to_warehouse_id, transfer_date, notes?, lines[] }`
+- `POST /stock/transfers/:id/reverse` — optional `{ transfer_date?, notes? }`
+
+Warehouses for filters/forms: `GET /warehouses/no_page`. Variant pick uses `GET /products` + `GET /products/:id`.
+
+### Opname (`/stock/opnames`, `/stock/opnames/:id`) — FE53 / Core F9e
+
+- `GET /stock/opnames` — list (`warehouse_id`, `status` draft|completed)
+- `POST /stock/opnames` — draft `{ warehouse_id, opname_date, notes?, lines? }`
+- `GET /stock/opnames/:id` — detail + lines (`difference` = counted − system)
+- `PUT /stock/opnames/:id/lines` — full replace while draft
+- `POST /stock/opnames/:id/refresh-system` — re-snapshot system_quantity
+- `POST /stock/opnames/:id/complete` — A9 drift check + `opname_adjustment` movements
+
+Create UI can seed lines from `GET /stock/balances` for the warehouse. No cancel status.
 
 ---
 

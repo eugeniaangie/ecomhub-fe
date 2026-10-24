@@ -71,15 +71,15 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE47 | FEATURE | Categories create UX — path parent picker + Add child (same-name under different parents) | UX |
 | [x] | FE48 | FEATURE | Catalog — “gone from Shopee” badges + Check Shopee / re-link UI (Core **F8o** Done) | Core **F8o** Done |
 | [x] | FE49 | FEATURE | Catalog — **add as variant** from `unmatched_models` UI (Core **F8q** Done) | Core **F8q** Done |
-| [ ] | FE50 | FEATURE | Inventory UI umbrella (warehouses + stock + opname) — after Core **F9a**; part of stock program | Core **F9** |
+| [x] | FE50 | FEATURE | Inventory UI umbrella (warehouses + stock + opname) — after Core **F9a**; part of stock program | Core **F9** |
 | [x] | FE54 | FEATURE | Catalog — **re-bind** listing to new Shopee `item_id` UI (Core **F8r** Done) | Core **F8r** Done |
 | [x] | FE51 | FEATURE | Warehouses list/create/edit UI | Core **F9c** |
-| [ ] | FE52 | FEATURE | Stock balances + movements UI | Core **F9d** |
-| [ ] | FE53 | FEATURE | Stock opname UI | Core **F9e** |
+| [x] | FE52 | FEATURE | Stock balances + movements UI | Core **F9d** |
+| [x] | FE53 | FEATURE | Stock opname UI | Core **F9e** |
 | [ ] | FE55 | FEATURE | Purchases / suppliers / AP UI umbrella | Core **F9h / F9i / F9j** |
-| [ ] | FE56 | FEATURE | Raw vs finished / BOM / HPP views (as Core ships F9k/F9l) | Core **F9k / F9l** |
+| [ ] | FE56 | FEATURE | Raw vs finished / BOM / HPP views (as Core ships F9k / F10c) | Core **F9k / F10c** |
 | [x] | FE57 | FEATURE | Shell IA — top-bar order + **account / profile** menu (Settings + Change tenant + Logout off the domain bar) | UX / FE32 follow-up |
-| [ ] | FE58 | FEATURE | Sales → Shopee summary: show **HPP per month with basis + coverage** (historical pre-go-live + ledger) — render API figures only | Core **F9u** (analysis F9t Done) |
+| [ ] | FE58 | FEATURE | Sales → Shopee summary: show **HPP per month with basis + coverage** — render API figures only | Core **F10b** (analysis F10a Done) |
 
 
 **P0 left:** none (FE1 Done).
@@ -1194,7 +1194,7 @@ GET …/returns/preview?fetch_all=true&origin=all|buyer|system|pembatalan
 
 ### FE50 — Inventory UI umbrella (warehouses + stock + opname)
 
-**Category:** FEATURE · **Status:** Open · **Noted:** 2026-10-23 · **Updated:** 2026-10-24 — Core **F9 stock program** in scope; **IA locked** · **Depends on:** Core **F9a** (then F9c–F9e) · **Related:** FE18, FE55, FE56, **FE57** · **Backend:** Core **F9**
+**Category:** FEATURE · **Status:** Done (2026-10-24) · **Noted:** 2026-10-23 · **Updated:** 2026-10-24 — Core **F9 stock program** in scope; **IA locked** · **Depends on:** Core **F9a** (then F9c–F9e) · **Related:** FE18, FE55, FE56, **FE57** · **Backend:** Core **F9**
 
 **Problem.** There is no Inventory nav or screens. Physical stock (warehouse ledger) is a separate domain from Catalog › Products listing stock (Shopee `update_stock` on FE39). Purchases/AP/HPP UIs are **FE55/FE56**, not this umbrella.
 
@@ -1211,7 +1211,7 @@ GET …/returns/preview?fetch_all=true&origin=all|buyer|system|pembatalan
 
 **Out of scope.** Habitat hierarchy; inventing HPP/AP screens here (→ FE55/FE56); shell chrome (→ FE57).
 
-**Next action.** FE51 after Core **F9c** (Done); FE52 after **F9d**; shell labels via FE57 (hubs may be empty until those land).
+**Done (2026-10-24):** Slices shipped — FE51 warehouses, FE52 balances/movements/transfers, FE53 opname; shell IA FE57. Purchases/BOM remain FE55/FE56.
 
 ---
 
@@ -1231,23 +1231,25 @@ GET …/returns/preview?fetch_all=true&origin=all|buyer|system|pembatalan
 
 ### FE52 — Stock balances + movements UI (Core F9d)
 
-**Category:** FEATURE · **Status:** Open · **Noted:** 2026-10-23 · **Parent:** FE50 · **Depends on:** Core **F9d** Done, FE51 · **Menu:** top-level **Stock** (FE50 / FE57)
+**Category:** FEATURE · **Status:** Done (2026-10-24) · **Noted:** 2026-10-23 · **Parent:** FE50 · **Depends on:** Core **F9d** Done, FE51 · **Menu:** top-level **Stock**
 
 **Goal.** Show balances by variant/warehouse; record manual movements (types from Core F9a). Render API figures only — no client-side re-derive of available stock.
 
 **Out of scope.** Opname posting (FE53); auto from Sales orders/returns; finance JE.
 
-**Note (2026-10-24):** Core **F9d** still Open — **Stock** top-bar / hub may ship as empty shell in FE57; do not invent balance/movement screens until F9d + Swagger.
+**Note (2026-10-24):** Core **F9d** Done — FE unblocked.
+
+**Done (2026-10-24):** Stock hub cards → `/stock/balances` (on-hand + channel snapshot column), `/stock/movements` (ledger + post opening/receipt/adjustment/reversal), `/stock/transfers` (create + view + reverse). `stockApi` + `canWriteStock`; variant pick via Catalog product search. Docs: `menu-endpoints.md`, README.
 
 ---
 
 ### FE53 — Stock opname UI (Core F9e)
 
-**Category:** FEATURE · **Status:** Open · **Noted:** 2026-10-23 · **Parent:** FE50 · **Depends on:** Core **F9a** + **F9e** Done · **Related:** FE52 · **Menu:** under **Stock** (with FE52)
+**Category:** FEATURE · **Status:** Done (2026-10-24) · **Noted:** 2026-10-23 · **Parent:** FE50 · **Depends on:** Core **F9a** + **F9e** Done · **Related:** FE52 · **Menu:** Stock › Opname
 
 **Goal.** Create/complete opname (system vs physical lines) when Core ships F9e. Do not invent shapes.
 
-**Next action.** Only after Core F9a + F9e.
+**Done (2026-10-24):** `/stock/opnames` list + create draft (optional seed from balances); `/stock/opnames/:id` edit counted, save lines, refresh system, complete (A9). Difference from API only. Docs: `menu-endpoints.md`, README.
 
 ---
 
@@ -1261,9 +1263,9 @@ GET …/returns/preview?fetch_all=true&origin=all|buyer|system|pembatalan
 
 ---
 
-### FE56 — Raw vs finished / BOM / HPP UI (Core F9k–F9l)
+### FE56 — Raw vs finished / BOM / HPP UI (Core F9k / F10c)
 
-**Category:** FEATURE · **Status:** Open · **Noted:** 2026-10-24 · **Depends on:** Core **F9k / F9l** · **Related:** FE41 catalog, FE55
+**Category:** FEATURE · **Status:** Open · **Noted:** 2026-10-24 · **Depends on:** Core **F9k / F10c** · **Related:** FE41 catalog, FE55
 
 **Goal.** Surfaces for item kind (raw vs barang jadi), BOM/composition, and HPP / unit cost including hybrid sourcing — as Core exposes. No client-side re-costing beyond displaying API figures.
 
@@ -1271,17 +1273,17 @@ GET …/returns/preview?fetch_all=true&origin=all|buyer|system|pembatalan
 
 ---
 
-### FE58 — Sales › Shopee: HPP with basis + coverage (Core F9u)
+### FE58 — Sales › Shopee: HPP with basis + coverage (Core F10b)
 
-**Category:** FEATURE · **Status:** Open · **Noted:** 2026-10-24 · **Depends on:** Core **F9u** (blocked there on HQ1–HQ7; analysis: Core `docs/analysis/historical-hpp.md`, F9t Done) · **Related:** FE46 (SKU summary), FE56
+**Category:** FEATURE · **Status:** Open · **Noted:** 2026-10-24 · **Depends on:** Core **F10b** (blocked on Core `historical-hpp.md` §22.2; F10a Done) · **Related:** FE46 (SKU summary), FE56
 
 **Problem.** The Sales Shopee summary shows what sold (`sku_summary`) but no HPP. Months before inventory go-live have no ledger, so their HPP comes from a different evidence basis than later months.
 
-**Why it matters.** A single HPP number with no label hides whether it was typed from an old Excel total, estimated from SKU detail at a flat cost, or costed by the ledger. That distinction changes how profit should be read.
+**Why it matters.** A single HPP number with no label hides whether it was estimated from channel sales × unit cost, uncovered (no cost), or later costed by the ledger. That distinction changes how profit should be read.
 
 **Scope when implementing (later).** Render the API's `hpp { amount, basis, coverage }` per month/channel with the basis shown as a label and uncovered qty/revenue visible. **No client-side costing**, no summing SKU rows into an HPP total, no mixing bases into one unlabeled figure.
 
-**Next action.** Wait for Core F9u H3/H4 + Swagger; do not start before the contract exists.
+**Next action.** Wait for Core F10b contract + Swagger; do not start before the contract exists.
 
 ---
 

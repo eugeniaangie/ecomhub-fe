@@ -74,7 +74,28 @@ export const navDomains: NavDomain[] = [
     id: 'stock',
     label: 'Stock',
     href: '/stock',
-    items: [],
+    items: [
+      {
+        label: 'Balances',
+        href: '/stock/balances',
+        description: 'On-hand quantity by variant and warehouse.',
+      },
+      {
+        label: 'Movements',
+        href: '/stock/movements',
+        description: 'Ledger: opening, receipt, adjustment, reversal.',
+      },
+      {
+        label: 'Transfers',
+        href: '/stock/transfers',
+        description: 'Move stock between warehouses.',
+      },
+      {
+        label: 'Opname',
+        href: '/stock/opnames',
+        description: 'Physical count: system vs counted, then complete.',
+      },
+    ],
   },
   {
     id: 'sales',

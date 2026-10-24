@@ -39,7 +39,7 @@ Dark **top bar** + domain **hubs** (decision **D7** — top-bar domains, hub car
 
 Account / profile menu (right): user · active tenant · Change tenant (flyout) · Settings · Logout
 Settings is not a top-bar domain — routes stay under `/settings/*` (FE57).
-Stock hub is a placeholder until FE52/FE53; Warehouse list is live (FE51).
+Stock hub: Balances / Movements / Transfers / Opname (FE52–FE53). Warehouse list live (FE51).
 ```
 
 Finance hub          Overview · Accounts · Transactions · Channels
@@ -53,7 +53,7 @@ Sales hub            Shopee Orders · Shopee Returns · Shopee Ads
 
 Catalog hub          Products · Categories
 
-Stock hub            Coming soon (FE52 / FE53)
+Stock hub            Balances · Movements · Transfers · Opname (FE52–FE53)
 
 Warehouse            Warehouses list / create / edit (FE51)
 
@@ -97,7 +97,11 @@ Rules that keep this from sprawling:
 | Catalog | Products | `/catalog/products` |
 | Catalog | Product detail (inline edit, Shopee draft + push) / new / copy | `/catalog/products/:id`, `/catalog/products/new` (`?copy_from=:id` FE45; `/:id/edit` redirects to detail) |
 | Catalog | Categories | `/master/categories` |
-| Stock | Domain hub (placeholder until FE52) | `/stock` |
+| Stock | Domain hub | `/stock` |
+| Stock | Balances | `/stock/balances` |
+| Stock | Movements | `/stock/movements` |
+| Stock | Transfers | `/stock/transfers` |
+| Stock | Opname list / detail | `/stock/opnames`, `/stock/opnames/:id` |
 | Warehouse | Warehouses list / create / edit | `/warehouse` |
 | Settings | Hub via Account menu (admin+) | `/settings` |
 | Settings | Shopee Integration | `/settings/integration/shopee` |
@@ -115,7 +119,6 @@ Unlinked but still reachable by URL: `/finance/dashboard` (legacy Shopee summary
 
 | Area | Likely contents | Home in the IA |
 |---|---|---|
-| Stock | Balances, movements, opname (FE52 / FE53) | top-level **Stock** hub live (FE57); screens pending Core + FE52/53 |
 | Catalog | Product Attributes, Pricing Rules | inside **Catalog** (Products list/CRUD/import/push live as FE41+FE39) |
 | Purchases / BOM / HPP | Suppliers, AP, raw vs FG | **FE55 / FE56** — not on the top bar until scoped |
 | Operations | Orders, Fulfillment, Fraud review | new top-level **Operations** (Shopee order preview lives under **Sales** for now) |

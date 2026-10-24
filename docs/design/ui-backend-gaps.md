@@ -40,6 +40,8 @@ Related: FE FE14–FE16 · core T32–T34
 
 **Note (2026-10-24) — shell IA (FE57):** Top bar includes **Stock** and **Warehouse**. Do **not** invent stock balances/movements until FE52 (Core F9d). **Warehouse** list/CRUD → **FE51 Done**. Settings / Change tenant / Logout live in the account menu.
 
+**Note (2026-10-24) — G1 and HPP:** Review of the existing dashboard/reporting found no revenue, gross-profit, or COGS endpoint in Core and no "D1" metric-definition document in either repo (analysis: Core `docs/analysis/historical-hpp.md` §19). The **COGS / HPP** part of G1 depends on Core **F10b** (historical + costed HPP, with basis/coverage labels); the revenue basis for the KPI strip is still undecided. Status stays **Open**.
+
 ---
 
 ## Conventions when implementing UI ahead of API
