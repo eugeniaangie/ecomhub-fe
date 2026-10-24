@@ -1180,7 +1180,7 @@ export function ChannelListingsPanel({ product, canWrite, onChanged }: Props) {
 
                 <div>
                   <p className="mb-1 text-xs font-medium text-gray-700">
-                    Suggestions (exact item_sku ↔ product_code / listing SKU)
+                    Suggestions (exact item_sku ↔ code / listing SKU)
                   </p>
                   {rebindBusy && rebindSuggestions.length === 0 ? (
                     <p className="text-xs text-gray-500">Loading…</p>

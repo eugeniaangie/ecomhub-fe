@@ -299,9 +299,9 @@ export default function AdDashboardPage() {
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-600">
                               <div>
-                                <div className="font-medium">{transaction.account_name}</div>
+                                <div className="font-medium">{transaction.name}</div>
                                 <div className="text-xs text-gray-500">
-                                  {transaction.account_code}
+                                  {transaction.code}
                                 </div>
                               </div>
                             </td>
@@ -311,9 +311,9 @@ export default function AdDashboardPage() {
                                 <div>
                                   {transaction.partner_accounts.map((partner, pIdx) => (
                                     <div key={pIdx} className={pIdx > 0 ? 'mt-2' : ''}>
-                                      <div className="font-medium">{partner.account_name}</div>
+                                      <div className="font-medium">{partner.name}</div>
                                       <div className="text-xs text-gray-500">
-                                        {partner.account_code} ({partner.account_type})
+                                        {partner.code} ({partner.account_type})
                                       </div>
                                       {partner.description && (
                                         <div className="mt-0.5 text-xs text-gray-400">

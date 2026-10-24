@@ -101,21 +101,21 @@ export default function FinanceBalancesPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {balances.map((row) => (
-                  <tr key={row.account_code} className="text-gray-900">
+                  <tr key={row.code} className="text-gray-900">
                     <td className="py-2 pr-4 font-mono text-xs">
                       <Link
-                        href={`/finance/transactions?account_code=${encodeURIComponent(row.account_code)}`}
+                        href={`/finance/transactions?code=${encodeURIComponent(row.code)}`}
                         className="text-blue-600 hover:underline"
                       >
-                        {row.account_code}
+                        {row.code}
                       </Link>
                     </td>
                     <td className="py-2 pr-4">
                       <Link
-                        href={`/finance/transactions?account_code=${encodeURIComponent(row.account_code)}`}
+                        href={`/finance/transactions?code=${encodeURIComponent(row.code)}`}
                         className="hover:text-blue-600 hover:underline"
                       >
-                        {row.account_name}
+                        {row.name}
                       </Link>
                     </td>
                     <td className="py-2 pr-4 text-gray-600">{row.account_type}</td>
@@ -198,9 +198,9 @@ export default function FinanceBalancesPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {movements.map((row) => (
-                  <tr key={row.account_code} className="text-gray-900">
-                    <td className="py-2 pr-4 font-mono text-xs">{row.account_code}</td>
-                    <td className="py-2 pr-4">{row.account_name}</td>
+                  <tr key={row.code} className="text-gray-900">
+                    <td className="py-2 pr-4 font-mono text-xs">{row.code}</td>
+                    <td className="py-2 pr-4">{row.name}</td>
                     <td className="py-2 pr-4 text-right tabular-nums">
                       {formatCurrency(row.total_debit)}
                     </td>

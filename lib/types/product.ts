@@ -19,8 +19,8 @@ export type ListingSyncStatus =
 export interface Product {
   id: number;
   tenant_id: number;
-  product_name: string;
-  product_code?: string | null;
+  name: string;
+  code?: string | null;
   description?: string | null;
   brand?: string | null;
   category_id?: number | null;
@@ -395,8 +395,8 @@ export interface ProductDetail extends Product {
 
 /** POST /products and PUT /products/:id body. */
 export interface ProductForm {
-  product_name: string;
-  product_code?: string | null;
+  name: string;
+  code?: string | null;
   description?: string | null;
   brand?: string | null;
   category_id?: number | null;

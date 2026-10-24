@@ -30,8 +30,8 @@ export function variantOptionValueTexts(
 }
 
 export type ProductCopySeed = {
-  product_name: string;
-  product_code: string;
+  name: string;
+  code: string;
   description: string;
   brand: string;
   category_id: string;
@@ -47,7 +47,7 @@ export type ProductCopySeed = {
 
 /**
  * Prefill for POST /products from an existing detail.
- * Strips ids, listings, images, SKUs, product_code; forces draft; suffixes name.
+ * Strips ids, listings, images, SKUs, code; forces draft; suffixes name.
  */
 export function buildProductCopySeed(source: ProductDetail): ProductCopySeed {
   const options = [...(source.options ?? [])]
@@ -67,8 +67,8 @@ export function buildProductCopySeed(source: ProductDetail): ProductCopySeed {
     }));
 
   return {
-    product_name: copyProductName(source.product_name),
-    product_code: '',
+    name: copyProductName(source.name),
+    code: '',
     description: source.description ?? '',
     brand: source.brand ?? '',
     category_id:

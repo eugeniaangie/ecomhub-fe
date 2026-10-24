@@ -609,7 +609,7 @@ export const financeReportsApi = {
 
   /**
    * Unified posted journal-line transactions (T33 / FE15).
-   * Optional channel = JE tag; optional account_code = primary line account.
+   * Optional channel = JE tag; optional code = primary line account.
    */
   getTransactions: async (params: {
     start_date: string;
@@ -617,7 +617,7 @@ export const financeReportsApi = {
     page: number;
     limit: number;
     channel?: string;
-    account_code?: string;
+    code?: string;
   }) => {
     const queryParams = new URLSearchParams({
       start_date: params.start_date,
@@ -626,7 +626,7 @@ export const financeReportsApi = {
       limit: params.limit.toString(),
     });
     if (params.channel) queryParams.set('channel', params.channel);
-    if (params.account_code) queryParams.set('account_code', params.account_code);
+    if (params.code) queryParams.set('code', params.code);
 
     return api.get<PaginatedResponseFinance<AccountTransaction>>(
       `${API_VERSION}/reports/dashboard/finance/transactions?${queryParams.toString()}`

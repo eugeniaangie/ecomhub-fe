@@ -314,7 +314,7 @@ export default function OperationalExpensesPage() {
   const getAccountName = (accountId: number) => {
     if (!accounts || accounts.length === 0) return 'Unknown';
     const account = accounts.find((a) => a.id === accountId);
-    return account ? `${account.account_code} - ${account.account_name}` : 'Unknown';
+    return account ? `${account.code} - ${account.name}` : 'Unknown';
   };
 
   if (isLoading && expenses.length === 0 && !error) {
@@ -613,7 +613,7 @@ export default function OperationalExpensesPage() {
               <option value={0}>Select an account</option>
               {(accounts || []).map((acc) => (
                 <option key={acc.id} value={acc.id}>
-                  {acc.account_code} - {acc.account_name}
+                  {acc.code} - {acc.name}
                 </option>
               ))}
             </select>

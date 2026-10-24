@@ -66,7 +66,7 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     if (product) {
-      document.title = `${product.product_name} · Catalog · EcomHub`;
+      document.title = `${product.name} · Catalog · EcomHub`;
     } else {
       document.title = 'Product · Catalog · EcomHub';
     }
@@ -133,7 +133,7 @@ export default function ProductDetailPage() {
     }
     if (
       !confirm(
-        `Archive “${product.product_name}”? SKUs stay reserved; the product is hidden from the default list. This does not delete anything on Shopee.`
+        `Archive “${product.name}”? SKUs stay reserved; the product is hidden from the default list. This does not delete anything on Shopee.`
       )
     ) {
       return;
@@ -194,14 +194,14 @@ export default function ProductDetailPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={product.product_name}
+        title={product.name}
         description={
           isArchived
             ? 'Archived — read-only. SKUs remain reserved.'
             : canWrite
               ? 'Edit fields below and save. Unlink listings before archive.'
-              : product.product_code
-                ? `Code ${product.product_code}`
+              : product.code
+                ? `Code ${product.code}`
                 : 'No product code'
         }
         parent={{ label: 'Products', href: '/catalog/products' }}
@@ -288,7 +288,7 @@ export default function ProductDetailPage() {
                 <div>
                   <dt className="text-gray-500">Product code</dt>
                   <dd className="mt-1 text-gray-900">
-                    {product.product_code || '—'}
+                    {product.code || '—'}
                   </dd>
                 </div>
                 <div className="sm:col-span-2">

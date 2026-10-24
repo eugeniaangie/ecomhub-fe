@@ -48,7 +48,7 @@ function NewProductPageInner() {
         const detail = await productsApi.getById(copyFromId);
         if (cancelled) return;
         setCopySeed(buildProductCopySeed(detail));
-        setCopySourceName(detail.product_name);
+        setCopySourceName(detail.name);
       } catch (err: unknown) {
         if (cancelled) return;
         setCopySeed(null);
@@ -116,7 +116,7 @@ function NewProductPageInner() {
         <ProductForm
           key={
             copySeed
-              ? `copy-${copyFromId}-${copySeed.product_name}`
+              ? `copy-${copyFromId}-${copySeed.name}`
               : 'create'
           }
           mode="create"

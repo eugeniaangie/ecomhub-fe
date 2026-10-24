@@ -34,7 +34,7 @@ function dateFromUrlParam(value: string | null, fallback: string): string {
 function TransactionsFeed() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const accountFromUrl = searchParams.get('account_code') || '';
+  const accountFromUrl = searchParams.get('code') || '';
   const startFromUrl = searchParams.get('start_date');
   const endFromUrl = searchParams.get('end_date');
 
@@ -45,7 +45,7 @@ function TransactionsFeed() {
     dateFromUrlParam(endFromUrl, getTodayFormatted())
   );
   const [channel, setChannel] = useState('');
-  const [accountCode, setAccountCode] = useState(accountFromUrl);
+  const [code, setAccountCode] = useState(accountFromUrl);
   const [accounts, setAccounts] = useState<Account[]>([]);
 
   const [rows, setRows] = useState<AccountTransaction[]>([]);
@@ -92,7 +92,7 @@ function TransactionsFeed() {
 
   const syncAccountInUrl = (code: string) => {
     const params = new URLSearchParams();
-    if (code) params.set('account_code', code);
+    if (code) params.set('code', code);
     if (startDate !== LEDGER_START_DATE) params.set('start_date', startDate);
     if (endDate !== getTodayFormatted()) params.set('end_date', endDate);
     const qs = params.toString();
@@ -109,7 +109,7 @@ function TransactionsFeed() {
         page: currentPage,
         limit: pageSize,
         channel: channel || undefined,
-        account_code: accountCode || undefined,
+        code: code || undefined,
       });
       setRows(data.results);
       setTotalPages(data.total_pages);
@@ -122,7 +122,7 @@ function TransactionsFeed() {
     } finally {
       setLoading(false);
     }
-  }, [startDate, endDate, currentPage, pageSize, channel, accountCode]);
+  }, [startDate, endDate, currentPage, pageSize, channel, code]);
 
   useEffect(() => {
     load();
@@ -178,7 +178,7 @@ function TransactionsFeed() {
           <div className="min-w-50 flex-1">
             <label className="mb-2 block text-sm font-medium text-gray-700">Account</label>
             <select
-              value={accountCode}
+              value={code}
               onChange={(e) => {
                 const code = e.target.value;
                 setAccountCode(code);
@@ -189,8 +189,8 @@ function TransactionsFeed() {
             >
               <option value="">All accounts</option>
               {accounts.map((a) => (
-                <option key={a.id} value={a.account_code}>
-                  {a.account_code} — {a.account_name}
+                <option key={a.id} value={a.code}>
+                  {a.code} — {a.name}
                 </option>
               ))}
             </select>
@@ -218,9 +218,9 @@ function TransactionsFeed() {
             From start
           </button>
         </div>
-        {accountCode ? (
+        {code ? (
           <p className="mt-3 text-xs text-gray-500">
-            Filtered to account <span className="font-mono">{accountCode}</span>
+            Filtered to account <span className="font-mono">{code}</span>
             {' · '}
             <Link
               href="/finance/balances"
@@ -257,7 +257,7 @@ function TransactionsFeed() {
                 <tbody className="divide-y divide-gray-200 bg-white">
                   {rows.map((tx, idx) => (
                     <tr
-                      key={`${tx.journal_entry_id}-${tx.account_code}-${idx}`}
+                      key={`${tx.journal_entry_id}-${tx.code}-${idx}`}
                       className="hover:bg-gray-50"
                     >
                       <td className="whitespace-nowrap px-4 py-3 text-gray-900">
@@ -281,17 +281,17 @@ function TransactionsFeed() {
                         ) : null}
                       </td>
                       <td className="px-4 py-3 text-gray-600">
-                        <div className="font-medium">{tx.account_name}</div>
-                        <div className="font-mono text-xs text-gray-500">{tx.account_code}</div>
+                        <div className="font-medium">{tx.name}</div>
+                        <div className="font-mono text-xs text-gray-500">{tx.code}</div>
                       </td>
                       <td className="px-4 py-3 text-gray-600">
                         {tx.partner_accounts && tx.partner_accounts.length > 0 ? (
                           <div>
                             {tx.partner_accounts.map((partner, pIdx) => (
                               <div key={pIdx} className={pIdx > 0 ? 'mt-2' : ''}>
-                                <div className="font-medium">{partner.account_name}</div>
+                                <div className="font-medium">{partner.name}</div>
                                 <div className="text-xs text-gray-500">
-                                  {partner.account_code} ({partner.account_type})
+                                  {partner.code} ({partner.account_type})
                                 </div>
                               </div>
                             ))}

@@ -236,11 +236,11 @@ export default function CatalogProductsPage() {
                           href={`/catalog/products/${p.id}`}
                           className="hover:underline"
                         >
-                          {p.product_name}
+                          {p.name}
                         </Link>
                       </td>
                       <td className="px-3 py-2 text-gray-600">
-                        {p.product_code || '—'}
+                        {p.code || '—'}
                       </td>
                       <td className="px-3 py-2">
                         <StatusBadge
