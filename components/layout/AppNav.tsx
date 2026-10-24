@@ -1,49 +1,28 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import {
-  canAccessSettings,
-  canConnectShopeeShop,
-  canManageTenants,
-  canManageUsers,
-  logout,
-} from '@/lib/authHelpers';
 import {
   domainForPath,
   isPathActive,
   navDomains,
-  SETTINGS_SHOPEE_INTEGRATION_HREF,
   type NavDomain,
   type NavItem,
 } from '@/lib/nav';
-import { Button } from '../ui/Button';
-import { TenantSwitcher } from './TenantSwitcher';
+import { AccountMenu } from './AccountMenu';
 
 const ACTIVE_BG = '#6A89A7';
 
-function visibleNavItems(domain: NavDomain): NavItem[] {
-  const items = [...(domain.items ?? []), ...(domain.setup ?? [])];
-  if (domain.id !== 'settings') return items;
-  return items.filter((item) => {
-    if (item.href === SETTINGS_SHOPEE_INTEGRATION_HREF) return canConnectShopeeShop();
-    if (item.href === '/settings/tenants') return canManageTenants();
-    if (item.href === '/settings/users') return canManageUsers();
-    return false;
-  });
+function domainDropdownItems(domain: NavDomain): NavItem[] {
+  return [...(domain.items ?? []), ...(domain.setup ?? [])];
 }
 
 export const AppNav: React.FC = () => {
   const pathname = usePathname() ?? '';
-  const router = useRouter();
   const activeDomain = domainForPath(pathname);
   const [openId, setOpenId] = useState<string | null>(null);
   const navRef = useRef<HTMLElement>(null);
-  // Settings: admin+ (Shopee Integration) / superadmin (Tenants, Users) — render gate; Core enforces.
-  const visibleDomains = navDomains.filter(
-    (d) => d.id !== 'settings' || canAccessSettings()
-  );
 
   useEffect(() => {
     const onPointerDown = (event: MouseEvent) => {
@@ -62,11 +41,6 @@ export const AppNav: React.FC = () => {
     };
   }, []);
 
-  const handleLogout = async () => {
-    await logout();
-    router.push('/login');
-  };
-
   return (
     <header
       ref={navRef}
@@ -81,7 +55,7 @@ export const AppNav: React.FC = () => {
           className="absolute inset-0 flex items-center justify-center gap-1"
           aria-label="Primary"
         >
-          {visibleDomains.map((domain) => (
+          {navDomains.map((domain) => (
             <DomainControl
               key={domain.id}
               domain={domain}
@@ -97,15 +71,7 @@ export const AppNav: React.FC = () => {
         </nav>
 
         <div className="relative z-10 ml-auto flex shrink-0 items-center">
-          <TenantSwitcher />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleLogout}
-            className="text-gray-300 hover:bg-gray-800 hover:text-white"
-          >
-            Logout
-          </Button>
+          <AccountMenu />
         </div>
       </div>
     </header>
@@ -129,7 +95,10 @@ const DomainControl: React.FC<DomainControlProps> = ({
   onToggle,
   onClose,
 }) => {
-  if (domain.leaf) {
+  const dropdownItems = domainDropdownItems(domain);
+  const asLeaf = domain.leaf || dropdownItems.length === 0;
+
+  if (asLeaf) {
     return (
       <Link
         href={domain.href}
@@ -142,8 +111,6 @@ const DomainControl: React.FC<DomainControlProps> = ({
       </Link>
     );
   }
-
-  const dropdownItems = visibleNavItems(domain);
 
   return (
     <div className="relative">

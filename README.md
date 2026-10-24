@@ -35,7 +35,12 @@ Production (Vercel) must set `NEXT_PUBLIC_API_BASE_URL` to the Railway API host 
 Dark **top bar** + domain **hubs** (decision **D7** — top-bar domains, hub cards, caret dropdown). Menus and features are EcomHub's.
 
 ```
-[ EcomHub | Dashboard | Catalog ▾ | Marketing ▾ | Sales ▾ | Finance ▾ | Settings ▾ | Logout ]
+[ EcomHub | Dashboard | Catalog ▾ | Stock | Sales ▾ | Warehouse | Marketing ▾ | Finance ▾ |  Account ▾ ]
+
+Account / profile menu (right): user · active tenant · Change tenant (flyout) · Settings · Logout
+Settings is not a top-bar domain — routes stay under `/settings/*` (FE57).
+Stock hub is a placeholder until FE52/FE53; Warehouse list is live (FE51).
+```
 
 Finance hub          Overview · Accounts · Transactions · Channels
                      Journal Entries · Operational Expenses · Capital & Investors
@@ -48,16 +53,19 @@ Sales hub            Shopee Orders · Shopee Returns · Shopee Ads
 
 Catalog hub          Products · Categories
 
-Settings hub         Shopee Integration (Connect shop via Partner OAuth)
-                     Tenants · Users (superadmin)
-```
+Stock hub            Coming soon (FE52 / FE53)
+
+Warehouse            Warehouses list / create / edit (FE51)
+
+Settings (Account menu)   Shopee Integration · Tenants · Users (role-gated)
 
 Rules that keep this from sprawling:
 
 1. **Top level = domains, few of them.** A new feature joins an existing domain unless it is a new noun of the business.
-2. **Domain label → hub; caret → dropdown** of the same items. No third accordion level.
+2. **Domain label → hub; caret → dropdown** of the same items. No third accordion level. Domains with no leaves yet (Stock, Warehouse) are hub-only links.
 3. **Marketplaces never become top-level.** Connections go under **Settings › Shopee Integration**; sales previews under **Sales**; money is read through **Finance › Channels** (backend `T34`).
-4. **Unbuilt areas are not rendered** in the top bar until they have a screen.
+4. **Account actions** (settings, change tenant, logout) live in the **account / profile** menu — not as a Settings domain tab.
+5. **Unbuilt feature screens** use empty hubs / coming-soon cards; do not invent stock figures.
 
 ---
 
@@ -89,7 +97,9 @@ Rules that keep this from sprawling:
 | Catalog | Products | `/catalog/products` |
 | Catalog | Product detail (inline edit, Shopee draft + push) / new / copy | `/catalog/products/:id`, `/catalog/products/new` (`?copy_from=:id` FE45; `/:id/edit` redirects to detail) |
 | Catalog | Categories | `/master/categories` |
-| Settings | Domain hub | `/settings` |
+| Stock | Domain hub (placeholder until FE52) | `/stock` |
+| Warehouse | Warehouses list / create / edit | `/warehouse` |
+| Settings | Hub via Account menu (admin+) | `/settings` |
 | Settings | Shopee Integration | `/settings/integration/shopee` |
 | Settings | Tenants (superadmin) | `/settings/tenants` |
 | Settings | Users (superadmin) | `/settings/users` |
@@ -101,14 +111,15 @@ Unlinked but still reachable by URL: `/finance/dashboard` (legacy Shopee summary
 
 ---
 
-## Planned areas (not in the top bar yet)
+## Planned areas
 
 | Area | Likely contents | Home in the IA |
 |---|---|---|
-| Catalog | Product Attributes, Pricing Rules, Inventory | inside **Catalog** (Products list/CRUD/import/push live as FE41+FE39; Inventory may graduate to its own domain) |
+| Stock | Balances, movements, opname (FE52 / FE53) | top-level **Stock** hub live (FE57); screens pending Core + FE52/53 |
+| Catalog | Product Attributes, Pricing Rules | inside **Catalog** (Products list/CRUD/import/push live as FE41+FE39) |
+| Purchases / BOM / HPP | Suppliers, AP, raw vs FG | **FE55 / FE56** — not on the top bar until scoped |
 | Operations | Orders, Fulfillment, Fraud review | new top-level **Operations** (Shopee order preview lives under **Sales** for now) |
-| Settings | TikTok / other channel connects, sync status, settlements (Shopee Connect is live under **Settings › Shopee Integration**) | inside **Settings** |
-| Settings | Profile (later) | top-level **Settings** (Tenants / Users / Shopee Integration live) |
+| Settings | TikTok / other channel connects, sync status, settlements (Shopee Connect is live under **Settings › Shopee Integration**) | inside **Settings** (reached via Account menu after FE57) |
 | Finance reports | Profit & Loss, Cash Flow, Balance Sheet | **Finance** hub cards |
 
 Status for frontend work is tracked in [`docs/roadmap/task-list.md`](docs/roadmap/task-list.md), not here.

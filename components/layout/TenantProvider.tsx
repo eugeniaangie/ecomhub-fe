@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import type { AllowedTenant, GetMeResponse } from '@/lib/types';
+import type { AllowedTenant, GetMeResponse, UserInfo } from '@/lib/types';
 import {
   applyMeTenantState,
   canMutateTenantData,
@@ -19,6 +19,8 @@ interface TenantContextValue {
   activeTenantId: number | null;
   canMutate: boolean;
   activeTenant: AllowedTenant | null;
+  /** From last GET /auth/me (account menu). */
+  user: UserInfo | null;
   /** Superadmin-only: switch active tenant and persist. */
   setTenantId: (tenantId: number) => void;
   /** Apply fields from GET /auth/me. */
@@ -33,6 +35,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const [allowedTenants, setAllowedTenants] = useState<AllowedTenant[]>([]);
   const [activeTenantId, setActiveId] = useState<number | null>(null);
   const [canMutate, setCanMutate] = useState(false);
+  const [user, setUser] = useState<UserInfo | null>(null);
 
   const hydrateFromMe = useCallback((me: GetMeResponse) => {
     const next = applyMeTenantState(me);
@@ -40,6 +43,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     setAllowedTenants(next.allowed);
     setActiveId(next.tenantId);
     setCanMutate(next.canMutate);
+    setUser(me.user ?? null);
     setReady(true);
   }, []);
 
@@ -66,6 +70,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       activeTenantId,
       canMutate,
       activeTenant,
+      user,
       setTenantId,
       hydrateFromMe,
     }),
@@ -76,6 +81,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       activeTenantId,
       canMutate,
       activeTenant,
+      user,
       setTenantId,
       hydrateFromMe,
     ]
@@ -97,6 +103,7 @@ export function useTenant(): TenantContextValue {
       activeTenantId: getActiveTenantId(),
       canMutate: canMutateTenantData(),
       activeTenant: null,
+      user: null,
       setTenantId: () => undefined,
       hydrateFromMe: () => undefined,
     };

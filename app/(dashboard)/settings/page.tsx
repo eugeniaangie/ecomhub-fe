@@ -9,9 +9,7 @@ import {
   canManageTenants,
   canManageUsers,
 } from '@/lib/authHelpers';
-import { navDomains, SETTINGS_SHOPEE_INTEGRATION_HREF } from '@/lib/nav';
-
-const settings = navDomains.find((d) => d.id === 'settings')!;
+import { settingsNavItems, SETTINGS_SHOPEE_INTEGRATION_HREF } from '@/lib/nav';
 
 export default function SettingsHubPage() {
   useEffect(() => {
@@ -19,7 +17,7 @@ export default function SettingsHubPage() {
   }, []);
 
   const items = useMemo(() => {
-    return (settings.items ?? []).filter((item) => {
+    return settingsNavItems.filter((item) => {
       if (item.href === SETTINGS_SHOPEE_INTEGRATION_HREF) return canConnectShopeeShop();
       if (item.href === '/settings/tenants') return canManageTenants();
       if (item.href === '/settings/users') return canManageUsers();

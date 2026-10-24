@@ -2,7 +2,7 @@
  * App navigation — EcomHub domains and features.
  *
  * Layout: dark top bar → domain hub → feature page (decision D7).
- * Labels, grouping and routes are EcomHub-only.
+ * Account / Settings live in the profile menu (FE57), not as a top-bar domain.
  */
 
 export interface NavItem {
@@ -26,6 +26,26 @@ export interface NavDomain {
 /** Shopee Partner OAuth connect screen (under Settings). */
 export const SETTINGS_SHOPEE_INTEGRATION_HREF = '/settings/integration/shopee';
 
+/** Settings hub items — account menu + `/settings` hub (not a top-bar domain). */
+export const settingsNavItems: NavItem[] = [
+  {
+    label: 'Shopee Integration',
+    href: SETTINGS_SHOPEE_INTEGRATION_HREF,
+    description: 'Connect a Shopee shop via Partner OAuth.',
+  },
+  {
+    label: 'Tenants',
+    href: '/settings/tenants',
+    description: 'Create and manage toko (tenants). Superadmin only.',
+  },
+  {
+    label: 'Users',
+    href: '/settings/users',
+    description: 'Roles and tenant membership. Superadmin only.',
+  },
+];
+
+/** Top-bar order (FE57): Dashboard · Catalog · Stock · Sales · Warehouse · Marketing · Finance */
 export const navDomains: NavDomain[] = [
   {
     id: 'dashboard',
@@ -51,21 +71,10 @@ export const navDomains: NavDomain[] = [
     ],
   },
   {
-    id: 'marketing',
-    label: 'Marketing',
-    href: '/marketing',
-    items: [
-      {
-        label: 'Ad Budgets',
-        href: '/marketing/ad-budgets',
-        description: 'Plan and track ad spend budgets by platform.',
-      },
-      {
-        label: 'Ad Expenses',
-        href: '/marketing/ad-expenses',
-        description: 'Ad spend totals by platform.',
-      },
-    ],
+    id: 'stock',
+    label: 'Stock',
+    href: '/stock',
+    items: [],
   },
   {
     id: 'sales',
@@ -86,6 +95,29 @@ export const navDomains: NavDomain[] = [
         label: 'Shopee Ads',
         href: '/sales/shopee/ads',
         description: 'Shop-level ads spend, ROAS, and wallet balance.',
+      },
+    ],
+  },
+  {
+    id: 'warehouse',
+    label: 'Warehouse',
+    href: '/warehouse',
+    items: [],
+  },
+  {
+    id: 'marketing',
+    label: 'Marketing',
+    href: '/marketing',
+    items: [
+      {
+        label: 'Ad Budgets',
+        href: '/marketing/ad-budgets',
+        description: 'Plan and track ad spend budgets by platform.',
+      },
+      {
+        label: 'Ad Expenses',
+        href: '/marketing/ad-expenses',
+        description: 'Ad spend totals by platform.',
       },
     ],
   },
@@ -148,28 +180,6 @@ export const navDomains: NavDomain[] = [
       },
     ],
   },
-  {
-    id: 'settings',
-    label: 'Settings',
-    href: '/settings',
-    items: [
-      {
-        label: 'Shopee Integration',
-        href: SETTINGS_SHOPEE_INTEGRATION_HREF,
-        description: 'Connect a Shopee shop via Partner OAuth.',
-      },
-      {
-        label: 'Tenants',
-        href: '/settings/tenants',
-        description: 'Create and manage toko (tenants). Superadmin only.',
-      },
-      {
-        label: 'Users',
-        href: '/settings/users',
-        description: 'Roles and tenant membership. Superadmin only.',
-      },
-    ],
-  },
 ];
 
 export function domainForPath(pathname: string): NavDomain | undefined {
@@ -189,13 +199,11 @@ export function domainForPath(pathname: string): NavDomain | undefined {
   if (pathname.startsWith('/catalog') || pathname.startsWith('/master')) {
     return navDomains.find((d) => d.id === 'catalog');
   }
-  // Legacy /integrations URLs redirect to Settings; callback stays under Settings IA.
-  if (
-    pathname.startsWith('/settings') ||
-    pathname.startsWith('/integrations') ||
-    pathname.startsWith('/shopee-auth-callback')
-  ) {
-    return navDomains.find((d) => d.id === 'settings');
+  if (pathname.startsWith('/stock')) {
+    return navDomains.find((d) => d.id === 'stock');
+  }
+  if (pathname.startsWith('/warehouse')) {
+    return navDomains.find((d) => d.id === 'warehouse');
   }
   return undefined;
 }

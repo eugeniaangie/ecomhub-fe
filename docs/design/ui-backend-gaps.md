@@ -38,6 +38,8 @@ Related: FE FE14–FE16 · core T32–T34
 
 **Note (2026-09-29):** G5/G7 channel strip is **not** waiting on aggregating `journal_entries.channel`. That field is a JE bookkeeping tag; marketplace channel performance is a separate product (integrations). Core Decision 13 / T32 Deferred.
 
+**Note (2026-10-24) — shell IA (FE57):** Top bar includes **Stock** and **Warehouse**. Do **not** invent stock balances/movements until FE52 (Core F9d). **Warehouse** list/CRUD → **FE51 Done**. Settings / Change tenant / Logout live in the account menu.
+
 ---
 
 ## Conventions when implementing UI ahead of API

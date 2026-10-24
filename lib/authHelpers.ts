@@ -517,6 +517,15 @@ export const canWriteProduct = (): boolean => {
 };
 
 /**
+ * Create / update warehouses (Core F9c / FE51). No hard delete.
+ * Allowed: superadmin, admin. Reads are open to any authenticated role.
+ */
+export const canWriteWarehouse = (): boolean => {
+  if (!canMutateTenantData()) return false;
+  return hasAnyRole(['superadmin', 'admin']);
+};
+
+/**
  * Import Shopee products into the catalog (Core F8d).
  * Allowed: superadmin, admin — same gate as products/import.
  */

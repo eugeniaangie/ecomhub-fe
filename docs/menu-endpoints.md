@@ -208,8 +208,9 @@ UI: parent picker shows full path (`A › B › C`); per-row **Add child** locks
 | `/finance/setup` | Finance setup hub (cards only) |
 | `/marketing` | Marketing domain hub |
 | `/catalog` | Catalog domain hub |
+| `/stock` | Stock domain hub — placeholder (FE57; screens FE52/53) |
 | `/sales` | Sales domain hub |
-| `/settings` | Settings domain hub (admin+: Shopee Integration; superadmin: Tenants/Users) |
+| `/settings` | Settings hub via Account menu (admin+: Shopee Integration; superadmin: Tenants/Users) |
 | `/shopee-auth-callback` | Shopee OAuth return — POSTs `code` + `shop_id` to Core `…/shopee/token` (F6a3) |
 | `/master` | Older standalone categories CRUD — unlinked, retire separately |
 
@@ -217,7 +218,23 @@ Legacy FE routes (redirect): `/integrations` → `/settings`, `/integrations/sho
 
 ---
 
-## Settings — FE34 / FE36 / FE37
+## Warehouse — FE51 (Core F9c)
+
+### Warehouses (`/warehouse`)
+
+- `GET /warehouses` — paginated list (`page`, `limit`, `search` on code/name)
+- `GET /warehouses/no_page` — all warehouses (dropdown; default first) — client ready, unused on this page
+- `GET /warehouses/:id` — detail
+- `POST /warehouses` — create `{ code, name, is_default? }` (admin+)
+- `PUT /warehouses/:id` — update `{ code, name, is_active, is_default }` (admin+; no hard delete)
+
+UI: search + pagination; create/edit modal. Core rejects invalid deactivate/default changes (default, last active, non-zero stock).
+
+---
+
+## Settings — FE34 / FE36 / FE37 / FE57
+
+Reached from the **Account / profile** menu (FE57), not a top-bar domain. Routes unchanged.
 
 ### Shopee Integration (`/settings/integration/shopee`) — FE37 (was Integrations)
 

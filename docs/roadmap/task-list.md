@@ -71,11 +71,15 @@ Single prioritized backlog for the frontend. Status lives in the checklist below
 | [x] | FE47 | FEATURE | Categories create UX — path parent picker + Add child (same-name under different parents) | UX |
 | [x] | FE48 | FEATURE | Catalog — “gone from Shopee” badges + Check Shopee / re-link UI (Core **F8o** Done) | Core **F8o** Done |
 | [x] | FE49 | FEATURE | Catalog — **add as variant** from `unmatched_models` UI (Core **F8q** Done) | Core **F8q** Done |
-| [ ] | FE50 | FEATURE | Inventory UI umbrella (warehouses + stock + opname) — **not urgent**; IA after Core **F9a** | Core **F9** |
+| [ ] | FE50 | FEATURE | Inventory UI umbrella (warehouses + stock + opname) — after Core **F9a**; part of stock program | Core **F9** |
 | [x] | FE54 | FEATURE | Catalog — **re-bind** listing to new Shopee `item_id` UI (Core **F8r** Done) | Core **F8r** Done |
-| [ ] | FE51 | FEATURE | Warehouses list/create/edit UI | Core **F9c** |
+| [x] | FE51 | FEATURE | Warehouses list/create/edit UI | Core **F9c** |
 | [ ] | FE52 | FEATURE | Stock balances + movements UI | Core **F9d** |
-| [ ] | FE53 | FEATURE | Stock opname UI — only if Core **F9a** puts opname in MVP | Core **F9e** |
+| [ ] | FE53 | FEATURE | Stock opname UI | Core **F9e** |
+| [ ] | FE55 | FEATURE | Purchases / suppliers / AP UI umbrella | Core **F9h / F9i / F9j** |
+| [ ] | FE56 | FEATURE | Raw vs finished / BOM / HPP views (as Core ships F9k/F9l) | Core **F9k / F9l** |
+| [x] | FE57 | FEATURE | Shell IA — top-bar order + **account / profile** menu (Settings + Change tenant + Logout off the domain bar) | UX / FE32 follow-up |
+| [ ] | FE58 | FEATURE | Sales → Shopee summary: show **HPP per month with basis + coverage** (historical pre-go-live + ledger) — render API figures only | Core **F9u** (analysis F9t Done) |
 
 
 **P0 left:** none (FE1 Done).
@@ -1190,50 +1194,131 @@ GET …/returns/preview?fetch_all=true&origin=all|buyer|system|pembatalan
 
 ### FE50 — Inventory UI umbrella (warehouses + stock + opname)
 
-**Category:** FEATURE · **Status:** Open · **Noted:** 2026-10-23 · **Priority note:** **not urgent** · **Depends on:** Core **F9a** decisions (then F9c–F9e) · **Related:** FE18 (IA: Catalog vs own Inventory group) · **Backend:** Core **F9**
+**Category:** FEATURE · **Status:** Open · **Noted:** 2026-10-23 · **Updated:** 2026-10-24 — Core **F9 stock program** in scope; **IA locked** · **Depends on:** Core **F9a** (then F9c–F9e) · **Related:** FE18, FE55, FE56, **FE57** · **Backend:** Core **F9**
 
-**Problem.** There is no Inventory nav or screens. Physical stock (warehouse ledger) is a separate domain from Catalog › Products listing stock (Shopee `update_stock` on FE39).
+**Problem.** There is no Inventory nav or screens. Physical stock (warehouse ledger) is a separate domain from Catalog › Products listing stock (Shopee `update_stock` on FE39). Purchases/AP/HPP UIs are **FE55/FE56**, not this umbrella.
 
 **Why it matters.** Operators cannot manage EcomHub warehouse stock until Core F9 ships; FE must not invent balances client-side or treat listing stock as inventory.
 
 **Scope (after Core F9a — do not invent shapes).**
 
-1. Decide IA with developer: stay under **Catalog** vs graduate to top-level **Inventory** (FE18 follow-up).
-2. Slice UI into **FE51** (warehouses), **FE52** (balances/movements), **FE53** (opname if MVP).
-3. Keep Shopee listing Stock action on product detail (FE39) — that is channel stock, not this domain.
+1. ~~Decide IA: **Catalog** vs top-level **Inventory** vs shared **Stock** hub with Purchases (FE18).~~
+2. Slice UI into **FE51** (warehouses), **FE52** (balances/movements), **FE53** (opname).
+3. Keep Shopee listing Stock on product detail (FE39) — channel stock ≠ on-hand.
 4. Update `docs/menu-endpoints.md` + README when screens land.
 
-**Out of scope.** Building before Core F9a; auto JE/COGS; Habitat warehouse hierarchy; calling Shopee `update_stock` from inventory screens unless Core **F9f** exists and is wired on purpose.
+**IA locked (2026-10-24):** Top-bar domains are separate **Stock** and **Warehouse** (not a single “Inventory” noun, not under Catalog). Full bar order + account menu → **FE57**. Feature screens still FE51–FE53.
 
-**Next action.** Wait for Core **F9a**; then FE51 after F9c.
+**Out of scope.** Habitat hierarchy; inventing HPP/AP screens here (→ FE55/FE56); shell chrome (→ FE57).
+
+**Next action.** FE51 after Core **F9c** (Done); FE52 after **F9d**; shell labels via FE57 (hubs may be empty until those land).
 
 ---
 
 ### FE51 — Warehouses UI (Core F9c)
 
-**Category:** FEATURE · **Status:** Open · **Noted:** 2026-10-23 · **Parent:** FE50 · **Depends on:** Core **F9c** Done · **Menu:** TBD (FE50 IA)
+**Category:** FEATURE · **Status:** Done (2026-10-24) · **Noted:** 2026-10-23 · **Parent:** FE50 · **Depends on:** Core **F9c** Done · **Menu:** top-level **Warehouse** (`/warehouse`)
 
 **Goal.** List/create/edit/(deactivate) warehouses per tenant. No delete when Core rejects referenced warehouses. English UI copy. Wire via `lib/services/*` + Swagger — do not invent field names.
 
 **Out of scope.** Stock qty editing (FE52); opname (FE53).
 
+**Note (2026-10-24):** Core **F9c** Done — FE work unblocked once FE57 places **Warehouse** on the bar (or hub exists). Do not invent shapes; use Core Swagger after `make swagger`.
+
+**Done (2026-10-24):** `/warehouse` list (search + pagination) + create/edit modal (`code`, `name`, `is_default`, `is_active` on edit). `warehousesApi` + `canWriteWarehouse` (admin+). No hard delete; Core guard messages surfaced on API error. Docs: `menu-endpoints.md`, README.
+
 ---
 
 ### FE52 — Stock balances + movements UI (Core F9d)
 
-**Category:** FEATURE · **Status:** Open · **Noted:** 2026-10-23 · **Parent:** FE50 · **Depends on:** Core **F9d** Done, FE51 · **Menu:** TBD (FE50 IA)
+**Category:** FEATURE · **Status:** Open · **Noted:** 2026-10-23 · **Parent:** FE50 · **Depends on:** Core **F9d** Done, FE51 · **Menu:** top-level **Stock** (FE50 / FE57)
 
 **Goal.** Show balances by variant/warehouse; record manual movements (types from Core F9a). Render API figures only — no client-side re-derive of available stock.
 
 **Out of scope.** Opname posting (FE53); auto from Sales orders/returns; finance JE.
 
+**Note (2026-10-24):** Core **F9d** still Open — **Stock** top-bar / hub may ship as empty shell in FE57; do not invent balance/movement screens until F9d + Swagger.
+
 ---
 
 ### FE53 — Stock opname UI (Core F9e)
 
-**Category:** FEATURE · **Status:** Open · **Noted:** 2026-10-23 · **Parent:** FE50 · **Depends on:** Core **F9a** includes opname in MVP + **F9e** Done · **Related:** FE52
+**Category:** FEATURE · **Status:** Open · **Noted:** 2026-10-23 · **Parent:** FE50 · **Depends on:** Core **F9a** + **F9e** Done · **Related:** FE52 · **Menu:** under **Stock** (with FE52)
 
-**Goal.** Create/complete opname (system vs physical lines) if Core ships F9e. If F9a defers opname, leave this Open/blocked and do not build a fake UI.
+**Goal.** Create/complete opname (system vs physical lines) when Core ships F9e. Do not invent shapes.
 
 **Next action.** Only after Core F9a + F9e.
+
+---
+
+### FE55 — Purchases / suppliers / AP UI (Core F9h–F9j)
+
+**Category:** FEATURE · **Status:** Open · **Noted:** 2026-10-24 · **Depends on:** Core **F9a** + **F9h / F9i / F9j** · **Related:** FE50 · **Backend:** Core stock program §1.6
+
+**Goal.** UI for multi-supplier master, purchase/receipt (items, qty, cost, payment status), and supplier utang (what is owed, which lines). Keep **utang ≠ HPP** labelling clear. Wire only after Core Swagger exists.
+
+**Out of scope.** Inventing AP maths client-side; Habitat purchasing screens.
+
+---
+
+### FE56 — Raw vs finished / BOM / HPP UI (Core F9k–F9l)
+
+**Category:** FEATURE · **Status:** Open · **Noted:** 2026-10-24 · **Depends on:** Core **F9k / F9l** · **Related:** FE41 catalog, FE55
+
+**Goal.** Surfaces for item kind (raw vs barang jadi), BOM/composition, and HPP / unit cost including hybrid sourcing — as Core exposes. No client-side re-costing beyond displaying API figures.
+
+**Next action.** After Core F9a locks IQ14–IQ16 and APIs ship.
+
+---
+
+### FE58 — Sales › Shopee: HPP with basis + coverage (Core F9u)
+
+**Category:** FEATURE · **Status:** Open · **Noted:** 2026-10-24 · **Depends on:** Core **F9u** (blocked there on HQ1–HQ7; analysis: Core `docs/analysis/historical-hpp.md`, F9t Done) · **Related:** FE46 (SKU summary), FE56
+
+**Problem.** The Sales Shopee summary shows what sold (`sku_summary`) but no HPP. Months before inventory go-live have no ledger, so their HPP comes from a different evidence basis than later months.
+
+**Why it matters.** A single HPP number with no label hides whether it was typed from an old Excel total, estimated from SKU detail at a flat cost, or costed by the ledger. That distinction changes how profit should be read.
+
+**Scope when implementing (later).** Render the API's `hpp { amount, basis, coverage }` per month/channel with the basis shown as a label and uncovered qty/revenue visible. **No client-side costing**, no summing SKU rows into an HPP total, no mixing bases into one unlabeled figure.
+
+**Next action.** Wait for Core F9u H3/H4 + Swagger; do not start before the contract exists.
+
+---
+
+### FE57 — Shell IA: top-bar order + account / profile menu
+
+**Category:** FEATURE · **Status:** Done (2026-10-24) · **Noted:** 2026-10-24 · **Related:** FE19, FE32, FE37, FE50–FE53 · **Menu:** top bar + account dropdown
+
+**Problem.** Top bar still mixes **Settings** as a domain next to Finance, and tenant switch + Logout sit as loose chrome. Stock / Warehouse need clear top-level nouns separate from Catalog. Developer locked the target IA (2026-10-24); **code not started** — docs first.
+
+**Why it matters.** Operators expect domain order to match the business (catalog → stock → sales → warehouse…), and account actions (settings, change company/tenant, logout) in a profile-style menu — not another domain tab.
+
+**Locked top-bar order (left → right):**
+
+`Dashboard · Catalog · Stock · Sales · Warehouse · Marketing · Finance`
+
+**Account / profile menu (right of bar — not a top-level domain):**
+
+1. Trigger: avatar / profile control (typical “me” / account menu).
+2. Primary panel: user identity (name + email from `/auth/me` when wired), **active tenant** label, link/entry **Settings** (existing Settings hub routes — Shopee Integration / Tenants / Users as role-gated today), **Logout**.
+3. **Change tenant** (copy TBD English — e.g. “Change tenant”): only when `canSwitchTenant` / `tenant_scope === 'all'` (same rule as FE32). Click opens a **second panel** (flyout) with searchable list of `allowed_tenants` and select → same behaviour as today’s switcher (persist + reload). Non-switchers: show fixed tenant name only (no Change tenant control).
+4. Remove Settings from the centered domain list; remove standalone top-bar `TenantSwitcher` select + Logout button once the menu covers them.
+
+**Reference UX.** Nested “Ganti Perusahaan” / Change tenant flyout pattern (search + list + selected highlight) — see developer screenshot (2026-10-24). EcomHub UI copy stays **English**.
+
+**BE / coverage notes (do not invent screens):**
+
+| Surface | Core / FE | Note |
+|---|---|---|
+| Settings routes (Shopee / Tenants / Users) | Live | Move entry into account menu only; pages stay under `/settings/*` |
+| Change tenant | FE32 / Core F7d | Already works; relocate UX into account menu |
+| Logout | Live | Move into account menu |
+| **Warehouse** domain | Core **F9c** Done → **FE51** | Top-bar + hub OK; list/CRUD waits FE51 |
+| **Stock** domain | Core **F9d** → **FE52** / **FE53** | Top-bar + empty hub OK in this task; no balances/opname UI until FE52/53 |
+| Purchases / BOM / HPP | FE55 / FE56 | **Not** on this bar yet (no “Pembelian” top-level until scoped) |
+| Notifications bell | — | **Out of scope** unless a later task; screenshot only |
+
+**Out of scope for FE57.** Building FE51–FE56 CRUD; inventing stock figures; notification center; Indonesian UI copy.
+
+**Done (2026-10-24):** Top bar order as locked; Settings off the domain bar. `AccountMenu` (avatar → identity, active tenant, Change tenant searchable flyout for superadmin, Settings hub + role-gated links, Logout). Empty `/stock` + `/warehouse` hubs. `settingsNavItems` shared by Settings hub. Docs: README, `menu-endpoints.md`.
 
