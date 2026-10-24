@@ -36,7 +36,10 @@ export default function ProductDetailPage() {
   const [saveError, setSaveError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deletingImageId, setDeletingImageId] = useState<number | null>(null);
   const [imageError, setImageError] = useState('');
+  const [archiveBusy, setArchiveBusy] = useState(false);
+  const [archiveError, setArchiveError] = useState('');
 
   const load = useCallback(async () => {
     if (!id || Number.isNaN(id)) {
@@ -63,7 +66,7 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     if (product) {
-      document.title = `${product.product_name} · Catalog · EcomHub`;
+      document.title = `${product.name} · Catalog · EcomHub`;
     } else {
       document.title = 'Product · Catalog · EcomHub';
     }
@@ -100,6 +103,50 @@ export default function ProductDetailPage() {
       setImageError(
         err instanceof Error ? err.message : 'Failed to set primary image'
       );
+    }
+  };
+
+  const onDeleteImage = async (imageId: number) => {
+    if (!product) return;
+    setDeletingImageId(imageId);
+    setImageError('');
+    try {
+      await productsApi.deleteImage(product.id, imageId);
+      await load();
+    } catch (err: unknown) {
+      setImageError(
+        err instanceof Error ? err.message : 'Failed to delete image'
+      );
+    } finally {
+      setDeletingImageId(null);
+    }
+  };
+
+  const handleArchive = async () => {
+    if (!product) return;
+    const listingCount = (product.listings ?? []).length;
+    if (listingCount > 0) {
+      setArchiveError(
+        `Unlink all channel listings first (${listingCount} remaining). Unlink is on the Channel listings panel.`
+      );
+      return;
+    }
+    if (
+      !confirm(
+        `Archive “${product.name}”? SKUs stay reserved; the product is hidden from the default list. This does not delete anything on Shopee.`
+      )
+    ) {
+      return;
+    }
+    setArchiveBusy(true);
+    setArchiveError('');
+    try {
+      await productsApi.archive(product.id);
+      await load();
+    } catch (err: unknown) {
+      setArchiveError(err instanceof Error ? err.message : 'Archive failed');
+    } finally {
+      setArchiveBusy(false);
     }
   };
 
@@ -141,29 +188,59 @@ export default function ProductDetailPage() {
   }
 
   const status = (product.status || 'draft') as ProductStatus;
+  const isArchived = status === 'archived';
+  const canMutate = canWrite && !isArchived;
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title={product.product_name}
+        title={product.name}
         description={
-          canWrite
-            ? 'Edit fields below and save. Delete/remove is not available yet.'
-            : product.product_code
-              ? `Code ${product.product_code}`
-              : 'No product code'
+          isArchived
+            ? 'Archived — read-only. SKUs remain reserved.'
+            : canWrite
+              ? 'Edit fields below and save. Unlink listings before archive.'
+              : product.code
+                ? `Code ${product.code}`
+                : 'No product code'
         }
         parent={{ label: 'Products', href: '/catalog/products' }}
         actions={
           canWrite ? (
-            <Link href={`/catalog/products/new?copy_from=${product.id}`}>
-              <Button variant="secondary">Copy product</Button>
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              {!isArchived && (
+                <Button
+                  variant="danger"
+                  isLoading={archiveBusy}
+                  disabled={archiveBusy}
+                  onClick={() => void handleArchive()}
+                >
+                  Archive
+                </Button>
+              )}
+              <Link href={`/catalog/products/new?copy_from=${product.id}`}>
+                <Button variant="secondary">Copy product</Button>
+              </Link>
+            </div>
           ) : undefined
         }
       />
 
-      {canWrite ? (
+      {archiveError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {archiveError}
+        </div>
+      )}
+
+      {isArchived && (
+        <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800">
+          This product is archived. It is hidden from the default product list
+          (filter Status → Archived to find it). No further edits, uploads, or
+          listing actions.
+        </div>
+      )}
+
+      {canMutate ? (
         <>
           <ProductForm
             key={`${product.id}-${product.updated_at}`}
@@ -180,9 +257,11 @@ export default function ProductDetailPage() {
             images={product.images ?? []}
             canWrite
             uploading={uploading}
+            deletingId={deletingImageId}
             error={imageError}
             onUpload={onUpload}
             onSetPrimary={setPrimary}
+            onDelete={onDeleteImage}
           />
         </>
       ) : (
@@ -209,7 +288,7 @@ export default function ProductDetailPage() {
                 <div>
                   <dt className="text-gray-500">Product code</dt>
                   <dd className="mt-1 text-gray-900">
-                    {product.product_code || '—'}
+                    {product.code || '—'}
                   </dd>
                 </div>
                 <div className="sm:col-span-2">
@@ -256,13 +335,13 @@ export default function ProductDetailPage() {
         </>
       )}
 
-      {canWrite && (
+      {canMutate && (
         <ShopeeListingDraftForm product={product} onSaved={load} />
       )}
 
       <ChannelListingsPanel
         product={product}
-        canWrite={canWrite}
+        canWrite={canMutate}
         onChanged={load}
       />
     </div>

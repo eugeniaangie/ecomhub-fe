@@ -527,7 +527,7 @@ export default function JournalEntriesPage() {
   const getAccountName = (accountId: number) => {
     if (!accounts || accounts.length === 0) return 'Unknown';
     const account = accounts.find((a) => a.id === accountId);
-    return account ? `${account.account_code} - ${account.account_name}` : 'Unknown';
+    return account ? `${account.code} - ${account.name}` : 'Unknown';
   };
 
   const { totalDebit, totalCredit, isBalanced } = calculateTotals();
@@ -931,7 +931,7 @@ export default function JournalEntriesPage() {
                         <option value={0}>Select account</option>
                         {accounts.map((acc) => (
                           <option key={acc.id} value={acc.id}>
-                            {acc.account_code} - {acc.account_name}
+                            {acc.code} - {acc.name}
                           </option>
                         ))}
                       </select>
@@ -1144,7 +1144,7 @@ export default function JournalEntriesPage() {
                       <tr key={line.id || index}>
                         <td className="px-4 py-2 text-sm text-gray-900">
                           {line.account
-                            ? `${line.account.account_code} - ${line.account.account_name}`
+                            ? `${line.account.code} - ${line.account.name}`
                             : getAccountName(line.account_id)}
                         </td>
                         <td className="px-4 py-2 text-sm text-gray-500">{line.description}</td>

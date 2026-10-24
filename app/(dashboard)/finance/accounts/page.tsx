@@ -50,8 +50,8 @@ export default function AccountsPage() {
 
   // Form
   const [form, setForm] = useState({
-    account_code: '',
-    account_name: '',
+    code: '',
+    name: '',
     account_type: 'asset' as AccountType,
     parent_account_id: null as number | null,
     is_active: true,
@@ -104,8 +104,8 @@ export default function AccountsPage() {
   const handleCreate = () => {
     setEditingItem(null);
     setForm({
-      account_code: '',
-      account_name: '',
+      code: '',
+      name: '',
       account_type: 'asset',
       parent_account_id: null,
       is_active: true,
@@ -117,8 +117,8 @@ export default function AccountsPage() {
   const handleEdit = (item: Account) => {
     setEditingItem(item);
     setForm({
-      account_code: item.account_code,
-      account_name: item.account_name,
+      code: item.code,
+      name: item.name,
       account_type: item.account_type,
       parent_account_id: item.parent_account_id || null,
       is_active: item.is_active,
@@ -142,17 +142,17 @@ export default function AccountsPage() {
 
   const handleSubmit = async () => {
     // Validation
-    if (!form.account_code.trim()) {
+    if (!form.code.trim()) {
       setFormError('Account code is required');
       return;
     }
 
-    if (!form.account_name.trim()) {
+    if (!form.name.trim()) {
       setFormError('Account name is required');
       return;
     }
 
-    if (form.account_name.trim().length < 3) {
+    if (form.name.trim().length < 3) {
       setFormError('Account name must be at least 3 characters');
       return;
     }
@@ -160,8 +160,8 @@ export default function AccountsPage() {
     try {
       setFormError('');
       const payload = {
-        account_code: form.account_code.trim(),
-        account_name: form.account_name.trim(),
+        code: form.code.trim(),
+        name: form.name.trim(),
         account_type: form.account_type,
         parent_account_id: form.parent_account_id || undefined,
         is_active: form.is_active,
@@ -174,8 +174,8 @@ export default function AccountsPage() {
       }
       setIsModalOpen(false);
       setForm({
-        account_code: '',
-        account_name: '',
+        code: '',
+        name: '',
         account_type: 'asset',
         parent_account_id: null,
         is_active: true,
@@ -193,8 +193,8 @@ export default function AccountsPage() {
     setIsModalOpen(false);
     setEditingItem(null);
     setForm({
-      account_code: '',
-      account_name: '',
+      code: '',
+      name: '',
       account_type: 'asset',
       parent_account_id: null,
       is_active: true,
@@ -330,19 +330,19 @@ export default function AccountsPage() {
                     sorted.push(account);
                     processed.add(account.id);
                     
-                    // Add all direct children, sorted by account_code
+                    // Add all direct children, sorted by code
                     const children = getDescendants(account.id).sort((a, b) => 
-                      a.account_code.localeCompare(b.account_code)
+                      a.code.localeCompare(b.code)
                     );
                     
                     // Recursively add each child and its descendants
                     children.forEach(child => addWithDescendants(child));
                   };
                   
-                  // Start with root accounts (no parent), sorted by account_code
+                  // Start with root accounts (no parent), sorted by code
                   const rootAccounts = accounts
                     .filter(acc => !acc.parent_account_id)
-                    .sort((a, b) => a.account_code.localeCompare(b.account_code));
+                    .sort((a, b) => a.code.localeCompare(b.code));
                   
                   // Add each root and all its descendants
                   rootAccounts.forEach(root => addWithDescendants(root));
@@ -381,13 +381,13 @@ export default function AccountsPage() {
                   return (
                     <tr key={account.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        {account.account_code}
+                        {account.code}
                       </td>
                       <td className={`px-6 py-4 text-sm text-gray-900 ${indentClass}`}>
                         {account.parent_account_id && (
                           <span className="text-gray-400 mr-2">└─</span>
                         )}
-                        {account.account_name}
+                        {account.name}
                       </td>
                       <td className="px-6 py-4 text-sm">
                         <StatusBadge
@@ -478,8 +478,8 @@ export default function AccountsPage() {
                 id="account-code"
                 type="text"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={form.account_code}
-                onChange={(e) => setForm({ ...form, account_code: e.target.value })}
+                value={form.code}
+                onChange={(e) => setForm({ ...form, code: e.target.value })}
                 required
                 placeholder="e.g., 1000"
               />
@@ -512,8 +512,8 @@ export default function AccountsPage() {
               id="account-name"
               type="text"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={form.account_name}
-              onChange={(e) => setForm({ ...form, account_name: e.target.value })}
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
               placeholder="e.g., Cash in Bank"
             />
@@ -534,7 +534,7 @@ export default function AccountsPage() {
               <option value="">No Parent (Root Account)</option>
               {availableParents.map((acc) => (
                 <option key={acc.id} value={acc.id}>
-                  {acc.account_code} - {acc.account_name}
+                  {acc.code} - {acc.name}
                 </option>
               ))}
             </select>

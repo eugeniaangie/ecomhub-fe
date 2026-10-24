@@ -46,8 +46,8 @@ export type AccountType = 'asset' | 'liability' | 'equity' | 'revenue' | 'expens
 
 export interface Account {
   id: number;
-  account_code: string;
-  account_name: string;
+  code: string;
+  name: string;
   account_type: AccountType;
   parent_account_id?: number;
   is_active: boolean;
@@ -58,8 +58,8 @@ export interface Account {
 }
 
 export interface CreateAccount {
-  account_code: string;
-  account_name: string;
+  code: string;
+  name: string;
   account_type: AccountType;
   parent_account_id?: number;
   is_active?: boolean;
@@ -271,8 +271,8 @@ export interface FinanceTransaction {
   neobank_debit: number;
   neobank_credit: number;
   line_description: string;
-  partner_account_code: string;
-  partner_account_name: string;
+  partner_code: string;
+  partner_name: string;
   partner_account_type: string;
   partner_amount: number;
   status: string;
@@ -280,7 +280,7 @@ export interface FinanceTransaction {
 
 // New API Response Types
 export interface AccountTransactionBalance {
-  account_name: string;
+  name: string;
   total_debit: number;
   total_credit: number;
   current_balance: number;
@@ -288,8 +288,8 @@ export interface AccountTransactionBalance {
 
 /** Cumulative cash-subtree balance row (T31). Sign already normalised by account_type. */
 export interface AccountBalance {
-  account_code: string;
-  account_name: string;
+  code: string;
+  name: string;
   account_type: string;
   is_active: boolean;
   total_debit: number;
@@ -299,8 +299,8 @@ export interface AccountBalance {
 
 /** Period cash-subtree movement row (T31). Sign already normalised by account_type. */
 export interface AccountMovement {
-  account_code: string;
-  account_name: string;
+  code: string;
+  name: string;
   account_type: string;
   is_active: boolean;
   total_debit: number;
@@ -309,16 +309,16 @@ export interface AccountMovement {
 }
 
 export interface PartnerAccount {
-  account_code: string;
-  account_name: string;
+  code: string;
+  name: string;
   account_type: string;
   amount: number;
   description: string;
 }
 
 export interface AccountTransaction {
-  account_name: string;
-  account_code: string;
+  name: string;
+  code: string;
   journal_entry_id: number;
   entry_number: string;
   entry_date: string; // ISO 8601 format

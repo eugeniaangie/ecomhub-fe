@@ -1,6 +1,6 @@
 // Product domain types — mirror ecomhub-core model/validation (F8b / F8d / F8e).
 
-export type ProductStatus = 'draft' | 'active';
+export type ProductStatus = 'draft' | 'active' | 'archived';
 
 export type SKUSource =
   | 'adopted'
@@ -19,8 +19,8 @@ export type ListingSyncStatus =
 export interface Product {
   id: number;
   tenant_id: number;
-  product_name: string;
-  product_code?: string | null;
+  name: string;
+  code?: string | null;
   description?: string | null;
   brand?: string | null;
   category_id?: number | null;
@@ -226,10 +226,106 @@ export interface ChannelListing {
   last_push_error?: string | null;
   push_started_at?: string | null;
   last_synced_at?: string | null;
+  /** F8o — set when listing no longer on Shopee; cleared when seen again */
+  absent_since?: string | null;
   created_at: string;
   updated_at: string;
   created_by?: number | null;
   updated_by?: number | null;
+}
+
+/** Observed Shopee model with no local listing-variant match (channel_data.unmatched_models). */
+export interface UnmatchedShopeeModel {
+  model_id?: number | string;
+  model_sku?: string;
+  model_status?: string;
+  original_price?: number;
+  stock?: number;
+  tier_index?: number[];
+}
+
+/** F8q — POST …/variants/from-unmatched */
+export interface UnmatchedOptionValueInput {
+  option_name: string;
+  option_value: string;
+}
+
+export interface AddVariantFromUnmatchedForm {
+  ext_variant_id: string;
+  sku?: string;
+  option_values?: UnmatchedOptionValueInput[];
+  listing_price?: number | null;
+  ext_stock?: number | null;
+}
+
+/** F8o — POST …/shopee/products/reconcile */
+export interface ShopeeListingReconcileItem {
+  listing_id: number;
+  product_id: number;
+  ext_product_id: string;
+  outcome: string;
+  ext_status?: string;
+  message?: string;
+}
+
+export interface ShopeeListingsReconcileResult {
+  shop_id: number;
+  checked: number;
+  present: number;
+  marked_gone: number;
+  skipped_error: number;
+  failed: number;
+  items: ShopeeListingReconcileItem[];
+  token_refreshed: boolean;
+}
+
+export interface ShopeeRelinkSuggestion {
+  listing_variant_id: number;
+  product_variant_id: number;
+  master_sku: string;
+  ext_variant_id: string;
+  model_sku: string;
+  reason: string;
+}
+
+export interface ShopeeRelinkSuggestResult {
+  listing_id: number;
+  suggestions: ShopeeRelinkSuggestion[];
+}
+
+export interface ShopeeRelinkVariantLink {
+  listing_variant_id: number;
+  ext_variant_id: string;
+}
+
+export interface ShopeeRelinkVariantsResult {
+  listing_id: number;
+  relinked: number;
+}
+
+/** F8r — GET …/rebind-suggestions */
+export interface ShopeeRebindSuggestion {
+  ext_product_id: string;
+  item_sku?: string;
+  item_name?: string;
+  item_status?: string;
+  reason: string;
+}
+
+export interface ShopeeRebindSuggestResult {
+  listing_id: number;
+  shop_id: number;
+  has_next_page: boolean;
+  suggestions: ShopeeRebindSuggestion[];
+}
+
+/** F8r — POST …/rebind */
+export interface ShopeeRebindResult {
+  listing_id: number;
+  previous_ext_product_id?: string | null;
+  ext_product_id: string;
+  variants_rematched: number;
+  unmatched_models: number;
 }
 
 export interface ChannelListingDetail extends ChannelListing {
@@ -299,8 +395,8 @@ export interface ProductDetail extends Product {
 
 /** POST /products and PUT /products/:id body. */
 export interface ProductForm {
-  product_name: string;
-  product_code?: string | null;
+  name: string;
+  code?: string | null;
   description?: string | null;
   brand?: string | null;
   category_id?: number | null;

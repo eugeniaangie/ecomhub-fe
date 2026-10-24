@@ -52,8 +52,8 @@ function emptyOption(): OptionDraft {
 }
 
 function fromDetail(detail: ProductDetail): {
-  product_name: string;
-  product_code: string;
+  name: string;
+  code: string;
   description: string;
   brand: string;
   category_id: string;
@@ -65,8 +65,8 @@ function fromDetail(detail: ProductDetail): {
   options: OptionDraft[];
 } {
   return {
-    product_name: detail.product_name ?? '',
-    product_code: detail.product_code ?? '',
+    name: detail.name ?? '',
+    code: detail.code ?? '',
     description: detail.description ?? '',
     brand: detail.brand ?? '',
     category_id: detail.category_id != null ? String(detail.category_id) : '',
@@ -104,8 +104,8 @@ export function ProductForm({
   const seed =
     mode === 'create' && copySeed
       ? {
-          product_name: copySeed.product_name,
-          product_code: copySeed.product_code,
+          name: copySeed.name,
+          code: copySeed.code,
           description: copySeed.description,
           brand: copySeed.brand,
           category_id: copySeed.category_id,
@@ -122,8 +122,8 @@ export function ProductForm({
       : initial
         ? fromDetail(initial)
         : null;
-  const [productName, setProductName] = useState(seed?.product_name ?? '');
-  const [productCode, setProductCode] = useState(seed?.product_code ?? '');
+  const [name, setProductName] = useState(seed?.name ?? '');
+  const [code, setProductCode] = useState(seed?.code ?? '');
   const [description, setDescription] = useState(seed?.description ?? '');
   const [brand, setBrand] = useState(seed?.brand ?? '');
   const [categoryId, setCategoryId] = useState(seed?.category_id ?? '');
@@ -167,8 +167,8 @@ export function ProductForm({
   const optionCount = options.length;
 
   const buildBody = (): ProductFormBody | null => {
-    const name = productName.trim();
-    if (!name) {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
       setLocalError('Product name is required.');
       return null;
     }
@@ -239,8 +239,8 @@ export function ProductForm({
 
     setLocalError('');
     return {
-      product_name: name,
-      product_code: productCode.trim() || null,
+      name: trimmedName,
+      code: code.trim() || null,
       description: description.trim() || null,
       brand: brand.trim() || null,
       category_id: categoryId ? Number(categoryId) : null,
@@ -301,7 +301,7 @@ export function ProductForm({
         <h2 className="text-sm font-semibold text-gray-900">Basics</h2>
         <Input
           label="Product name *"
-          value={productName}
+          value={name}
           onChange={(e) => setProductName(e.target.value)}
           required
           maxLength={255}
@@ -310,7 +310,7 @@ export function ProductForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <Input
             label="Product code"
-            value={productCode}
+            value={code}
             onChange={(e) => setProductCode(e.target.value)}
             maxLength={255}
             placeholder="Optional; e.g. TEE-001 (A–Z, 0–9, -)"

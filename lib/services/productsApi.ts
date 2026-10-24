@@ -3,6 +3,7 @@
 import { api } from '../api';
 import type { PaginatedResponse } from '../types';
 import type {
+  AddVariantFromUnmatchedForm,
   ChannelListingDetail,
   ChannelListingDraftForm,
   Product,
@@ -17,6 +18,11 @@ import type {
   ShopeeListingStockForm,
   ShopeeListingVisibilityForm,
   ShopeeProductPushResult,
+  ShopeeRebindResult,
+  ShopeeRebindSuggestResult,
+  ShopeeRelinkSuggestResult,
+  ShopeeRelinkVariantLink,
+  ShopeeRelinkVariantsResult,
 } from '../types/product';
 
 const API_VERSION = '/api/v1';
@@ -76,6 +82,25 @@ export const productsApi = {
     return api.put<ProductImageDetail[]>(
       `${API_VERSION}/products/${productId}/images`,
       data
+    );
+  },
+
+  /** F8p — soft-retire product (status=archived). Listings must be unlinked first. */
+  archive: async (productId: number) => {
+    return api.post<ProductDetail>(`${API_VERSION}/products/${productId}/archive`);
+  },
+
+  /** F8p — remove local listing (never Shopee delete_*). Rejects still-live listings. */
+  unlinkListing: async (productId: number, listingId: number) => {
+    return api.delete<{ message?: string }>(
+      `${API_VERSION}/products/${productId}/listings/${listingId}`
+    );
+  },
+
+  /** F8p — delete gallery image + GC orphaned storage object. */
+  deleteImage: async (productId: number, imageId: number) => {
+    return api.delete<{ message?: string }>(
+      `${API_VERSION}/products/${productId}/images/${imageId}`
     );
   },
 
@@ -143,6 +168,56 @@ export const productsApi = {
     const qs = query.toString();
     return api.post<ShopeeProductPushResult>(
       `${API_VERSION}/products/${productId}/listings/${listingId}/stock${qs ? `?${qs}` : ''}`,
+      body
+    );
+  },
+
+  /** F8o A3 — suggested absent listing-variant ↔ unmatched model pairs (not applied). */
+  getRelinkSuggestions: async (productId: number, listingId: number) => {
+    return api.get<ShopeeRelinkSuggestResult>(
+      `${API_VERSION}/products/${productId}/listings/${listingId}/relink-suggestions`
+    );
+  },
+
+  /** F8o A3 — operator-confirmed re-link of absent variants to Shopee model_ids. */
+  relinkVariants: async (
+    productId: number,
+    listingId: number,
+    links: ShopeeRelinkVariantLink[]
+  ) => {
+    return api.post<ShopeeRelinkVariantsResult>(
+      `${API_VERSION}/products/${productId}/listings/${listingId}/relink-variants`,
+      { links }
+    );
+  },
+
+  /** F8r — candidate Shopee items (not imported) for listing re-bind. */
+  getRebindSuggestions: async (productId: number, listingId: number) => {
+    return api.get<ShopeeRebindSuggestResult>(
+      `${API_VERSION}/products/${productId}/listings/${listingId}/rebind-suggestions`
+    );
+  },
+
+  /** F8r — point gone/draft listing at a new Shopee item_id (same shop). */
+  rebindListing: async (
+    productId: number,
+    listingId: number,
+    extProductId: string
+  ) => {
+    return api.post<ShopeeRebindResult>(
+      `${API_VERSION}/products/${productId}/listings/${listingId}/rebind`,
+      { ext_product_id: extProductId }
+    );
+  },
+
+  /** F8q — create master variant + link from unmatched Shopee model. */
+  addVariantFromUnmatched: async (
+    productId: number,
+    listingId: number,
+    body: AddVariantFromUnmatchedForm
+  ) => {
+    return api.post<ProductDetail>(
+      `${API_VERSION}/products/${productId}/listings/${listingId}/variants/from-unmatched`,
       body
     );
   },

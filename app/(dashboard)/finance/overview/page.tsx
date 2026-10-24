@@ -180,12 +180,12 @@ export default function FinanceOverviewPage() {
           <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-0 border-t border-gray-100 pt-1.5 text-[10px] leading-tight text-gray-400 sm:grid-cols-3 lg:grid-cols-4">
             {balances.map((row) => (
               <div
-                key={row.account_code}
+                key={row.code}
                 className="flex items-baseline justify-between gap-1.5"
               >
                 <dt className="truncate">
-                  <span className="font-mono text-[9px] text-gray-400">{row.account_code}</span>{' '}
-                  {row.account_name}
+                  <span className="font-mono text-[9px] text-gray-400">{row.code}</span>{' '}
+                  {row.name}
                 </dt>
                 <dd className={`shrink-0 tabular-nums text-[10px] ${amountColorClass(row.current_balance)}`}>
                   {formatCurrency(row.current_balance)}
